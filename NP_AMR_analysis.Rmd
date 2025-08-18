@@ -32,9 +32,11 @@ parse_sample_file <- function(fn) {
 info_df <-
   parse_sample_file("./sample_data/6588_info.tsv") %>% 
   dplyr::filter(!grepl("HiC_RMV",sample_supplier_name))
+
 run_df <-
   parse_sample_file("./sample_data/6588_runs.tsv") %>% 
     dplyr::select(-name)
+
 files_df <-
   parse_sample_file("./sample_data/6588_files.tsv") %>%
     dplyr::filter(file_type == "annotation") %>%
@@ -42,6 +44,7 @@ files_df <-
     dplyr::mutate(annotation_file = paste0(stringr::str_sub(file_uuid, start = 1L, end = 6L),'_',npg_run_id)) %>% 
     dplyr::mutate(npg_run_id = gsub(".gff","",npg_run_id)) %>% 
     dplyr::select(-path)
+
 epi_df <-
   dplyr::bind_rows(
     read.csv("./sample_data/Asian_isolate_data.csv") %>% 
@@ -57,3 +60,18 @@ sample_df <-
     dplyr::left_join(epi_df, by = c("sample_donor_id" = "Sample"))
 
 ```
+
+## Use Kraken to QC data
+
+## Use AMR finder to identify resistance genes
+
+## Use capsule typer to identify serotypes
+
+## Use PopPUNK to categorise isolates
+
+## Use Panaroo to identify genes
+
+## Compare strain frequncies between samples
+
+## Compare gene frequencies between samples
+
