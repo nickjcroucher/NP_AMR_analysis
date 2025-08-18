@@ -1,2 +1,2 @@
 # NP AMR analysis
-Analyses of nasopharyngeal colonisationd data
+Analyses of nasopharyngeal colonisation data
