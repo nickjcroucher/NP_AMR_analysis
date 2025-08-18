@@ -1,2 +1,2 @@
-# NP_AMR_analysis
+# NP AMR analysis
 Analyses of nasopharyngeal colonisationd data
