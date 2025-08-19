@@ -49,7 +49,8 @@ epi_df <-
   dplyr::bind_rows(
     read.csv("./sample_data/Asian_isolate_data.csv") %>% 
       dplyr::mutate(Description = gsub(" from nasopharyngeal swab","",Description)),
-    read.csv("./sample_data/Hampshire_isolate_data.csv")
+    read.csv("./sample_data/Hampshire_isolate_data.csv") %>% 
+      dplyr::mutate(Cohort = Country)
   )
 
 # Merge data
