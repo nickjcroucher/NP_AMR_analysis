@@ -39,6 +39,26 @@ process_annotation_file_names <- function(df) {
   
 }
 
+process_assembly_file_names <- function(df) {
+  
+   df %>%
+    dplyr::filter(file_type == "assembly") %>%
+    dplyr::mutate(npg_run_id = gsub("(.)+/","",gsub("/velvet_assembly/contigs.fa","",gsub("/spades_assembly/contigs.fa","",path)))) %>% 
+    dplyr::mutate(assembly_file = paste0(stringr::str_sub(file_uuid, start = 1L, end = 6L),'_contigs.fa')) %>% 
+    dplyr::select(npg_run_id,assembly_file)
+  
+}
+
+process_qc_file_names <- function(df) {
+  
+   df %>%
+    dplyr::filter(file_type == "qc") %>%
+    dplyr::mutate(npg_run_id = gsub("(.)+/","",gsub("/kraken.report","",path))) %>% 
+    dplyr::mutate(qc_file = paste0(stringr::str_sub(file_uuid, start = 1L, end = 6L),'_kraken.report')) %>% 
+    dplyr::select(npg_run_id,qc_file)
+  
+}
+
 # Parse sample files
 info_df <-
   dplyr::bind_rows(
@@ -57,10 +77,24 @@ run_df <-
       dplyr::select(-name)
   )
 
+fn_6588 <- "./sample_data/6588_files.tsv"
+fn_6310 <- "./sample_data/6310_files.tsv"
 files_df <-
   dplyr::bind_rows(
-    parse_sample_file("./sample_data/6588_files.tsv") %>% process_annotation_file_names(),
-    parse_sample_file("./sample_data/6310_files.tsv") %>% process_annotation_file_names()
+    parse_sample_file(fn_6588) %>% process_annotation_file_names(),
+    parse_sample_file(fn_6310) %>% process_annotation_file_names()
+  ) %>% dplyr::left_join(
+    dplyr::bind_rows(
+      parse_sample_file(fn_6588) %>% process_assembly_file_names(),
+      parse_sample_file(fn_6310) %>% process_assembly_file_names()
+    ),
+    by = c("npg_run_id")
+  ) %>% dplyr::left_join(
+    dplyr::bind_rows(
+      parse_sample_file(fn_6588) %>% process_qc_file_names(),
+      parse_sample_file(fn_6310) %>% process_qc_file_names()
+    ),
+    by = c("npg_run_id")
   )
 
 epi_df <-
@@ -102,7 +136,14 @@ sample_df <-
 ``` {bash, eval = FALSE}
 
 module load assembly-stats/1.0.1
+assembly-stats -t *fa > NP_AMR_assembly_stats.tsv
 
+```
+
+``` {r Parse assembly statistics data}
+
+assembly_stats_df <-
+  read.table(file = "./sample_data/NP_AMR_assembly_stats.tsv", header = TRUE)
 
 ```
 
