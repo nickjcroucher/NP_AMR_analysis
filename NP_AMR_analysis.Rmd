@@ -28,39 +28,76 @@ parse_sample_file <- function(fn) {
   
 }
 
-# Parse sample files
-info_df <-
-  parse_sample_file("./sample_data/6588_info.tsv") %>% 
-  dplyr::filter(!grepl("HiC_RMV",sample_supplier_name))
-
-run_df <-
-  parse_sample_file("./sample_data/6588_runs.tsv") %>% 
-    dplyr::select(-name)
-
-files_df <-
-  parse_sample_file("./sample_data/6588_files.tsv") %>%
+process_annotation_file_names <- function(df) {
+  
+   df %>%
     dplyr::filter(file_type == "annotation") %>%
     dplyr::mutate(npg_run_id = gsub("(.)+/","",path)) %>% 
     dplyr::mutate(annotation_file = paste0(stringr::str_sub(file_uuid, start = 1L, end = 6L),'_',npg_run_id)) %>% 
     dplyr::mutate(npg_run_id = gsub(".gff","",npg_run_id)) %>% 
     dplyr::select(-path)
+  
+}
+
+# Parse sample files
+info_df <-
+  dplyr::bind_rows(
+    parse_sample_file("./sample_data/6588_info.tsv") %>% 
+      dplyr::filter(!grepl("HiC_RMV",sample_supplier_name)) %>%
+      dplyr::mutate(project = "6588"),
+    parse_sample_file("./sample_data/6310_info.tsv") %>%
+      dplyr::mutate(project = "6310")
+  )
+
+run_df <-
+  dplyr::bind_rows(
+    parse_sample_file("./sample_data/6588_runs.tsv") %>% 
+      dplyr::select(-name),
+    parse_sample_file("./sample_data/6310_runs.tsv") %>% 
+      dplyr::select(-name)
+  )
+
+files_df <-
+  dplyr::bind_rows(
+    parse_sample_file("./sample_data/6588_files.tsv") %>% process_annotation_file_names(),
+    parse_sample_file("./sample_data/6310_files.tsv") %>% process_annotation_file_names()
+  )
 
 epi_df <-
   dplyr::bind_rows(
     read.csv("./sample_data/Asian_isolate_data.csv") %>% 
-      dplyr::mutate(Description = gsub(" from nasopharyngeal swab","",Description)),
+      dplyr::mutate(Description = gsub(" from nasopharyngeal swab","",Description)) %>%
+      dplyr::mutate(project = "6588"),
     read.csv("./sample_data/Hampshire_isolate_data.csv") %>% 
-      dplyr::mutate(Cohort = Country)
-  )
+      dplyr::mutate(Cohort = Country) %>%
+      dplyr::mutate(project = "6588"),
+    read.csv("~/Downloads/Global-Hinf-metadata-microreact.csv") %>% 
+      dplyr::select(id,country,collection_date) %>% 
+      dplyr::filter(country == "Maela") %>% 
+      dplyr::rename(Sample = id,
+                    Region = country,
+                    Year = collection_date) %>% 
+      dplyr::mutate(Region = "Maela",
+                    Country = "Thailand",
+                    Species = "Haemophilus influenzae",
+                    project = "6310",
+                    Year = as.numeric(Year)) %>% 
+      dplyr::mutate(npg_run_id = gsub("(_.*?)_", "\\1#", Sample))
+  ) %>% 
+  dplyr::mutate(join_col = dplyr::if_else(project == "6588",Sample,npg_run_id)) %>% 
+  dplyr::select(-c(project,npg_run_id,Sample))
 
 # Merge data
 sample_df <-
   info_df %>% 
     dplyr::left_join(run_df, by = c("sample_uuid")) %>% 
     dplyr::left_join(files_df, by = c("npg_run_id")) %>% 
-    dplyr::left_join(epi_df, by = c("sample_donor_id" = "Sample"))
+    dplyr::mutate(join_col = dplyr::if_else(project == "6588",sample_donor_id,npg_run_id)) %>% 
+    dplyr::left_join(epi_df, by = c("join_col"))
 
 ```
+
+## Use assembly statistics to QC data
 
 ## Use Kraken to QC data
 
