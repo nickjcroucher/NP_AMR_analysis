@@ -71,7 +71,7 @@ epi_df <-
     read.csv("./sample_data/Hampshire_isolate_data.csv") %>% 
       dplyr::mutate(Cohort = Country) %>%
       dplyr::mutate(project = "6588"),
-    read.csv("~/Downloads/Global-Hinf-metadata-microreact.csv") %>% 
+    read.csv("./sample_data/Global-Hinf-metadata-microreact.csv") %>% 
       dplyr::select(id,country,collection_date) %>% 
       dplyr::filter(country == "Maela") %>% 
       dplyr::rename(Sample = id,
@@ -98,6 +98,13 @@ sample_df <-
 ```
 
 ## Use assembly statistics to QC data
+
+``` {bash, eval = FALSE}
+
+module load assembly-stats/1.0.1
+
+
+```
 
 ## Use Kraken to QC data
 
