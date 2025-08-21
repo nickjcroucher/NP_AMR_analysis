@@ -101,22 +101,29 @@ epi_df <-
   dplyr::bind_rows(
     read.csv("./sample_data/Asian_isolate_data.csv") %>% 
       dplyr::mutate(Description = gsub(" from nasopharyngeal swab","",Description)) %>%
-      dplyr::mutate(project = "6588"),
+      dplyr::mutate(project = "6588") %>% 
+      dplyr::mutate(Species = Description) %>% 
+      dplyr::mutate(Description = dplyr::if_else(Species == "Mixed bacteria","Mixed bacteria","Single isolate")),
     read.csv("./sample_data/Hampshire_isolate_data.csv") %>% 
       dplyr::mutate(Cohort = Country) %>%
-      dplyr::mutate(project = "6588"),
+      dplyr::mutate(project = "6588") %>% 
+      dplyr::mutate(Description = "Single isolate"),
     read.csv("./sample_data/Global-Hinf-metadata-microreact.csv") %>% 
+      dplyr::filter(disease == "") %>% 
       dplyr::select(id,country,collection_date) %>% 
       dplyr::filter(country == "Maela") %>% 
-      dplyr::rename(Sample = id,
+      dplyr::rename(Isolate = id,
                     Region = country,
                     Year = collection_date) %>% 
-      dplyr::mutate(Region = "Maela",
+      dplyr::mutate(Sample = Isolate,
+                    Region = "Maela",
+                    Cohort = "Maela",
                     Country = "Thailand",
                     Species = "Haemophilus influenzae",
                     project = "6310",
                     Year = as.numeric(Year)) %>% 
-      dplyr::mutate(npg_run_id = gsub("(_.*?)_", "\\1#", Sample))
+      dplyr::mutate(npg_run_id = gsub("(_.*?)_", "\\1#", Sample)) %>% 
+      dplyr::mutate(Description = "Single isolate")
   ) %>% 
   dplyr::mutate(join_col = dplyr::if_else(project == "6588",Sample,npg_run_id)) %>% 
   dplyr::select(-c(project,npg_run_id,Sample))
@@ -127,7 +134,10 @@ sample_df <-
     dplyr::left_join(run_df, by = c("sample_uuid")) %>% 
     dplyr::left_join(files_df, by = c("npg_run_id")) %>% 
     dplyr::mutate(join_col = dplyr::if_else(project == "6588",sample_donor_id,npg_run_id)) %>% 
-    dplyr::left_join(epi_df, by = c("join_col"))
+    dplyr::left_join(epi_df, by = c("join_col")) %>% 
+    dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
+    dplyr::select(-join_col) %>% 
+    dplyr::filter(!is.na(Country))
 
 ```
 
