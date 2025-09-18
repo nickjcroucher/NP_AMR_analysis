@@ -246,22 +246,23 @@ assembly_stats_df <-
 
 ``` {r Parse bracken outputs}
 
+parse_bracken <- function(fn) {
+  
+  read.table(file = gzfile(fn),
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE) %>% 
+  dplyr::filter(grepl("s__",Classification)
+  
+}
+
 species_abundance_df <-
-  read.table(file = gzfile("./sample_data/6310_bracken_summary_report.tsv.gz"),
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-  dplyr::filter(grepl("s__",Classification)) %>% 
+  parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
-    read.table(file = gzfile("./sample_data/6588_bracken_summary_report.tsv.gz"),
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-      dplyr::filter(grepl("s__",Classification)),
+    parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
     by = "Classification"
-  ) %>% 
+  ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
   tidyr::pivot_longer(cols = -Classification, names_to = "lane", values_to = "matches") %>% 
   dplyr::rename(Species = Classification) %>% 
