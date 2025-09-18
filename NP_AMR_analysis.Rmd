@@ -232,13 +232,22 @@ Assembly statistics were calculated with Quast (version 5.0.2).
 
 ``` {r Parse assembly statistics data}
 
+# Parse assembly statistics
 assembly_stats_df <-
   read.table(file = "./sample_data/NP_quast_report.tsv",
              check.names = FALSE,
              comment.char = "",
              sep ="\t",
              header = TRUE) %>% 
-    dplyr::rename(lane = Assembly)
+    dplyr::rename(npg_run_id = Assembly)
+
+# Join to sample information
+assembly_stats_df %<>%
+  dplyr::left_join(sample_df,
+                   by = "npg_run_id")
+
+# Plot and filter
+
 
 ```
 
@@ -246,30 +255,52 @@ assembly_stats_df <-
 
 ``` {r Parse bracken outputs}
 
+parse_bracken <- function(fn) {
+  
+  read.table(file = gzfile(fn),
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE) %>% 
+    dplyr::filter(grepl("s__",Classification))
+  
+}
+
+species_match_threshold <- 10000000
+
 species_abundance_df <-
-  read.table(file = gzfile("./sample_data/6310_bracken_summary_report.tsv.gz"),
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-  dplyr::filter(grepl("s__",Classification)) %>% 
+  parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
-    read.table(file = gzfile("./sample_data/6588_bracken_summary_report.tsv.gz"),
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-      dplyr::filter(grepl("s__",Classification)),
+    parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
     by = "Classification"
-  ) %>% 
+  ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
-  tidyr::pivot_longer(cols = -Classification, names_to = "lane", values_to = "matches") %>% 
+  tidyr::pivot_longer(cols = -Classification, names_to = "npg_run_id", values_to = "matches") %>% 
   dplyr::rename(Species = Classification) %>% 
   dplyr::mutate(matches = dplyr::if_else(is.na(matches),0,matches)) %>% 
   dplyr::group_by(Species) %>% 
   dplyr::mutate(Total = sum(matches)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::filter(Total > 0)
+  dplyr::filter(Total > species_match_threshold)
+
+# Join with sample information
+species_sample_df <-
+  species_abundance_df %>% 
+    dplyr::full_join(
+      sample_df,
+      by = "npg_run_id"
+    )
+  
+
+# Plot species matches
+ggplot(species_abundance_df,
+       aes(x = Species,
+           y = npg_run_id,
+           fill = matches+0.5)) +
+  geom_tile() +
+  scale_fill_continuous(trans = "log10") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
 
