@@ -13,6 +13,47 @@ require(tidyverse)
 
 ```
 
+``` {bash, eval=FALSE}
+
+module load PaM/environment
+module load shelf
+module load bsub.py
+module load irods_extractor
+module load qc-short-read
+iinit
+export LSB_DEFAULT_USERGROUP=team284
+cd /data/pam/team284/nc3/scratch/NP_AMR/data/
+# QC project 6310
+cd /data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc
+bsub.py --queue oversubscribed --threads 1 4 6310_QC qc-short-read --studyid 6310 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 151 --classification_level S -ansi-log false --kraken2_threads 16 --bracken_threads 16
+
+rm -rf results work *_QC.[oe]; bsub.py --queue oversubscribed --threads 1 4 6310_QC qc-short-read --studyid 6310 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 151 --classification_level S -ansi-log false --kraken2_threads 16 --bracken_threads 16 --type cram; watch bjobs
+
+
+
+bsub -o output.o -e error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --input ./test_data/inputs/test_manifest.csv --read_len 150 --threshold 1 --classification_level 'G' --kraken2_threads 10 --outdir my_output
+
+bsub.py 16 6588_QC qc-short-read --studyid 6588 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 150 --classification_level S -ansi-log false
+
+shelf get file -q import.sequencescape_study_id=6310 -q file.file_type=assembly
+
+module load assembly-unicycler-short-read
+
+
+
+```
+
+Run assemblies:
+
+``` {bash, eval=FALSE}
+
+module load PaM/environment
+module load shelf
+export LSB_DEFAULT_USERGROUP=team284
+cd /data/pam/team284/nc3/scratch/NP_AMR/data/
+
+```
+
 ## Load data from project
 
 Import sample data from project
@@ -141,23 +182,96 @@ sample_df <-
 
 ```
 
-## Use assembly statistics to QC data
+## Identify species with Kraken and Bracken
+
+Identification of species from short read data used the qc-short-read pipeline (revision 103cba2a10), which used Kraken2 (version 2.1.3) and Bracken (version 2.8). Pipeline report is [execution_report_2025-09-14_08-15-34.html](./pipeline_info/execution_report_2025-09-14_08-15-34.html).
 
 ``` {bash, eval = FALSE}
 
-module load assembly-stats/1.0.1
-assembly-stats -t *fa > NP_AMR_assembly_stats.tsv
+module load bsub.py
+module load qc-short-read
+cd 6310_qc
+echo -en "ID\tR1\tR2\n" > 6310.manifest; for f in ./results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME%_1.fastq.gz}\t${f}\t${f%_1.fastq.gz}_2.fastq.gz\n"; done >> 6310.manifest
+bsub.py -q oversubscribed 4 6310_qc_rerun qc-short-read --manifest_of_reads 6310.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
+cd ../6588_qc
+echo -en "ID\tR1\tR2\n" > 6588.manifest; for f in ./results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME%_1.fastq.gz}\t${f}\t${f%_1.fastq.gz}_2.fastq.gz\n"; done >> 6588.manifest
+bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
 
 ```
+
+## Assemble reads with SPAdes and unicycler
+
+Assembly used the assembly_unicycler_short_read pipeline (version 25.04.0), which used SPAdes (version 4.0.0) and unicycler (version 0.5.1). Pipeline reports are [execution_report_2025-09-11_20-15-21.html](./pipeline_info/execution_report_2025-09-11_20-15-21.html) and [execution_report_2025-09-11_17-22-43.html](./pipeline_info/execution_report_2025-09-11_17-22-43.html).
+
+``` {bash, eval = FALSE}
+
+git clone --recurse-submodules git@gitlab.internal.sanger.ac.uk:sanger-pathogens/pipelines/assembly_unicycler_short_read.git
+cd assembly_unicycler_short_read
+echo -en "ID,R1,R2\n" > 6310.manifest; for f in ../6310_qc/results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc/results/fastqs/${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc/results/fastqs/${BASENAME%_1.fastq.gz}_2.fastq.gz\n"; done >> 6310.manifest
+echo -en "ID,R1,R2\n" > 6588.manifest; for f in ../6588_qc/results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6588_qc/results/fastqs/${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6588_qc/results/fastqs/${BASENAME%_1.fastq.gz}_2.fastq.gz\n"; done >> 6588.manifest
+bsub -o 6310_output.o -e 6310_error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --manifest ./6310.manifest --outdir 6310_assemblies
+bsub -o 6588_output.o -e 6588_error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --manifest ./6588.manifest --outdir 6588_assemblies
+
+```
+
+## Annotate assemblies with Bakta
+
+The assemblies were annotated using Bakta (version 1.11).
+
+``` {bash, eval = FALSE}
+
+module load bakta/1.11.0
+declare -i N; N=1; for f in *.fa; do echo "bakta --db /data/pam/software/bakta/v6.0 --prefix ${f%.fa} --output ${f%.fa}_annotation --gram - --threads 4 ${f}" > bacta_job.${N}; chmod +x ./bacta_job.${N}; N=($N+1); done
+bsub -n 4 -M 4000 -R 'select[mem>4000] rusage[mem=4000] span[hosts=1]' -o bakta.%I.o -e bakta.%I.e -J bakta_run[1-4473] ./bacta_job.\${LSB_JOBINDEX}
+
+```
+
+## Evaluate assemblies with Quast
+
+Assembly statistics were calculated with Quast (version 5.0.2).
 
 ``` {r Parse assembly statistics data}
 
 assembly_stats_df <-
-  read.table(file = "./sample_data/NP_AMR_assembly_stats.tsv", header = TRUE)
+  read.table(file = "./sample_data/NP_quast_report.tsv",
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE) %>% 
+    dplyr::rename(lane = Assembly)
 
 ```
 
-## Use Kraken to QC data
+## Identify species in datasets
+
+``` {r Parse bracken outputs}
+
+species_abundance_df <-
+  read.table(file = gzfile("./sample_data/6310_bracken_summary_report.tsv.gz"),
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE) %>% 
+  dplyr::filter(grepl("s__",Classification)) %>% 
+  dplyr::full_join(
+    read.table(file = gzfile("./sample_data/6588_bracken_summary_report.tsv.gz"),
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE) %>% 
+      dplyr::filter(grepl("s__",Classification)),
+    by = "Classification"
+  ) %>% 
+  dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
+  tidyr::pivot_longer(cols = -Classification, names_to = "lane", values_to = "matches") %>% 
+  dplyr::rename(Species = Classification) %>% 
+  dplyr::mutate(matches = dplyr::if_else(is.na(matches),0,matches)) %>% 
+  dplyr::group_by(Species) %>% 
+  dplyr::mutate(Total = sum(matches)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(Total > 0)
+
+```
 
 ## Use AMR finder to identify resistance genes
 
