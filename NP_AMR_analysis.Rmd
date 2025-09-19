@@ -232,13 +232,22 @@ Assembly statistics were calculated with Quast (version 5.0.2).
 
 ``` {r Parse assembly statistics data}
 
+# Parse assembly statistics
 assembly_stats_df <-
   read.table(file = "./sample_data/NP_quast_report.tsv",
              check.names = FALSE,
              comment.char = "",
              sep ="\t",
              header = TRUE) %>% 
-    dplyr::rename(lane = Assembly)
+    dplyr::rename(npg_run_id = Assembly)
+
+# Join to sample information
+assembly_stats_df %<>%
+  dplyr::left_join(sample_df,
+                   by = "npg_run_id")
+
+# Plot and filter
+
 
 ```
 ### Merge data of two files of sample_df and assembly_stats_df
@@ -287,7 +296,7 @@ parse_bracken <- function(fn) {
              comment.char = "",
              sep ="\t",
              header = TRUE) %>% 
-  dplyr::filter(grepl("s__",Classification)
+    dplyr::filter(grepl("s__",Classification)
   
 }
 
@@ -298,13 +307,32 @@ species_abundance_df <-
     by = "Classification"
   ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
-  tidyr::pivot_longer(cols = -Classification, names_to = "lane", values_to = "matches") %>% 
+  tidyr::pivot_longer(cols = -Classification, names_to = "npg_run_id", values_to = "matches") %>% 
   dplyr::rename(Species = Classification) %>% 
   dplyr::mutate(matches = dplyr::if_else(is.na(matches),0,matches)) %>% 
   dplyr::group_by(Species) %>% 
   dplyr::mutate(Total = sum(matches)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::filter(Total > 0)
+  dplyr::filter(Total > species_match_threshold)
+
+# Join with sample information
+species_sample_df <-
+  species_abundance_df %>% 
+    dplyr::full_join(
+      sample_df,
+      by = "npg_run_id"
+    )
+  
+
+# Plot species matches
+ggplot(species_abundance_df,
+       aes(x = Species,
+           y = npg_run_id,
+           fill = matches+0.5)) +
+  geom_tile() +
+  scale_fill_continuous(trans = "log10") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
 
