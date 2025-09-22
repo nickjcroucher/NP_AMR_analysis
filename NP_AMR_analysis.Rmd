@@ -258,6 +258,7 @@ We use these two files to merge getting chronological data.
 merge_df <- merge(assembly_stats_df, sample_df, by.x = "filename", by.y = "assembly_file")
 
 View(merge_df)
+View(assembly_stats_df)
 
 right_df <- right_join(as_tibble(assembly_stats_df), as_tibble(sample_df), by = c("filename" = "assembly_file"))
 
@@ -269,20 +270,29 @@ View(right_df)
 We used total_length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is 100000bp and total length (x-axis) which is from 1.75Mbp to 2.25Mbp.
 
 ``` {r, plot-genome assembly, include=TRUE}
-ggplot(data = right_df) + geom_point(aes(x = total_length, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+<<<<<<< HEAD
+ggplot(data = assembly_stats_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + scale_x_log10() + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+=======
+ggplot(data = assembly_stats_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+>>>>>>> 2007f1bcef216c88ea517b381798cb3fe3b90443
 ```
 ### Quality controle of merging data
 We need to eliminate a few results from sequencing to get the better quality control of sequencing genome
 
 ``` {r, filter-data, include=TRUE}
-summaried_df <- merge_df %>%
-  filter(N50 > 100000 & (total_length > 1.75e+06 & total_length < 2.25e+06))
-ggplot(data = summaried_df) + geom_point(aes(x = total_length, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+summaried_df <- assembly_stats_df %>%
+<<<<<<< HEAD
+  filter(N50 > 10000 & (`Total length` > 1.5e+06 & `Total length` < 2.5e+06))
+ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 80000) + geom_vline(xintercept = c(1.725e+06, 2.15e+06))
+=======
+  filter(N50 > 100000 & (`Total length` > 1.75e+06 & `Total length` < 2.25e+06))
+ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+>>>>>>> 2007f1bcef216c88ea517b381798cb3fe3b90443
 ```
 ### Plot graph of identifing bacterial burden in each three countries
 
 ``` {r, plot-graph, include=TRUE}
-ggplot(data = merge_df) + geom_bar(aes(x = Year, fill = Country, position = "dodge")) + facet_wrap(~ Species) + xlab("Year of investigation") + ylab("Number of enrollment\nIn local hospital") + labs(fill = "Study Enrollment\nIn Each Countries", shape = "Species", caption = "Antimicrobial Resistance Study") + scale_shape_manual(values = c(17,19), labels = c("Haemophilus influenzae", "Moraxella catarrhalis")) + coord_cartesian(xlim = c(2004, 2021)) + theme_minimal()
+ggplot(data = assembly_stats_df) + geom_bar(aes(x = Year, fill = Country, position = "dodge")) + facet_wrap(~ Species) + xlab("Year of investigation") + ylab("Number of enrollment\nIn local hospital") + labs(fill = "Study Enrollment\nIn Each Countries", shape = "Species", caption = "Antimicrobial Resistance Study") + scale_shape_manual(values = c(17,19), labels = c("Haemophilus influenzae", "Moraxella catarrhalis")) + coord_cartesian(xlim = c(2004, 2021)) + theme_minimal()
 ```
 
 ## Identify species in datasets
@@ -296,10 +306,10 @@ parse_bracken <- function(fn) {
              comment.char = "",
              sep ="\t",
              header = TRUE) %>% 
-    dplyr::filter(grepl("s__",Classification)
+    dplyr::filter(grepl("s__",Classification))
   
 }
-
+species_match_threshold = 10000000
 species_abundance_df <-
   parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
@@ -325,16 +335,77 @@ species_sample_df <-
   
 
 # Plot species matches
-ggplot(species_abundance_df,
-       aes(x = Species,
+ggplot(species_sample_df,
+       aes(x = Species.x,
            y = npg_run_id,
            fill = matches+0.5)) +
-  geom_tile() +
-  scale_fill_continuous(trans = "log10") +
+  geom_tile() + facet_grid(Species.y ~., scales = "free_y") + scale_fill_continuous(trans = "log10") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
+## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
+
+```{r create a proportion}
+
+df <- species_sample_df %>%
+  dplyr::mutate(Species.x = gsub("_"," ", Species.x)) %>%
+  group_by(npg_run_id) %>%
+  mutate(proportion = matches / sum(matches)) %>%
+dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
+tidyr::fill(Matching_proportion, .direction = "updown")
+df
+```
+## We plot matching proportion for each types of species (Moraxella catarrhalis, Haemophilus influenzae and Mixed bacteria) to get the high quality species 
+
+```{r plot proportion}
+
+filtered_df <- df %>%
+  filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") & Species.y == Species.x)
+summary_df <- filtered_df %>%
+  group_by(Species.y) %>%
+  summarise(mean_total = mean(Total, na.rm = TRUE))
+ggplot(filtered_df, aes(x = Species.y, y = proportion)) + geom_violin()+ geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") + labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") + theme_minimal()
+
+```
+## We try to remove the species with lower proportion of 0.95
+
+```{r filter the proportion }
+
+filtered_df <- df %>%
+  
+  filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") & Species.y == Species.x & proportion > 0.95)
+summary_df <- filtered_df %>%
+  group_by(Species.y) %>%
+  summarise(mean_total = mean(Total, na.rm = TRUE))
+ggplot(filtered_df, aes(x = Species.y, y = proportion)) + geom_violin()+ geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") + labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") + theme_minimal()
+```
+## plot the characteristic of the filter data (country and years)
+
+```{r plot the filter dataset}
+
+plot_column <- df %>%
+  filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria"),
+         Species.y == Species.x,
+         proportion > 0.95) %>%
+  select(Country, Year, Species.y, proportion, Matching_proportion, Total, npg_run_id, matches) %>%
+  distinct()
+plot_column
+
+ggplot(data = plot_column) + geom_bar(aes(x = Year, fill = Country)) + facet_wrap(~ Species.y) + labs(title = "Total by Country and Years", x = "Years", y = "Total", fill = "Countries") + theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## We want to keep sampels with threshold:
+N50 above 80,000
+Total length above 1,725,000 bp
+Total length below 2,150,000 bp
+and Matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony
+
+## Tidy up the column name of dataset 
+Species.x to orginal species
+Species.y to matching species
+
 
 ## Use AMR finder to identify resistance genes
 
