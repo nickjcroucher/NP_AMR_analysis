@@ -154,8 +154,7 @@ epi_df <-
       dplyr::select(id,country,Year) %>% 
       dplyr::filter(country == "Maela") %>% 
       dplyr::rename(Isolate = id,
-                    Region = country,
-                    Year = collection_date) %>% 
+                    Region = country) %>% 
       dplyr::mutate(Sample = Isolate,
                     Region = "Maela",
                     Cohort = "Maela",
