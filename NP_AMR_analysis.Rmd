@@ -151,7 +151,7 @@ epi_df <-
       dplyr::mutate(Description = "Single isolate"),
     read.csv("./sample_data/Global-Hinf-metadata-microreact.csv") %>% 
       dplyr::filter(disease == "") %>% 
-      dplyr::select(id,country,collection_date) %>% 
+      dplyr::select(id,country,Year) %>% 
       dplyr::filter(country == "Maela") %>% 
       dplyr::rename(Isolate = id,
                     Region = country,
