@@ -382,7 +382,22 @@ plot_column
 ggplot(data = plot_column) + geom_bar(aes(x = Year, fill = Country)) + facet_wrap(~ Species.y) + labs(title = "Total by Country and Years", x = "Years", y = "Total", fill = "Countries") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-merge_data <- left_join()
+```{r rename Global_Hinfl dataset}
+selected_Global_data <- Global_Hinf_metadata_microreact[, grep("^(id|Year)$", names(Global_Hinf_metadata_microreact))]
+selected_Global_data
+rename_Global_data <- selected_Global_data %>%
+  select(id, Year) %>%
+  rename(Isolate = id, new_Year = Year)
+rename_Global_data
+```
+```{r merge both datasets of Global and epi}
+
+join_epi_Global_data <- left_join(rename_Global_data, epi_df, by = "Isolate") %>%
+  mutate(Year = if_else(!is.na(new_Year), new_Year, Year)) %>%
+  select(-new_Year)
+join_epi_Global_data
+
+```
 
 ## We want to keep sampels with threshold:
 N50 above 80,000
