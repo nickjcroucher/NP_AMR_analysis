@@ -255,14 +255,8 @@ We use these two files to merge getting chronological data.
 
 ```{r, merge data, echo=TRUE}
 
-merge_df <- merge(assembly_stats_df, sample_df, by.x = "filename", by.y = "assembly_file")
-
-View(merge_df)
 View(assembly_stats_df)
-
-right_df <- right_join(as_tibble(assembly_stats_df), as_tibble(sample_df), by = c("filename" = "assembly_file"))
-
-View(right_df)
+right_df <- right_join(as_tibble(assembly_stats_df), as_tibble(sample_df), by = "assembly_file")
 
 ```
 
@@ -388,6 +382,7 @@ plot_column
 ggplot(data = plot_column) + geom_bar(aes(x = Year, fill = Country)) + facet_wrap(~ Species.y) + labs(title = "Total by Country and Years", x = "Years", y = "Total", fill = "Countries") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+merge_data <- left_join()
 
 ## We want to keep sampels with threshold:
 N50 above 80,000
