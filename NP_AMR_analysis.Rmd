@@ -378,7 +378,7 @@ filtered_genus_df <-
 ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
   geom_violin() +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
+  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion") +
   theme_minimal()
 
 ```
