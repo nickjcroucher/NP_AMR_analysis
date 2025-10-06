@@ -278,18 +278,9 @@ We need to eliminate a few results from sequencing to get the better quality con
 
 ``` {r, filter-data, include=TRUE}
 summaried_df <- assembly_stats_df %>%
-<<<<<<< HEAD
-<<<<<<< HEAD
   filter(N50 > 10000 & (`Total length` > 1.5e+06 & `Total length` < 2.5e+06))
 ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 80000) + geom_vline(xintercept = c(1.725e+06, 2.15e+06))
-=======
-  filter(N50 > 100000 & (`Total length` > 1.75e+06 & `Total length` < 2.25e+06))
-ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
->>>>>>> 2007f1bcef216c88ea517b381798cb3fe3b90443
-=======
-  filter(N50 > 10000 & (`Total length` > 1.5e+06 & `Total length` < 2.5e+06))
-ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 80000) + geom_vline(xintercept = c(1.725e+06, 2.15e+06))
->>>>>>> 4cf72fb2656b669abcf94c333a6dc8ec85983f66
+
 ```
 ### Plot graph of identifing bacterial burden in each three countries
 
