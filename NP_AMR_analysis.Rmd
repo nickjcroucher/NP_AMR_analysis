@@ -354,12 +354,40 @@ summary_df <- filtered_df %>%
 ggplot(filtered_df, aes(x = Species.y, y = proportion)) + geom_violin()+ geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") + labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") + theme_minimal()
 
 ```
+
+## We use the genus level to analyse Moraxella
+
+``` {r Moraxella at genus level}
+
+genus_level_df <-
+  df %>% 
+    dplyr::mutate(Observed_genus = stringr::str_extract(Species.x, '[A-Za-z]+'),
+                  Expected_genus = stringr::str_extract(Species.y, '[A-Za-z]+'))
+
+filtered_genus_df <-
+  genus_level_df %>%
+    dplyr::filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
+    dplyr::group_by(npg_run_id) %>%
+    dplyr::mutate(Total = sum(matches)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(npg_run_id,Observed_genus) %>%
+    dplyr::mutate(proportion = sum(matches)/Total) %>% 
+    dplyr::ungroup() %>%
+    dplyr::filter(Expected_genus == Observed_genus)
+
+ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
+  geom_violin() +
+  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
+  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
+  theme_minimal()
+
+```
+
 ## We try to remove the species with lower proportion of 0.95
 
 ```{r filter the proportion }
 
-filtered_df <- df %>%
-  
+filtered_df <- genus_level_df %>%
   filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") & Species.y == Species.x & proportion > 0.95)
 summary_df <- filtered_df %>%
   group_by(Species.y) %>%
@@ -370,12 +398,13 @@ ggplot(filtered_df, aes(x = Species.y, y = proportion)) + geom_violin()+ geom_hl
 
 ```{r plot the filter dataset}
 
-plot_column <- df %>%
-  filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria"),
-         Species.y == Species.x,
-         proportion > 0.95) %>%
-  select(Country, Year, Species.y, proportion, Matching_proportion, Total, npg_run_id, matches) %>%
-  distinct()
+plot_column <-
+  filtered_genus_df %>%
+  dplyr::filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae") &
+                Species.y == Species.x &
+                proportion > 0.95) %>%
+  dplyr::select(npg_run_id, Country, Year, Species.y, proportion, Matching_proportion, Total, matches) %>%
+  dplyr::distinct()
 plot_column
 
 ggplot(data = plot_column) + geom_bar(aes(x = Year, fill = Country)) + facet_wrap(~ Species.y) + labs(title = "Total by Country and Years", x = "Years", y = "Total", fill = "Countries") + theme_minimal() +
