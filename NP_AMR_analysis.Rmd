@@ -450,7 +450,7 @@ ggplot(filtered_df,
 
 ```{r plot the filter dataset}
 
-plot_column <-
+plot_genus_df <-
   filtered_genus_df %>%
   dplyr::filter(Species.y %in%
                   c("Moraxella catarrhalis", "Haemophilus influenzae") &
@@ -467,7 +467,7 @@ plot_column <-
     matches) %>%
   dplyr::distinct()
 plot_column
-
+View(plot_column)
 ggplot(data = plot_column) +
   geom_bar(aes(x = Year, fill = Country)) +
   facet_wrap(~ Species.y) +
@@ -486,21 +486,51 @@ ggplot(data = plot_column) +
     )
 
 ```
+```{r filter npg_run_id of Moraxella }
 
+filter_Moraxella <- plot_genus_df %>%
+  filter(Species.y == "Moraxella catarrhalis") %>%
+select(npg_run_id) %>%
+distinct()
+filter_Moraxella
+View(filter_Moraxella)
+
+write.table(filter_Moraxella,
+            file = "./sample_data/npg_run_id_Moraxella.csv",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
+```
+
+```{r filter npg_run_id of Haemophilus}
+filter_Haemophilus <- plot_genus_df %>%
+  filter(Species.y == "Haemophilus influenzae") %>%
+select(npg_run_id) %>%
+  distinct()
+
+filter_Haemophilus
+View(filter_Haemophilus)
+
+write.table(filter_Haemophilus,
+            file = "./sample_data/npg_run_id_Haemophilus.csv",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
+```
 ## Calculate genomes of each species and each countries.
 
 ```{r calculate genomes of each species}
 
-table(plot_column$Species.y)
-table(plot_column$Country)
-table(plot_column$Year)
+table(plot_genus_df$Species.y)
+table(plot_genus_df$Country)
+table(plot_genus_df$Year)
 
 ```
 
 ```{r Moraxella in each country and each year}
 
 moraxella_Country_Year <-
-  plot_column %>%
+  plot_genus_df %>%
   filter(Species.y == "Moraxella catarrhalis")
 
 table(moraxella_Country_Year$Country,
@@ -525,7 +555,7 @@ ggplot(plot_moraxella,
 ```{r Haemophilus influenzae in each country and each year}
 
 Haemo_Country_Year <-
-  plot_column %>%
+  plot_genus_df %>%
   filter(
     Species.y == "Haemophilus influenzae"
     )
@@ -553,6 +583,7 @@ ggplot(
   ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
 
 ```
+
 
 ```{r Get genomes to process}
 
