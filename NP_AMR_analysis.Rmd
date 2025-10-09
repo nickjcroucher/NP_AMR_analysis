@@ -552,6 +552,7 @@ ggplot(plot_moraxella,
   ggtitle("Distribution of Moraxella catarrhalis\nin each coutries and years")
 
 ```
+
 ```{r Haemophilus influenzae in each country and each year}
 
 Haemo_Country_Year <-
@@ -583,8 +584,6 @@ ggplot(
   ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
 
 ```
-
-
 ```{r Get genomes to process}
 
 mcat_list <-
