@@ -518,7 +518,8 @@ ggplot(plot_moraxella,
     aes(label = n),
     position = position_dodge(width = 0.9),
     vjust = -0.3, size = 3
-    )
+    ) +
+  ggtitle("Distribution of Moraxella catarrhalis\nin each coutries and years")
 
 ```
 ```{r Haemophilus influenzae in each country and each year}
@@ -548,7 +549,9 @@ ggplot(
     aes(label = n),
     position = position_dodge(width = 0.9),
     vjust = -0.3, size = 3
-    )
+    ) +
+  ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
+
 ```
 
 ```{r Get genomes to process}
