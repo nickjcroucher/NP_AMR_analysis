@@ -498,20 +498,57 @@ table(plot_column$Year)
 ```
 
 ```{r Moraxella in each country and each year}
-moraxella_Country_Year <- plot_column %>%
+
+moraxella_Country_Year <-
+  plot_column %>%
   filter(Species.y == "Moraxella catarrhalis")
-table(moraxella_Country_Year$Country, moraxella_Country_Year$Year)
-plot_moraxella <- moraxella_Country_Year %>%
+
+table(moraxella_Country_Year$Country,
+      moraxella_Country_Year$Year)
+
+plot_moraxella <-
+  moraxella_Country_Year %>%
   count(Country, Year)
-ggplot(plot_moraxella, aes(x = Year, y = n, fill = Country)) + geom_bar(stat = "identity") + theme_classic() + geom_text(aes(label = n), position = position_dodge(width = 0.9), vjust = -0.3, size = 3)
+
+ggplot(plot_moraxella,
+       aes(x = Year, y = n, fill = Country)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  geom_text(
+    aes(label = n),
+    position = position_dodge(width = 0.9),
+    vjust = -0.3, size = 3
+    )
+
 ```
 ```{r Haemophilus influenzae in each country and each year}
-Haemo_Country_Year <- plot_column %>%
-  filter(Species.y == "Haemophilus influenzae")
-table(Haemo_Country_Year$Country, Haemo_Country_Year$Year)
-plot_haemo <- Haemo_Counrty_Year %>%
-  count(Country, Year)
-ggplot(plot_haemo, aes(x = Year, y = n, fill = Country)) + geom_bar(stat = "identity") + theme_minimal()
+
+Haemo_Country_Year <-
+  plot_column %>%
+  filter(
+    Species.y == "Haemophilus influenzae"
+    )
+table(
+  Haemo_Country_Year$Country,
+  Haemo_Country_Year$Year
+  )
+
+plot_haemo <-
+  Haemo_Counrty_Year %>%
+  count(
+    Country, Year
+    )
+
+ggplot(
+  plot_haemo, aes(x = Year, y = n, fill = Country)) +
+  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  geom_text(
+    aes(label = n),
+    position = position_dodge(width = 0.9),
+    vjust = -0.3, size = 3
+    )
 ```
 
 ```{r Get genomes to process}
