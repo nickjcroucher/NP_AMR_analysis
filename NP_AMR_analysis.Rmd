@@ -640,6 +640,40 @@ Species.x to orginal species Species.y to matching species
 ## Use PopPUNK to categorise isolates
 
 ## Use Panaroo to identify genes
+After we got the gene presence absence from panaroo, then we extract that csv file for doing tidy column and calculate the gene frequency.
+
+```{r tidy up the column}
+
+Moraxella_gene_presence <- read.csv("./panaroo_file/Moraxella_gene_presence_absence.csv", header = TRUE, comment.char = "", check.names = FALSE, sep = ",") %>% tidyr::pivot_longer(cols = -c(Gene, `Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
+```
+
+```{r left_join dataset with sample_df}
+Moraxella_gene_sample <- left_join(Moraxella_gene_presence, sample_df, by = "npg_run_id")
+
+```
+
+```{r calculate the number of genome in each dataset}
+
+Moraxella_gene_sample %>%
+  filter(Country %in% c("United Kingdom", "Cambodia", "Thailand")) %>%
+  group_by(Country) %>%
+  summarise(GenomeCount = n_distinct(Gene))
+
+```
+
+
+```{r calculate the frequency gene in each dataset}
+Moraxella_gene_freq <- Moraxella_gene_sample %>%
+  group_by(Country, Gene) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  arrange(Country, desc(Frequency))
+Moraxella_gene_freq
+
+```
+
+
+
+
 
 ## Compare strain frequncies between samples
 
