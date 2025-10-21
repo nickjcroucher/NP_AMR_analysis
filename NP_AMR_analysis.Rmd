@@ -777,8 +777,8 @@ View(gene_freq)
 ```
 
 ```{r plot the frequency of each country}
-ggplot(gene_freq, aes(x = Frequency, fill = Country)) +
-  geom_histogram(binwidth = 0.05, alpha = 0.6) + theme_light()
+library(ggplot2)
+ggplot(gene_freq, aes(x = Country, y = Frequency)) + geom_boxplot(color = "blue", size = 2, alpha = 1) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 ```
 
 ```{r plot frequency}
@@ -792,12 +792,6 @@ pop <- simulate_admixture(
   total_runtime = 11)
 require(ggplot2)
 plot_frequencies(result = pop)
-```
-```{r plot frequnecy genome}
-plot_frequencies(
-  result = pop,
-  locations = seq(0, 1, length.out = 100),
-  progress_bar = FALSE)
 ```
 
 ```{r ranking frequnecy gene}
