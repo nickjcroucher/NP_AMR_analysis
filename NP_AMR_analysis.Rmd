@@ -13,47 +13,6 @@ require(tidyverse)
 
 ```
 
-``` {bash, eval=FALSE}
-
-module load PaM/environment
-module load shelf
-module load bsub.py
-module load irods_extractor
-module load qc-short-read
-iinit
-export LSB_DEFAULT_USERGROUP=team284
-cd /data/pam/team284/nc3/scratch/NP_AMR/data/
-# QC project 6310
-cd /data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc
-bsub.py --queue oversubscribed --threads 1 4 6310_QC qc-short-read --studyid 6310 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 151 --classification_level S -ansi-log false --kraken2_threads 16 --bracken_threads 16
-
-rm -rf results work *_QC.[oe]; bsub.py --queue oversubscribed --threads 1 4 6310_QC qc-short-read --studyid 6310 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 151 --classification_level S -ansi-log false --kraken2_threads 16 --bracken_threads 16 --type cram; watch bjobs
-
-
-
-bsub -o output.o -e error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --input ./test_data/inputs/test_manifest.csv --read_len 150 --threshold 1 --classification_level 'G' --kraken2_threads 10 --outdir my_output
-
-bsub.py 16 6588_QC qc-short-read --studyid 6588 --kraken2_db /data/pam/software/kraken2/standard/ --read_len 150 --classification_level S -ansi-log false
-
-shelf get file -q import.sequencescape_study_id=6310 -q file.file_type=assembly
-
-module load assembly-unicycler-short-read
-
-
-
-```
-
-Run assemblies:
-
-``` {bash, eval=FALSE}
-
-module load PaM/environment
-module load shelf
-export LSB_DEFAULT_USERGROUP=team284
-cd /data/pam/team284/nc3/scratch/NP_AMR/data/
-
-```
-
 ## Load data from project
 
 Import sample data from project
@@ -184,9 +143,19 @@ sample_df <-
 
 ## Identify species with Kraken and Bracken
 
-Identification of species from short read data used the qc-short-read pipeline (revision 103cba2a10), which used Kraken2 (version 2.1.3) and Bracken (version 2.8). Pipeline report is [execution_report_2025-09-14_08-15-34.html](./pipeline_info/execution_report_2025-09-14_08-15-34.html).
+Analysis of the short reads used the `qc-short-read` pipeline (revision 103cba2a10; v1.0.2), which depends upon:
 
-``` {bash, eval = FALSE}
+-   fastqc (v0.12.1)
+
+-   multiqc (v1.19)
+
+-   kraken2 (v2.1.3)
+
+-   bracken (v2.8)
+
+The results are stored for projects [6310](./pipeline_info/execution_report_2025-09-14_08-15-34.html) and [6588](./pipeline_info/execution_report_2025-09-14_08-18-09.html).
+
+```{bash, eval = FALSE}
 
 module load bsub.py
 module load qc-short-read
@@ -201,9 +170,17 @@ bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588
 
 ## Assemble reads with SPAdes and unicycler
 
-Assembly used the assembly_unicycler_short_read pipeline (version 25.04.0), which used SPAdes (version 4.0.0) and unicycler (version 0.5.1). Pipeline reports are [execution_report_2025-09-11_20-15-21.html](./pipeline_info/execution_report_2025-09-11_20-15-21.html) and [execution_report_2025-09-11_17-22-43.html](./pipeline_info/execution_report_2025-09-11_17-22-43.html).
+Analysis of the short reads used the `assembly-unicycler-short-read` pipeline, developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
 
-``` {bash, eval = FALSE}
+-   QUAST (v5.0.2)
+
+-   Unicycler (v0.5.1)
+
+-   SPAdes (v4.0.0)
+
+The results are stored for projects [6310](./pipeline_info/execution_report_2025-09-11_17-26-05.html) and [6588](./pipeline_info/execution_report_2025-09-11_20-15-21.html).
+
+```{bash, eval = FALSE}
 
 git clone --recurse-submodules git@gitlab.internal.sanger.ac.uk:sanger-pathogens/pipelines/assembly_unicycler_short_read.git
 cd assembly_unicycler_short_read
@@ -216,9 +193,9 @@ bsub -o 6588_output.o -e 6588_error.e -q oversubscribed -R "select[mem>4000] rus
 
 ## Annotate assemblies with Bakta
 
-The assemblies were annotated using Bakta (version 1.11).
+The assemblies were annotated using Bakta (version 1.11.0).
 
-``` {bash, eval = FALSE}
+```{bash, eval = FALSE}
 
 module load bakta/1.11.0
 declare -i N; N=1; for f in *.fa; do echo "bakta --db /data/pam/software/bakta/v6.0 --prefix ${f%.fa} --output ${f%.fa}_annotation --gram - --threads 4 ${f}" > bacta_job.${N}; chmod +x ./bacta_job.${N}; N=($N+1); done
@@ -230,7 +207,7 @@ bsub -n 4 -M 4000 -R 'select[mem>4000] rusage[mem=4000] span[hosts=1]' -o bakta.
 
 Assembly statistics were calculated with Quast (version 5.0.2).
 
-``` {r Parse assembly statistics data}
+```{r Parse assembly statistics data}
 
 # Parse assembly statistics
 assembly_stats_df <-
@@ -250,7 +227,9 @@ assembly_stats_df %<>%
 
 
 ```
+
 ### Merge data of two files of sample_df and assembly_stats_df
+
 We use these two files to merge getting chronological data.
 
 ```{r, merge data, echo=TRUE}
@@ -266,28 +245,32 @@ View(right_df)
 ```
 
 ### Plot assembly data of baterial genome assemblies between total length and N50 to get quality of genome
+
 We used total_length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is 100000bp and total length (x-axis) which is from 1.75Mbp to 2.25Mbp.
 
-``` {r, plot-genome assembly, include=TRUE}
+```{r, plot-genome assembly, include=TRUE}
 ggplot(data = right_df) + geom_point(aes(x = total_length, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
 ```
+
 ### Quality controle of merging data
+
 We need to eliminate a few results from sequencing to get the better quality control of sequencing genome
 
-``` {r, filter-data, include=TRUE}
+```{r, filter-data, include=TRUE}
 summaried_df <- merge_df %>%
   filter(N50 > 100000 & (total_length > 1.75e+06 & total_length < 2.25e+06))
 ggplot(data = summaried_df) + geom_point(aes(x = total_length, y = N50, colour = Species)) + geom_hline(yintercept = 100000) + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
 ```
+
 ### Plot graph of identifing bacterial burden in each three countries
 
-``` {r, plot-graph, include=TRUE}
+```{r, plot-graph, include=TRUE}
 ggplot(data = merge_df) + geom_bar(aes(x = Year, fill = Country, position = "dodge")) + facet_wrap(~ Species) + xlab("Year of investigation") + ylab("Number of enrollment\nIn local hospital") + labs(fill = "Study Enrollment\nIn Each Countries", shape = "Species", caption = "Antimicrobial Resistance Study") + scale_shape_manual(values = c(17,19), labels = c("Haemophilus influenzae", "Moraxella catarrhalis")) + coord_cartesian(xlim = c(2004, 2021)) + theme_minimal()
 ```
 
 ## Identify species in datasets
 
-``` {r Parse bracken outputs}
+```{r Parse bracken outputs}
 
 parse_bracken <- function(fn) {
   
@@ -347,4 +330,3 @@ ggplot(species_abundance_df,
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
-
