@@ -618,8 +618,14 @@ rename_Global_data
 ```{r merge both datasets of Global and epi}
 
 join_epi_Global_data <-
-  left_join(rename_Global_data, epi_df, by = "Isolate") %>%
-  mutate(Year = if_else(!is.na(new_Year), new_Year, Year)) %>%
+  left_join(
+    rename_Global_data, epi_df,
+            by = "Isolate"
+    ) %>%
+  mutate(
+    Year = if_else(!is.na(new_Year),
+                   new_Year, Year)
+    ) %>%
   select(-new_Year)
 join_epi_Global_data
 
@@ -633,47 +639,181 @@ N50 above 80,000 Total length above 1,725,000 bp Total length below 2,150,000 bp
 
 Species.x to orginal species Species.y to matching species
 
+
 ## Use AMR finder to identify resistance genes
 
 ## Use capsule typer to identify serotypes
 
 ## Use PopPUNK to categorise isolates
 
+
 ## Use Panaroo to identify genes
-After we got the gene presence absence from panaroo, then we extract that csv file for doing tidy column and calculate the gene frequency.
+After we got the gene presence absence from panaroo, then we extracted that csv file for doing tidy column and calculate the gene frequency and number of genomes.
 
 ```{r tidy up the column}
 
-Moraxella_gene_presence <- read.csv("./panaroo_file/Moraxella_gene_presence_absence.csv", header = TRUE, comment.char = "", check.names = FALSE, sep = ",") %>% tidyr::pivot_longer(cols = -c(Gene, `Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
+Moraxella_gene_presence <- read.csv(
+  "./panaroo_file/Moraxella_gene_presence_absence.csv",
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`, 
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+    )
+
+View(Moraxella_gene_presence)
 ```
 
-```{r left_join dataset with sample_df}
-Moraxella_gene_sample <- left_join(Moraxella_gene_presence, sample_df, by = "npg_run_id")
+```{r left_join Moraxella gene presence dataset with sample_df}
 
+Moraxella_gene_sample <- left_join(
+  Moraxella_gene_presence,
+  sample_df,
+  by = "npg_run_id"
+  )
+Moraxella_gene_sample
+```
+```{r table country, Year, and species}
+table(Moraxella_gene_sample$Country)
+table(Moraxella_gene_sample$Year)
+table(Moraxella_gene_sample$Species)
+table(sample_df$Country)
+table(sample_df$Year)
+table(sample_df$Species)
 ```
 
-```{r calculate the number of genome in each dataset}
+```{r classifying sample_df dataset in early and late year of UK country}
 
-Moraxella_gene_sample %>%
-  filter(Country %in% c("United Kingdom", "Cambodia", "Thailand")) %>%
+UK_early_late_df <- sample_df %>%
+  filter(Country == "United Kingdom",
+         Year %in% c(2007:2011, 2019:2020)
+         ) %>%
+  mutate(Period = 
+           case_when(Year >= 2007
+                     & Year <= 2011 ~ "Early",
+                     Year >= 2019 & Year <= 2020 ~ "Late")
+         )
+UK_early_late_df
+```
+```{r calculate number of Moraxell genome in early and late year in UK}
+UK_Cam_Thai_Count <- Moraxella_gene_sample %>%
+  filter(Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand")
+         ) %>%
+  filter(Country == "United Kingdom",
+         Year %in% c(2007:2011, 2019:2020)
+         ) %>%
+  mutate(Period = 
+           case_when(Country == "United Kingdom" & Year >= 2007 & Year <= 2011 ~ "Early", Country == "United Kingdom" & Year >= 2019 & Year <= 2020 ~ "Late", TRUE ~ NA_character_)) %>%
+  filter(!is.na(Gene)) %>%
+  group_by(Country, Period) %>%
+  summarise(
+    Genome_Count = n_distinct(Gene),
+    .groups = "drop")
+UK_Cam_Thai_Count
+```
+
+
+```{r calculate the number of Moraxella genome in each dataset using Gene}
+
+GenomeCount <- Moraxella_gene_sample %>%
+  filter(Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand")
+         ) %>%
   group_by(Country) %>%
-  summarise(GenomeCount = n_distinct(Gene))
-
+  summarise(
+    Genome_Count = n_distinct(Gene),
+    .groups = "drop")
+GenomeCount
 ```
 
+```{r calculate the number of Moraxella genome in each dataset using npg_run_id}
 
-```{r calculate the frequency gene in each dataset}
-Moraxella_gene_freq <- Moraxella_gene_sample %>%
+GenomeCount <- Moraxella_gene_sample %>%
+  filter(Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand"),
+    Species == "Moraxella catarrhalis", 
+    !is.na(npg_run_id)
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_Count = n_distinct(npg_run_id), 
+            .groups = "drop")
+GenomeCount
+```
+
+```{r calculate the gene frequency for Moraxella }
+Genome_Count <- Moraxella_gene_sample %>%
+  filter(!is.na(npg_run_id),
+    Country %in% c("United Kingdom", "Cambodia", "Thailand")
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_Count = n_distinct(Gene),
+    .groups = "drop")
+Genome_Count
+
+Count_CDS <- Moraxella_gene_sample %>%
+  filter(!is.na(Gene), 
+         Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand")
+         ) %>%
   group_by(Country, Gene) %>%
-  summarise(Frequency = n(), .groups = "drop") %>%
-  arrange(Country, desc(Frequency))
-Moraxella_gene_freq
-
+  summarise(CDS_count = n(), 
+            .groups = "drop") %>%
+arrange(Country, desc(CDS_count))
+Count_CDS
+gene_freq <- Count_CDS %>%
+  left_join(Genome_Count, 
+            by = "Country") %>%
+  mutate(Frequency = CDS_count / Genome_Count)
+View(gene_freq)
 ```
 
+```{r plot the frequency of each country}
+ggplot(gene_freq, aes(x = Frequency, fill = Country)) +
+  geom_histogram(binwidth = 0.05, alpha = 0.6) + theme_light()
+```
 
+```{r plot frequency}
+if(!require('GenomeAdmixR')) {
+  install.packages('GenomeAdmixR')
+  library('GenomeAdmixR')
+}
+pop <- simulate_admixture(
+  module = ancestry_module(number_of_founders = 4), 
+  pop_size = 1000, 
+  total_runtime = 11)
+require(ggplot2)
+plot_frequencies(result = pop)
+```
+```{r plot frequnecy genome}
+plot_frequencies(
+  result = pop,
+  locations = seq(0, 1, length.out = 100),
+  progress_bar = FALSE)
+```
 
+```{r ranking frequnecy gene}
+gene_ranking <- Moraxella_gene_sample %>%
+  group_by(Gene, Country) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  arrange(desc(Frequency)) %>%
+  mutate(Rank = row_number())
+gene_ranking
+head(gene_ranking, 1000)
+```
 
+```{r plot the frequecy gene in each country}
+
+ggplot(gene_ranking, aes(x = Gene, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "dodge") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
 ## Compare strain frequncies between samples
 
