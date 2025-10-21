@@ -170,7 +170,7 @@ bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588
 
 ## Assemble reads with SPAdes and unicycler
 
-Analysis of the short reads used the `assembly-unicycler-short-read` pipeline, developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
+Analysis of the short reads used the `assembly-unicycler-short-read` pipeline (v1.2.5; commit 92464961e453d624e88e69da06670638fb90ede0), developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
 
 -   QUAST (v5.0.2)
 
