@@ -751,7 +751,7 @@ GenomeCount
 
 ```{r calculate the gene frequency for Moraxella }
 Genome_Count <- Moraxella_gene_sample %>%
-  filter(!is.na(npg_run_id),
+  filter(!is.na(Gene),
     Country %in% c("United Kingdom", "Cambodia", "Thailand")
     ) %>%
   group_by(Country) %>%
@@ -776,22 +776,24 @@ gene_freq <- Count_CDS %>%
 View(gene_freq)
 ```
 
-```{r plot the frequency of each country}
+```{r reshape gene_freq to wide format}
 library(ggplot2)
-ggplot(gene_freq, aes(x = Country, y = Frequency)) + geom_boxplot(color = "blue", size = 2, alpha = 1) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+library(tidyr)
+library(dplyr)
+library(ggrepel)
+gene_freq_wide <- gene_freq %>%
+  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
+  pivot_wider(names_from = Country, values_from = Frequency)
+View(gene_freq_wide)
 ```
 
-```{r plot frequency}
-if(!require('GenomeAdmixR')) {
-  install.packages('GenomeAdmixR')
-  library('GenomeAdmixR')
-}
-pop <- simulate_admixture(
-  module = ancestry_module(number_of_founders = 4), 
-  pop_size = 1000, 
-  total_runtime = 11)
-require(ggplot2)
-plot_frequencies(result = pop)
+```{r plot scatter graph of frequency gene in between United Kingdom and Camboida Country}
+
+ggplot(gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray")+ geom_text_repel(aes(label = Gene), sixe = 3, max.overlaps = 50) + labs(title = "Gene Frequency by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
+```
+
+```{r plot scatter graph of frequency gene in between United Kingdom and Thailand Country}
+ggplot(gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray")+ geom_text_repel(aes(label = Gene), sixe = 3, max.overlaps = 50) + labs(title = "Gene Frequency by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
 ```
 
 ```{r ranking frequnecy gene}
@@ -802,11 +804,6 @@ gene_ranking <- Moraxella_gene_sample %>%
   mutate(Rank = row_number())
 gene_ranking
 head(gene_ranking, 1000)
-```
-
-```{r plot the frequecy gene in each country}
-
-ggplot(gene_ranking, aes(x = Gene, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "dodge") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ## Compare strain frequncies between samples
