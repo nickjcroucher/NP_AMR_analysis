@@ -123,6 +123,15 @@ epi_df <-
                     project = "6310",
                     Year = as.numeric(Year)) %>% 
       dplyr::mutate(npg_run_id = gsub("(_.*?)_", "\\1#", Sample)) %>% 
+      dplyr::mutate(Description = "Single isolate"),
+    read.csv("./sample_data/Drakenstein_epi.csv") %>% 
+      dplyr::mutate(Year = as.numeric(Year)) %>% 
+      dplyr::left_join(
+        read_csv("./sample_data/Drakenstein_accessions.csv"),
+        by = c("Isolate"="run_accession")
+      ) %>% 
+      dplyr::mutate(Isolate = sample_accession) %>% 
+      dplyr::select(-sample_accession) %>% 
       dplyr::mutate(Description = "Single isolate")
   ) %>% 
   dplyr::mutate(join_col = dplyr::if_else(project == "6588",Sample,npg_run_id)) %>% 
@@ -168,6 +177,19 @@ bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588
 
 ```
 
+Download data from the Drachenstein study; results are available [here](./pipeline_info/execution_report_2025-10-22_06-07-18.html):
+
+``` {bash, eval = FALSE}
+
+cd DRAK_study
+module load PaM/environment
+module load qc-short-read
+module load bsub.py
+
+bsub.py -q oversubscribed 4 DRAK_qc qc-short-read --manifest_ena DRAK.manifest --accession_type run --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
+
+```
+
 ## Assemble reads with SPAdes and unicycler
 
 Analysis of the short reads used the `assembly-unicycler-short-read` pipeline (v1.2.5; commit 92464961e453d624e88e69da06670638fb90ede0), developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
@@ -191,6 +213,19 @@ bsub -o 6588_output.o -e 6588_error.e -q oversubscribed -R "select[mem>4000] rus
 
 ```
 
+Assemble data from the Drachenstein study; results are available [here](./pipeline_info/execution_report_2025-10-22_12-50-46.html):
+
+``` {bash, eval = FALSE}
+
+cd DRAK_study
+module load PaM/environment
+module load qc-short-read
+module load bsub.py
+
+bsub -o drak_output.o -e drak_error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --manifest_ena /data/pam/team284/nc3/scratch/NP_AMR/data/DRAK_study/DRAK.manifest --accession_type run --outdir /data/pam/team284/nc3/scratch/NP_AMR/data/DRAK_study/assemblies
+
+```
+
 ## Annotate assemblies with Bakta
 
 The assemblies were annotated using Bakta (version 1.11.0).
@@ -203,6 +238,16 @@ bsub -n 4 -M 4000 -R 'select[mem>4000] rusage[mem=4000] span[hosts=1]' -o bakta.
 
 ```
 
+This was also run on the Drachenstein isolates, after 1427/1429 isolates were successfully downloaded and assembled:
+
+```{bash, eval = FALSE}
+
+module load bakta/1.11
+declare -i N; N=1; for f in *.fa; do echo "bakta --db /data/pam/software/bakta/v6.0 --prefix ${f%.fa} --output ${f%.fa}_annotation --gram - --threads 4 ${f}" > bacta_job.${N}; chmod +x ./bacta_job.${N}; N=($N+1); done
+bsub -n 4 -M 12000 -R 'select[mem>12000] rusage[mem=12000] span[hosts=1]' -o bakta.%I.o -e bakta.%I.e -J bakta_run[1-1427] ./bacta_job.\${LSB_JOBINDEX}
+
+```
+
 ## Evaluate assemblies with Quast
 
 Assembly statistics were calculated with Quast (version 5.0.2).
@@ -211,11 +256,19 @@ Assembly statistics were calculated with Quast (version 5.0.2).
 
 # Parse assembly statistics
 assembly_stats_df <-
-  read.table(file = "./sample_data/NP_quast_report.tsv",
+  dplyr::bind_rows(
+    read.table(file = "./sample_data/NP_quast_report.tsv",
+             check.names = FALSE,
+             comment.char = "",
+             sep ="\t",
+             header = TRUE),
+    read.table(file = "./sample_data/Drakenstein_summary_quast_report.tsv",
              check.names = FALSE,
              comment.char = "",
              sep ="\t",
              header = TRUE) %>% 
+      dplyr::mutate(Assembly = gsub(".assembly","",Assembly))
+  ) %>% 
     dplyr::rename(npg_run_id = Assembly)
 
 # Join to sample information
@@ -693,11 +746,17 @@ parse_bracken <- function(fn) {
     dplyr::filter(grepl("s__",Classification))
   
 }
+
 species_match_threshold = 10000000
+
 species_abundance_df <-
   parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
     parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
+    by = "Classification"
+  ) %>%
+  dplyr::full_join(
+    parse_bracken("./sample_data/Drakenstein_bracken_summary_report.tsv.gz"),
     by = "Classification"
   ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
@@ -723,6 +782,7 @@ ggplot(species_sample_df,
            y = npg_run_id,
            fill = matches+0.5)) +
   geom_tile() +
+  geom_vline(xintercept = species_match_threshold) +
   facet_grid(Species.y ~., scales = "free_y") +
   scale_fill_continuous(trans = "log10") +
   theme_bw() +
