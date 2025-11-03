@@ -233,15 +233,20 @@ right_df <-
   right_join(as_tibble(assembly_stats_df),
              as_tibble(sample_df),
              by = "npg_run_id")
+
+minimum_length <- 1750000
+maximum_length <- 2250000
+n50_threshold <- 100000
 ```
 
 ### Plot assembly data of baterial genome assemblies between total length and N50 to get quality of genome
-We used total length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is 100000 bp and total length (x-axis) which is from 1.75 Mbp to 2.25 Mbp.
+We used total length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is `r n50_threshold`` bp and total length (x-axis) which is from `r minimum_length`` Mbp to `r maximum_length` Mbp.
 
 ```{r, plot-genome assembly, include=TRUE}
 
 ggplot(data = assembly_stats_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) +
-  geom_hline(yintercept = 100000) + scale_x_log10() + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+  geom_hline(yintercept = n50_threshold) + scale_x_log10() + geom_vline(xintercept = c(minimum_length, maximum_length))
+                                            
 ```
 
 ### We need to plot of merging dataset to be known Quality control of each species and knowing limitted threshold to be accepted in each species.
