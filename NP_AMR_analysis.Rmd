@@ -153,10 +153,12 @@ sample_df <-
   info_df %>% 
     dplyr::left_join(run_df, by = c("sample_uuid")) %>% 
     dplyr::left_join(files_df, by = c("npg_run_id")) %>% 
+    dplyr::mutate(npg_run_id = dplyr::if_else(project == "Drakenstein",
+                                              sample_accession_number,
+                                              npg_run_id)) %>%
     dplyr::mutate(join_col = dplyr::if_else(project == "6588",sample_donor_id,npg_run_id)) %>% 
     dplyr::left_join(epi_df, by = c("join_col")) %>% 
     dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
-    dplyr::mutate(npg_run_id = dplyr::if_else(project == "Drakenstein", Isolate, npg_run_id)) %>%
     dplyr::select(-join_col) %>% 
     dplyr::filter(!is.na(Country))
 
