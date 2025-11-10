@@ -145,7 +145,10 @@ epi_df <-
       dplyr::select(-sample_accession) %>% 
       dplyr::mutate(Description = "Single isolate")
   ) %>% 
-  dplyr::mutate(join_col = dplyr::if_else(project == "6588",Sample,npg_run_id)) %>% 
+  dplyr::mutate(join_col = dplyr::case_when(
+    project == "6588" ~ Sample,
+    Country == "South Africa" ~ Isolate,
+    TRUE ~ npg_run_id)) %>% 
   dplyr::select(-c(project,npg_run_id,Sample))
 
 # Merge data
