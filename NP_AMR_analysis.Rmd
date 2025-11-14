@@ -592,7 +592,7 @@ filter_Moraxella
 
 ```{r generate npg_run_id list of Moraxella}
 write.table(filter_Moraxella,
-            file = "./sample_data/npg_run_id_Moraxella.csv",
+            file = "./sample_data/npg_run_id_Moraxella_cat.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
@@ -608,7 +608,7 @@ filter_Haemophilus
 
 ```{r generate npg_run_id list of Haemophilus}
 write.table(filter_Haemophilus,
-            file = "./sample_data/npg_run_id_Haemophilus.csv",
+            file = "./sample_data/npg_run_id_Haemo_influ.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
