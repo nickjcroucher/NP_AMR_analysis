@@ -458,11 +458,15 @@ ggplot(species_sample_df,
 ```{r create a proportion}
 
 proportion_df <- species_sample_df %>%
+  filter(!is.na(Species.x), 
+         !is.na(Species.y), 
+         !is.na(matches)) %>%
   dplyr::mutate(Species.x = gsub("_"," ", Species.x)) %>%
   group_by(npg_run_id) %>%
   mutate(proportion = matches / sum(matches)) %>%
 dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-tidyr::fill(Matching_proportion, .direction = "updown")
+tidyr::fill(Matching_proportion, .direction = "updown") %>%
+  ungroup()
 proportion_df
 ```
 
@@ -471,11 +475,11 @@ proportion_df
 ```{r plot proportion}
 
 filter_proportion_df <- proportion_df %>%
-  filter(Species.y %in%
+  filter(!is.na(Species.y), 
+         Species.y %in%
            c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x)
-summary_df <- filter_proportion_df %>%
-  group_by(Species.y) %>%
+           Species.y == Species.x) %>%
+  group_by(Species.y, proportion) %>%
   summarise(mean_total = mean(Total, na.rm = TRUE))
 ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
   geom_violin()+
@@ -495,12 +499,13 @@ genus_level_df <-
 
 filtered_genus_df <-
   genus_level_df %>%
-    dplyr::filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
+    dplyr::filter(!is.na(Species.y), 
+                  Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
     dplyr::group_by(npg_run_id) %>%
-    dplyr::mutate(Total = sum(matches)) %>% 
+    dplyr::mutate(Total = sum(matches, na.rm = TRUE)) %>% 
     dplyr::ungroup() %>% 
-    dplyr::group_by(npg_run_id,Observed_genus) %>%
-    dplyr::mutate(proportion = sum(matches)/Total) %>% 
+    dplyr::group_by(npg_run_id, Observed_genus) %>%
+    dplyr::mutate(proportion = sum(matches, na.rm = TRUE)/Total) %>% 
     dplyr::ungroup() %>%
     dplyr::filter(Expected_genus == Observed_genus)
 
@@ -518,11 +523,12 @@ N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,0
 ```{r filter the proportion }
 
 filtered_proportion <- genus_level_df %>%
-  filter(Species.y %in%
+  filter(!is.na(Species.y), 
+         Species.y %in%
            c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
            Species.y == Species.x & proportion > 0.95)
 
-summary_df <- filtered_proportion %>%
+concluded_proportion <- filtered_proportion %>%
   group_by(Species.y) %>%
   summarise(mean_total = mean(Total, na.rm = TRUE))
 
@@ -540,7 +546,8 @@ ggplot(filtered_proportion,
 
 plot_genus_df <-
   filtered_genus_df %>%
-  dplyr::filter(Species.y %in%
+  dplyr::filter(!is.na(Species.y), 
+                Species.y %in%
                   c("Moraxella catarrhalis", "Haemophilus influenzae") &
                 Species.y == Species.x &
                 proportion > 0.95) %>%
@@ -581,7 +588,9 @@ filter_Moraxella <- plot_genus_df %>%
 select(npg_run_id) %>%
 distinct()
 filter_Moraxella
+```
 
+```{r generate npg_run_id list of Moraxella}
 write.table(filter_Moraxella,
             file = "./sample_data/npg_run_id_Moraxella.csv",
             col.names = FALSE,
@@ -595,7 +604,9 @@ filter_Haemophilus <- plot_genus_df %>%
 select(npg_run_id) %>%
   distinct()
 filter_Haemophilus
+```
 
+```{r generate npg_run_id list of Haemophilus}
 write.table(filter_Haemophilus,
             file = "./sample_data/npg_run_id_Haemophilus.csv",
             col.names = FALSE,
