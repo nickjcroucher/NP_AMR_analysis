@@ -516,6 +516,16 @@ write.table(Morax_filter,
             quote = FALSE)
 ```
 
+```{r filter npg_run_id of Haemophilus genomes}
+
+Hinflu_filter <- assembly_species_filtering %>% 
+  filter(`sample species` == "Haemophilus influenzae") %>% 
+  select(npg_run_id) %>%
+  distinct()
+Hinflu_filter
+
+```
+
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
 
 ```{r create a proportion}
