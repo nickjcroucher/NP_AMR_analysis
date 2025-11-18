@@ -414,13 +414,17 @@ parse_bracken <- function(fn) {
              sep ="\t",
              header = TRUE) %>% 
     dplyr::filter(grepl("s__",Classification))
-  
 }
+
 species_match_threshold = 10000000
+
 species_abundance_df <-
   parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
     parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
+    by = "Classification"
+  ) %>%
+  dplyr::full_join(parse_bracken("./sample_data/Drakenstein_bracken_summary_report.tsv.gz"),
     by = "Classification"
   ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
@@ -452,6 +456,59 @@ ggplot(species_sample_df,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
+```{r merge dataset between assembly_stats_df and species_sample_df}
+assembly_species_merge <- left_join(assembly_stats_df, species_sample_df, by = "npg_run_id")
+assembly_species_merge <- assembly_species_merge %>% 
+  rename(`sample species` = Species.y)
+assembly_species_merge
+```
+
+```{r filtering assembly_species_merge to get quality genomes using N50 and Total length}
+clean_assembly_species <- assembly_species_merge %>%
+  filter(!is.na(`sample species`),
+         !is.na(`Total length`),
+         !is.na(N50),
+         !is.na(Species.x))
+clean_assembly_species
+
+ggplot(data = clean_assembly_species) + 
+  geom_point(aes
+             (x = `Total length`, 
+               y = N50, 
+               colour = `sample species`)) +
+  geom_hline(yintercept = 80000) + 
+  scale_x_log10() + 
+  geom_vline(xintercept = c(minimum_length, 
+                            maximum_length))
+
+```
+
+```{r filtering genomes for getting good genomic quality}
+
+assembly_species_filtering <- 
+  assembly_species_merge %>%
+  filter(N50 > n50_threshold & 
+           (`Total length` > minimum_length & 
+              `Total length` < maximum_length))
+assembly_species_filtering
+
+ggplot(data = assembly_species_filtering) + 
+  geom_point(aes
+             (x = `Total length`, 
+               y = N50, colour = `sample species`)) + 
+  geom_hline(yintercept = n50_threshold) + 
+  geom_vline(xintercept = c(minimum_length, maximum_length))
+```
+```{r filter Moraxella specie by npg_run_id}
+
+Morax_filter <- assembly_species_filtering %>%
+  filter(`sample species` == "Moraxella catarrhalis") %>%
+select(npg_run_id) %>%
+distinct()
+Morax_filter
+
+```
+
 
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
 
