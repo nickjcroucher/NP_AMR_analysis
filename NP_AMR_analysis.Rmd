@@ -506,9 +506,15 @@ Morax_filter <- assembly_species_filtering %>%
 select(npg_run_id) %>%
 distinct()
 Morax_filter
-
 ```
 
+```{r generate list of npg_run_id Moraxella cattarrhalis}
+write.table(Morax_filter,
+            file = "./sample_data/npg_run_id_final_Mcattarrhalis.csv",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
+```
 
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
 
