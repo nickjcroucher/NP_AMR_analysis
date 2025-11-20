@@ -1356,10 +1356,113 @@ Mcat_gene_freq <- Mcat_CDS_count %>%
             by = "Country") %>%
   mutate(Frequency = CDS_count / Genome_count)
 View(Mcat_gene_freq)
+
 ```
 
+```{r reform column of Mcat_gene_freq to wide format column}
+Mcat_SA_gene_freq_wide <- Mcat_gene_freq %>%
+  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
+pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+Mcat_SA_gene_freq_wide
 
+```
+```{r plot scatter graph comparing with Cambodia and Thailand}
 
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = Thailand, 
+           y = Cambodia)) + 
+  geom_point(alpha = 0.7, 
+             color = "blue") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph}
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `United Kingdom`, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "green") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "brown")+ 
+  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph}
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `United Kingdom`, 
+           y = Cambodia)) + 
+  geom_point(alpha = 0.7, 
+             color = "pink") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "black")+ 
+  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+
+```
+
+```{r plot scatter graph}
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `United Kingdom, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "darkgray") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "yellow")+ 
+  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph}
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `South Africa`, 
+           y = Cambodia)) + 
+  geom_point(alpha = 0.7, 
+             color = "black") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "purple")+ 
+  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
+
+```{r }
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `South Africa`, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "purple") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "black")+ 
+  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
