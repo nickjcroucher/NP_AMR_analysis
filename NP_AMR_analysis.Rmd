@@ -835,11 +835,10 @@ View(Moraxella_gene_presence)
 
 ```{r left_join Moraxella gene presence dataset with sample_df}
 
-Moraxella_gene_sample <- left_join(
-  Moraxella_gene_presence,
-  sample_df,
-  by = "npg_run_id"
-  )
+Moraxella_gene_sample <- 
+  left_join(Moraxella_gene_presence, 
+            sample_df, 
+            by = "npg_run_id")
 Moraxella_gene_sample
 ```
 
@@ -958,7 +957,8 @@ ggplot(gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country)
 
 ```
 
-We will calculate genome count and frequency genes of Haemophilus influenzae
+### We will calculate genome count and frequency genes of Haemophilus influenzae
+
 ```{r import Haemophilus gene presece absence csv file for tidy up the column}
 Haemophilus_gene_presence <- read.csv("./panaroo_haemophilus_file/Haemo_gene_presence_absence.csv", 
                                       header = TRUE, 
@@ -1295,6 +1295,70 @@ ggplot(Haemo_2_gene_freq,
   theme(strip.text = element_text(face = "bold", size = 9), 
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
+
+
+
+### We compare Moraxella geneomic dataset from South Africa, UK, Cambodia and Thailand
+
+```{r import gene presence absence from Panaroo of Moraxella}
+
+Mcat_with_SA_gene_preabsence <- read.csv(
+  "./Mcat_gene_presence_absence/Mcat_SA_gene_preabsence.csv",
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`, 
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+    )
+Mcat_with_SA_gene_preabsence
+```
+
+```{r merge Mcat_SA gene presence absence with sample_df}
+
+Mcat_SA_gene_sample <- left_join(Mcat_with_SA_gene_preabsence, sample_df, by = "npg_run_id")
+Mcat_SA_gene_sample
+
+```
+
+```{r calculate number of genomes and frequency genes of Mcat genome with dataset from SA, UK, Cambodia, and Thailand}
+# Count distinct genomes per country
+Mcat_gene_count <- Mcat_SA_gene_sample %>%
+  filter(!is.na(npg_run_id),
+    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_count = n_distinct(npg_run_id),
+    .groups = "drop")
+Mcat_gene_count
+# Count CDS occurrences per gene and country
+Mcat_CDS_count <- Mcat_SA_gene_sample %>%
+  filter(CDS != "" & 
+         Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+         ) %>%
+  group_by(Country, Gene) %>%
+  summarise(CDS_count = n(), 
+            .groups = "drop") %>%
+arrange(Country, desc(CDS_count))
+Mcat_CDS_count
+
+# Calculate frequency genes
+Mcat_gene_freq <- Mcat_CDS_count %>%
+  left_join(Mcat_gene_count, 
+            by = "Country") %>%
+  mutate(Frequency = CDS_count / Genome_count)
+View(Mcat_gene_freq)
+```
+
+
 
 ## Compare strain frequncies between samples
 
