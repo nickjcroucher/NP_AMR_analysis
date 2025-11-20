@@ -1417,25 +1417,25 @@ ggplot(Mcat_SA_gene_freq_wide,
 ```
 
 ```{r plot scatter graph}
-ggplot(Mcat_SA_gene_freq_wide, 
-       aes(x = `United Kingdom, 
-           y = Thailand)) + 
+
+ggplot(Mcat_SA_gene_freq_wide, aes(x = `United Kingdom`, y = Thailand)) + 
   geom_point(alpha = 0.7, 
              color = "darkgray") + 
   geom_abline(slope = 1, 
               intercept = 0, 
               linetype = "dashed", 
-              color = "yellow")+ 
+              color = "brown")+ 
   labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
        x = "Thailand", 
        y = "Cambodia") + 
   theme_minimal()
+
 ```
 
 ```{r plot scatter graph}
+
 ggplot(Mcat_SA_gene_freq_wide, 
-       aes(x = `South Africa`, 
-           y = Cambodia)) + 
+       aes(x = `South Africa`, y = Cambodia)) + 
   geom_point(alpha = 0.7, 
              color = "black") + 
   geom_abline(slope = 1, 
@@ -1446,9 +1446,11 @@ ggplot(Mcat_SA_gene_freq_wide,
        x = "Thailand", 
        y = "Cambodia") + 
   theme_minimal()
+
 ```
 
-```{r }
+```{r plot scatter graph }
+
 ggplot(Mcat_SA_gene_freq_wide, 
        aes(x = `South Africa`, 
            y = Thailand)) + 
@@ -1462,7 +1464,10 @@ ggplot(Mcat_SA_gene_freq_wide,
        x = "Thailand", 
        y = "Cambodia") + 
   theme_minimal()
+
 ```
+
+
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
