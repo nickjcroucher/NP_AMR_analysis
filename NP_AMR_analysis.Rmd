@@ -458,14 +458,12 @@ ggplot(species_sample_df,
 ```
 ```{r merge dataset between assembly_stats_df and species_sample_df}
 assembly_species_merge <- left_join(assembly_stats_df, species_sample_df, by = "npg_run_id")
-assembly_species_merge <- assembly_species_merge %>% 
-  rename(`sample species` = Species.y)
 assembly_species_merge
 ```
 
 ```{r filtering assembly_species_merge to get quality genomes using N50 and Total length}
 clean_assembly_species <- assembly_species_merge %>%
-  filter(!is.na(`sample species`),
+  filter(!is.na(Species.y),
          !is.na(`Total length`),
          !is.na(N50),
          !is.na(Species.x))
@@ -475,7 +473,7 @@ ggplot(data = clean_assembly_species) +
   geom_point(aes
              (x = `Total length`, 
                y = N50, 
-               colour = `sample species`)) +
+               colour = Species.y)) +
   geom_hline(yintercept = 80000) + 
   scale_x_log10() + 
   geom_vline(xintercept = c(minimum_length, 
@@ -495,14 +493,36 @@ assembly_species_filtering
 ggplot(data = assembly_species_filtering) + 
   geom_point(aes
              (x = `Total length`, 
-               y = N50, colour = `sample species`)) + 
+               y = N50, colour = Species.y)) + 
   geom_hline(yintercept = n50_threshold) + 
   geom_vline(xintercept = c(minimum_length, maximum_length))
 ```
+
+
+
+
+### Redataset 
+```{r}
+
+specific_filter <- assembly_species_filtering %>%
+  mutate(Species.x = recode(Species.x, "Moraxella_catarrhalis" = "Moraxella catarrhalis", "Haemophilus_influenzae" = "Haemophilus influenzae")) %>%
+  filter(!is.na(Species.x),
+         !is.na(Species.y),
+         Species.x %in% c("Moraxella catarrhalis", "Haemophilus influenzae"), 
+         Species.x == Species.y) %>%
+  group_by(npg_run_id) %>%
+  mutate(proportion = matches / sum(matches)) %>%
+  mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
+  fill(Matching_proportion, .direction = "updown")
+specific_filter
+
+```
+
+
 ```{r filter Moraxella specie by npg_run_id}
 
 Morax_filter <- assembly_species_filtering %>%
-  filter(`sample species` == "Moraxella catarrhalis") %>%
+  filter(Species.y == "Moraxella catarrhalis") %>%
 select(npg_run_id) %>%
 distinct()
 Morax_filter
@@ -519,7 +539,7 @@ write.table(Morax_filter,
 ```{r filter npg_run_id of Haemophilus genomes}
 
 Hinflu_filter <- assembly_species_filtering %>% 
-  filter(`sample species` == "Haemophilus influenzae") %>% 
+  filter(Species.y == "Haemophilus influenzae") %>% 
   select(npg_run_id) %>%
   distinct()
 Hinflu_filter
@@ -535,6 +555,7 @@ write.table(Hinflu_filter,
             quote = FALSE)
 
 ```
+
 
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
 
@@ -669,7 +690,11 @@ ggplot(data = plot_genus_df) +
     )
 ```
 
-### merge dataset proportion_df and 
+
+
+
+
+
 
 
 ```{r filter npg_run_id of Moraxella }
