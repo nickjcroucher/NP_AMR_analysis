@@ -551,9 +551,12 @@ dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, prop
 tidyr::fill(Matching_proportion, .direction = "updown") %>%
   ungroup()
 proportion_df
+proportion_threshold <- 0.95
 ```
 
 ## We plot matching proportion for each types of species (Moraxella catarrhalis, Haemophilus influenzae and Mixed bacteria) to get the high quality species
+
+We will filter at a species matching proportion of `r proportion_threshold`.
 
 ```{r plot proportion}
 
@@ -566,9 +569,10 @@ filter_proportion_df <- proportion_df %>%
   summarise(mean_total = mean(Total, na.rm = TRUE))
 ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
   geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
   labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
   theme_minimal()
+
 ```
 
 ## We use the genus level to analyse Moraxella
@@ -594,9 +598,10 @@ filtered_genus_df <-
 
 ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
   geom_violin() +
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
   labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion") +
   theme_minimal()
+
 ```
 
 ## We try to remove the species with lower proportion of 0.95
@@ -605,11 +610,11 @@ N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,0
 
 ```{r filter the proportion }
 
-filtered_proportion <- genus_level_df %>%
+filtered_proportion <- proportion_df %>%
   filter(!is.na(Species.y), 
          Species.y %in%
            c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x & proportion > 0.95)
+           Species.y == Species.x & proportion > proportion_threshold)
 
 concluded_proportion <- filtered_proportion %>%
   group_by(Species.y) %>%
@@ -618,7 +623,7 @@ concluded_proportion <- filtered_proportion %>%
 ggplot(filtered_proportion,
        aes(x = Species.y, y = proportion)) +
   geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
   labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
   theme_minimal()
 ```
@@ -633,7 +638,7 @@ plot_genus_df <-
                 Species.y %in%
                   c("Moraxella catarrhalis", "Haemophilus influenzae") &
                 Species.y == Species.x &
-                proportion > 0.95) %>%
+                proportion > proportion_threshold) %>%
   dplyr::select(
     npg_run_id,
     Country,
@@ -663,6 +668,9 @@ ggplot(data = plot_genus_df) +
         hjust = 1)
     )
 ```
+
+### merge dataset proportion_df and 
+
 
 ```{r filter npg_run_id of Moraxella }
 
