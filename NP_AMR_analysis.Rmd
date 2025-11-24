@@ -501,7 +501,7 @@ ggplot(data = assembly_species_filtering) +
 
 
 
-### Redataset 
+### Re-filter dataset 
 ```{r}
 
 specific_filter <- assembly_species_filtering %>%
@@ -521,7 +521,7 @@ specific_filter
 
 ```{r filter Moraxella specie by npg_run_id}
 
-Morax_filter <- assembly_species_filtering %>%
+Morax_filter <- specific_filter %>%
   filter(Species.y == "Moraxella catarrhalis") %>%
 select(npg_run_id) %>%
 distinct()
@@ -530,7 +530,7 @@ Morax_filter
 
 ```{r generate list of npg_run_id Moraxella cattarrhalis}
 write.table(Morax_filter,
-            file = "./sample_data/npg_run_id_final_Mcattarrhalis.csv",
+            file = "./sample_data/npg_run_id_2ndfinal_Mcattarrhalis.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
@@ -538,7 +538,7 @@ write.table(Morax_filter,
 
 ```{r filter npg_run_id of Haemophilus genomes}
 
-Hinflu_filter <- assembly_species_filtering %>% 
+Hinflu_filter <- specific_filter %>% 
   filter(Species.y == "Haemophilus influenzae") %>% 
   select(npg_run_id) %>%
   distinct()
@@ -549,7 +549,7 @@ Hinflu_filter
 ```{r generate npg_run_id Haemophilus influenzae}
 
 write.table(Hinflu_filter,
-            file = "./sample_data/npg_run_id_final_Hinfluenzae.csv",
+            file = "./sample_data/npg_run_id_2ndfinal_Hinfluenzae.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
