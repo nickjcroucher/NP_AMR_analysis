@@ -295,9 +295,9 @@ assembly_stats_df %>%
 assembly_stats_df
 ```
 
-### Merge data of two files of sample_df and assembly_stats_df
+### Merge two datasets of sample_df and assembly_stats_df
 
-We use these two files to merge getting chronological data.
+We will use these two files to merge getting chronological data set.
 
 ```{r, merge data, echo=TRUE}
 assembly_join_sample <- 
@@ -309,10 +309,11 @@ assembly_join_sample
 minimum_length <- 1750000
 maximum_length <- 2250000
 n50_threshold <- 100000
+
 ```
 
-### Plot assembly data of baterial genome assemblies between total length and N50 to get quality of genome
-We used total length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is `r n50_threshold`` bp and total length (x-axis) which is from `r minimum_length`` Mbp to `r maximum_length` Mbp.
+### Plot assembly data of baterial genomic assemblies between total length and N50 to get quality of genomesz
+We used total length and N50 of each genomes to find quality of genomes with baseline threshold of N50 (y-axis) is `r n50_threshold`` bp and total length (x-axis) which is from `r minimum_length`` Mbp to `r maximum_length` Mbp.
 
 ```{r, plot-genome assembly, include=TRUE}
 
@@ -328,7 +329,7 @@ ggplot(data = assembly_join_sample) +
                                             
 ```
 
-### We need to plot of merging dataset to be known Quality control of each species and knowing limitted threshold to be accepted in each species.
+### We need to plot of merging dataset to be known quality control of each species and knowing limitted threshold to be accepted in each species.
 We need to eliminate a few results from sequencing to get the better quality control of each species.
 
 ```{r, filter-data, include=TRUE}
@@ -349,7 +350,7 @@ ggplot(data = summary_df) +
 
 ```
 
-### Plot graph of identifing bacterial burden in each three countries
+### Plot graph of identifing bacterial burden in each three countries including South Africa
 
 ```{r, plot-graph, include=TRUE}
 
@@ -370,7 +371,7 @@ ggplot(data = assembly_join_sample) +
   theme_minimal()
 ```
 
-```{r make Moraxell npg_run_id}
+```{r filter npg_run_id list of Moraxella cattarrhalis}
 filter_Moraxella <- summary_df %>%
   filter(Species == "Moraxella catarrhalis") %>%
 select(npg_run_id) %>%
@@ -378,7 +379,7 @@ distinct()
 filter_Moraxella
 ```
 
-```{r Moraxell npg_run_id}
+```{r generate file of npg_run_id Moraxella cattarrhalis}
 write.table(filter_Moraxella,
             file = "./sample_data/npg_run_id_Morax2_SA.csv",
             col.names = FALSE,
@@ -386,15 +387,16 @@ write.table(filter_Moraxella,
             quote = FALSE)
 ```
 
-```{r filter npg_run_id of Haemophilus}
+```{r filter npg_run_id of Haemophilus influenzae}
 filter_Haemophilus <- summary_df %>%
   filter(Species == "Haemophilus influenzae") %>%
 select(npg_run_id) %>%
   distinct()
 filter_Haemophilus
+
 ```
 
-```{r Haemophilus npg_run_id}
+```{r generate npg_run_id file of Haemophilus influenzae}
 write.table(filter_Haemophilus,
             file = "./sample_data/npg_run_id_Haemo2_SA.csv",
             col.names = FALSE,
@@ -456,9 +458,10 @@ ggplot(species_sample_df,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
-```{r merge dataset between assembly_stats_df and species_sample_df}
+```{r merge two datasets between assembly_stats_df and species_sample_df}
 assembly_species_merge <- left_join(assembly_stats_df, species_sample_df, by = "npg_run_id")
 assembly_species_merge
+
 ```
 
 ```{r filtering assembly_species_merge to get quality genomes using N50 and Total length}
@@ -481,8 +484,7 @@ ggplot(data = clean_assembly_species) +
 
 ```
 
-```{r filtering genomes for getting good genomic quality}
-
+```{r filtering genomes for getting good genomic quality by N50 and Total length}
 assembly_species_filtering <- 
   assembly_species_merge %>%
   filter(N50 > n50_threshold & 
@@ -496,20 +498,18 @@ ggplot(data = assembly_species_filtering) +
                y = N50, colour = Species.y)) + 
   geom_hline(yintercept = n50_threshold) + 
   geom_vline(xintercept = c(minimum_length, maximum_length))
+
 ```
 
-
-
-
-### Re-filter dataset 
-```{r}
-
+### Re-filter dataset to get specific matching genomes of Moraxella cattarrhalis and Haemophilus influenzae
+```{r filter two specific genomics of Mcat and Hinflu}
 specific_filter <- assembly_species_filtering %>%
   mutate(Species.x = recode(Species.x, "Moraxella_catarrhalis" = "Moraxella catarrhalis", "Haemophilus_influenzae" = "Haemophilus influenzae")) %>%
   filter(!is.na(Species.x),
          !is.na(Species.y),
          Species.x %in% c("Moraxella catarrhalis", "Haemophilus influenzae"), 
          Species.x == Species.y) %>%
+  select(npg_run_id, `Total length`, `GC (%)`, N50, Species.x, matches, Total, name, sample_common_name, total_reads, Isolate, Cohort, Country, Region, Year, Description, Species.y) %>%
   group_by(npg_run_id) %>%
   mutate(proportion = matches / sum(matches)) %>%
   mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
@@ -519,7 +519,7 @@ specific_filter
 ```
 
 
-```{r filter Moraxella specie by npg_run_id}
+```{r filter Moraxella cattarrhalis specie by npg_run_id}
 
 Morax_filter <- specific_filter %>%
   filter(Species.y == "Moraxella catarrhalis") %>%
@@ -536,7 +536,7 @@ write.table(Morax_filter,
             quote = FALSE)
 ```
 
-```{r filter npg_run_id of Haemophilus genomes}
+```{r filter npg_run_id of Haemophilus influenzae genomes}
 
 Hinflu_filter <- specific_filter %>% 
   filter(Species.y == "Haemophilus influenzae") %>% 
@@ -546,7 +546,7 @@ Hinflu_filter
 
 ```
 
-```{r generate npg_run_id Haemophilus influenzae}
+```{r generate npg_run_id list of Haemophilus influenzae}
 
 write.table(Hinflu_filter,
             file = "./sample_data/npg_run_id_2ndfinal_Hinfluenzae.csv",
@@ -555,6 +555,8 @@ write.table(Hinflu_filter,
             quote = FALSE)
 
 ```
+
+
 
 
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
@@ -690,13 +692,6 @@ ggplot(data = plot_genus_df) +
     )
 ```
 
-
-
-
-
-
-
-
 ```{r filter npg_run_id of Moraxella }
 
 filter_Moraxella <- plot_genus_df %>%
@@ -730,7 +725,7 @@ write.table(filter_Haemophilus,
             quote = FALSE)
 ```
 
-## Calculate genomes of each species and each countries.
+## Calculate genomes of each species and each countries in each years.
 
 ```{r calculate genomes of each species}
 
@@ -762,6 +757,7 @@ ggplot(plot_moraxella,
     vjust = -0.3, size = 3
     ) +
   ggtitle("Distribution of Moraxella catarrhalis\nin each coutries and years")
+
 ```
 
 ```{r Haemophilus influenzae in each country and each year}
@@ -785,6 +781,7 @@ ggplot(
     vjust = -0.3, size = 3
     ) +
   ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
+
 ```
 
 ```{r get genomes to process}
@@ -842,10 +839,11 @@ join_epi_Global_data
 
 ## Use PopPUNK to categorise isolates
 
+
 ## Use Panaroo to identify genes
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
-```{r tidy up the Moraxell gene presence absence columns to longer format columns}
+```{r tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns}
 
 Moraxella_gene_presence <- read.csv(
   "./panaroo_moraxella_file/Moraxella_gene_presence_absence.csv",
@@ -863,7 +861,7 @@ Moraxella_gene_presence <- read.csv(
     names_to = "npg_run_id",
     values_to = "CDS"
     )
-View(Moraxella_gene_presence)
+Moraxella_gene_presence
 ```
 
 ```{r left_join Moraxella gene presence dataset with sample_df}
@@ -925,14 +923,14 @@ gene_freq <- Count_CDS %>%
   left_join(Genome_Count, 
             by = "Country") %>%
   mutate(Frequency = CDS_count / Genome_Count)
-View(gene_freq)
+gene_freq
 ```
 
-```{r reshape gene_freq to wide format}
+```{r reform gene_freq to wide format}
 gene_freq_wide <- gene_freq %>%
   select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
   pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-View(gene_freq_wide)
+gene_freq_wide
 ```
 
 ```{r plot scatter graph of frequency genes in between United Kingdom and Cambodia Country}
@@ -992,7 +990,7 @@ ggplot(gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country)
 
 ### We will calculate genome count and frequency genes of Haemophilus influenzae
 
-```{r import Haemophilus gene presece absence csv file for tidy up the column}
+```{r import Haemophilus influenzae of gene presece absence csv file for tidy up the column}
 Haemophilus_gene_presence <- read.csv("./panaroo_haemophilus_file/Haemo_gene_presence_absence.csv", 
                                       header = TRUE, 
                                       sep = ",", 
@@ -1015,7 +1013,7 @@ Haemo_gene_preab_sample
 
 ```
 
-```{r calculate number of genome count and frequency gene of Haemophilus influenzae}
+```{r calculate number of genome count and frequency genes of Haemophilus influenzae}
 # Count distinct genomes per country
 Haemo_gene_count <- Haemo_gene_preab_sample %>%
   filter(!is.na(npg_run_id),
@@ -1084,7 +1082,7 @@ ggplot(Haemo_gene_freq_wide,
   theme_minimal()
 ```
 
-```{r plot scatter graph of Haemophilus influenzae frequency gene in between Cambodia and Thailand}
+```{r plot scatter graph of Haemophilus influenzae frequency genes in between Cambodia and Thailand}
 ggplot(Haemo_gene_freq_wide, 
        aes(x = Thailand, 
            y = Cambodia)) + 
@@ -1112,9 +1110,10 @@ ggplot(Haemo_gene_freq,
   theme(strip.text = element_text(face = "bold", size = 9), 
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
+
 ## We will extract the Moraxella catarrhalis and Haemophilus influenzae files from panaroo modifying scripts are named gene presence and absence csv to calculate the number of genomes and frequnecy genes then plot the scatter graph and histogram
 
-```{r import Moraxella cattarrhalis of gene presences absences csv file}
+```{r import data files of Moraxella cattarrhalis and Haemophilus influenzae of gene presences absences csv from panaroo}
 Morax_2_gene_preab <- 
   read.csv(file = "./panaroo_moraxella_file/Morax_gene_presence_absence_2.csv", header = TRUE, stringsAsFactors = FALSE, 
            sep = ",", 
@@ -1331,9 +1330,9 @@ ggplot(Haemo_2_gene_freq,
 
 
 
-### We compare Moraxella geneomic dataset from South Africa, UK, Cambodia and Thailand
+### We will compare geneomic dataset of Moraxella cattarrhalis from South Africa, UK, Cambodia and Thailand
 
-```{r import gene presence absence from Panaroo of Moraxella}
+```{r import gene presence absence file of Moraxella cattarrhalis after running Panaroo quality control script}
 
 Mcat_with_SA_gene_preabsence <- read.csv(
   "./Mcat_gene_presence_absence/Mcat_SA_gene_preabsence.csv",
@@ -1354,14 +1353,14 @@ Mcat_with_SA_gene_preabsence <- read.csv(
 Mcat_with_SA_gene_preabsence
 ```
 
-```{r merge Mcat_SA gene presence absence with sample_df}
+```{r merge Mcat_SA gene presence absence with sample_df by npg_run_id }
 
 Mcat_SA_gene_sample <- left_join(Mcat_with_SA_gene_preabsence, sample_df, by = "npg_run_id")
 Mcat_SA_gene_sample
 
 ```
 
-```{r calculate number of genomes and frequency genes of Mcat genome with dataset from SA, UK, Cambodia, and Thailand}
+```{r calculate number of genomes and frequency genes for Mcat genome with dataset from South Africa, UK, Cambodia, and Thailand}
 # Count distinct genomes per country
 Mcat_gene_count <- Mcat_SA_gene_sample %>%
   filter(!is.na(npg_run_id),
@@ -1399,6 +1398,7 @@ pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
 Mcat_SA_gene_freq_wide
 
 ```
+
 ```{r plot scatter graph comparing with Cambodia and Thailand}
 
 ggplot(Mcat_SA_gene_freq_wide, 
@@ -1426,9 +1426,9 @@ ggplot(Mcat_SA_gene_freq_wide,
               intercept = 0, 
               linetype = "dashed", 
               color = "brown")+ 
-  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
-       x = "Thailand", 
-       y = "Cambodia") + 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "South Africa") + 
   theme_minimal()
 ```
 
@@ -1442,8 +1442,8 @@ ggplot(Mcat_SA_gene_freq_wide,
               intercept = 0, 
               linetype = "dashed", 
               color = "black")+ 
-  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
-       x = "Thailand", 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "United Kingdom", 
        y = "Cambodia") + 
   theme_minimal()
 
@@ -1451,16 +1451,17 @@ ggplot(Mcat_SA_gene_freq_wide,
 
 ```{r plot scatter graph}
 
-ggplot(Mcat_SA_gene_freq_wide, aes(x = `United Kingdom`, y = Thailand)) + 
+ggplot(Mcat_SA_gene_freq_wide, 
+       aes(x = `United Kingdom`, y = Thailand)) + 
   geom_point(alpha = 0.7, 
              color = "darkgray") + 
   geom_abline(slope = 1, 
               intercept = 0, 
               linetype = "dashed", 
               color = "brown")+ 
-  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
-       x = "Thailand", 
-       y = "Cambodia") + 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "Thailand") + 
   theme_minimal()
 
 ```
@@ -1475,8 +1476,8 @@ ggplot(Mcat_SA_gene_freq_wide,
               intercept = 0, 
               linetype = "dashed", 
               color = "purple")+ 
-  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
-       x = "Thailand", 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "South Africa", 
        y = "Cambodia") + 
   theme_minimal()
 
@@ -1493,11 +1494,24 @@ ggplot(Mcat_SA_gene_freq_wide,
               intercept = 0, 
               linetype = "dashed", 
               color = "black")+ 
-  labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", 
-       x = "Thailand", 
-       y = "Cambodia") + 
+  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+       x = "South Africa", 
+       y = "Thailand") + 
   theme_minimal()
 
+```
+
+```{r plot histogram for Moraxella cattarrhalis in between South Africa, UK, Cambodia and Thailand}
+ggplot(Mcat_gene_freq, 
+       aes(x = Frequency)) + 
+  geom_histogram(color = "blue") + 
+  facet_wrap(~ Country) + 
+  theme_minimal(base_size = 14) + 
+  labs(title = "Mcattarrhalis with SA\nGene Frequency Distribution", 
+       x = "Frequency", 
+       y = "Number of Observation") + 
+  theme(strip.text = element_text(face = "bold", size = 9), 
+        plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
 
