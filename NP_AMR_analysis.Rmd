@@ -1494,7 +1494,7 @@ ggplot(Mcat_SA_gene_freq_wide,
               intercept = 0, 
               linetype = "dashed", 
               color = "black")+ 
-  labs(title = "Moraxella catarrahlis with SA\nFrequency genes by Country", 
+  labs(title = "Moraxella catarrhalis with SA\nFrequency genes by Country", 
        x = "South Africa", 
        y = "Thailand") + 
   theme_minimal()
