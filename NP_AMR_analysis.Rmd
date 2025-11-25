@@ -1140,6 +1140,7 @@ Haemo_2_gene_sample
 ```
 
 ```{r calculate the number of genome count and frequency genes of Morax_2}
+# Calculate number of genomes
 Morax_2_gene_count <- Morax_2_gene_sample %>%
   filter(!is.na(npg_run_id),
     Country %in% c("United Kingdom", "Cambodia", "Thailand")
@@ -1149,6 +1150,7 @@ Morax_2_gene_count <- Morax_2_gene_sample %>%
     .groups = "drop")
 Morax_2_gene_count
 
+# Calculate Coding DNS Sequence
 Morax_2_CDS_count <- Morax_2_gene_sample %>%
   filter(CDS != "" & 
          Country %in% 
@@ -1159,6 +1161,8 @@ Morax_2_CDS_count <- Morax_2_gene_sample %>%
             .groups = "drop") %>%
 arrange(Country, desc(CDS_count))
 Morax_2_CDS_count
+
+# Calculate frequnecy genes
 Morax_2_gene_freq <- Morax_2_CDS_count %>%
   left_join(Morax_2_gene_count, 
             by = "Country") %>%
@@ -1186,6 +1190,7 @@ Haemo_2_CDS_count <- Haemo_2_gene_sample %>%
             .groups = "drop") %>%
 arrange(Country, desc(CDS_count))
 Haemo_2_CDS_count
+
 Haemo_2_gene_freq <- Haemo_2_CDS_count %>%
   left_join(Haemo_2_gene_count, 
             by = "Country") %>%
@@ -1513,6 +1518,367 @@ ggplot(Mcat_gene_freq,
   theme(strip.text = element_text(face = "bold", size = 9), 
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
+
+
+### We will do analysis Moraxella cattarrhalis genome after did filter comparring with only matching proportion threshold 0.95 and after running Panaroo gene presence absence csv
+
+```{r import Mcat_version2_gene_preabsence. csv after running Panaroo}
+Mcat_version2_gene_preabsence <- read.csv(
+  "./Mcat_gene_presence_absence/Mcat_version2_gene_preabsence.csv",
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`, 
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+    )
+Mcat_version2_gene_preabsence
+
+```
+
+```{r merge two datasets between Mcat_version2_gene_preabsence and sample_df}
+Mcat_version2_gene_sample <- left_join(Mcat_version2_gene_preabsence, sample_df, by = "npg_run_id")
+Mcat_version2_gene_sample
+```
+
+```{r calculate number of genomes and frequency genes for Mcattarrhalis}
+# Count distinct genomes per country
+Mcat_version2_genecount <- Mcat_version2_gene_sample %>%
+  filter(!is.na(npg_run_id),
+    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_count = n_distinct(npg_run_id),
+    .groups = "drop")
+Mcat_version2_genecount
+
+# Count CDS occurrences per gene and country
+Mcat_version2_cdscount <- Mcat_version2_gene_sample %>%
+  filter(CDS != "" & 
+         Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+         ) %>%
+  group_by(Country, Gene) %>%
+  summarise(CDS_count = n(), 
+            .groups = "drop") %>%
+arrange(Country, desc(CDS_count))
+Mcat_version2_cdscount
+
+# Calculate frequency genes
+Mcat_version2_genefreq <- Mcat_version2_cdscount %>%
+  left_join(Mcat_version2_genecount, 
+            by = "Country") %>%
+  mutate(Frequency = CDS_count / Genome_count)
+Mcat_version2_genefreq
+```
+
+```{r reformat Mcat_version2_genefreq to wide format columns}
+Mcat_version2_genefreq_wide <- Mcat_version2_genefreq %>%
+  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
+pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+Mcat_version2_genefreq_wide
+
+```
+
+```{r plot scatter graph comparing with Cambodia and Thailand}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = Thailand, 
+           y = Cambodia)) + 
+  geom_point(alpha = 0.7, 
+             color = "blue") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "Cambodia") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing with Cambodia and UK}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `United Kingdom`)) + 
+  geom_point(alpha = 0.7, 
+             color = "brown") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "blue")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "United Kingdom") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing with Camboida and South Africa}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "black") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "red")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing with UK and South Africa}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = `United Kingdom`, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "blue") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "purple")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing with UK and Thailand}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = `United Kingdom`, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "Thailand") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing with Thailand and South Africa}
+ggplot(Mcat_version2_genefreq_wide, 
+       aes(x = Thailand, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "blue") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "black")+ 
+  labs(title = "Version2 Moraxella catarrahlis\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot histogram for Moraxella cattarrhalis comparing between UK, Cambodia, Thailand and South Africa}
+ggplot(Mcat_version2_genefreq, 
+       aes(x = Frequency)) + 
+  geom_histogram(color = "red") + 
+  facet_wrap(~ Country) + 
+  theme_minimal(base_size = 14) + 
+  labs(title = "Version2 Moraxella cattarrhalis\nGene Frequency Distribution", 
+       x = "Frequency", 
+       y = "Number of Observation") + 
+  theme(strip.text = element_text(face = "bold", size = 9), 
+        plot.title = element_text(hjust = 0.5, face = "bold"))
+
+```
+
+
+
+### We will analize Haemophilus influenzae after filtering by N50 and Total length and running Panaroo with Haemophilus influenzae gene presence absence cvs file including South Africa data.
+
+```{r import Haemophilus_SA_genepreabsence cvs file from Panaroo}
+Haemophilus_SA_gene_preabsence <- read.csv(
+  "./Haemo_SA_gene_preabsence/Haemophilus_SA_gene_preabsence.csv",
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`, 
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+    )
+Haemophilus_SA_gene_preabsence
+```
+
+```{r merge dataset between Haemophilus_SA_gene_preabsence and sample_df}
+Haemophilus_SA_gene_sample <- left_join(Haemophilus_SA_gene_preabsence, sample_df, by = "npg_run_id")
+Haemophilus_SA_gene_sample
+
+```
+
+```{r calculate number of genomes and frequency genes for Haemophilus influenzae}
+# Count distinct genomes per country
+Haemophilus_SA_genecount <- Haemophilus_SA_gene_sample %>%
+  filter(!is.na(npg_run_id),
+    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_count = n_distinct(npg_run_id),
+    .groups = "drop")
+Haemophilus_SA_genecount
+
+# Count Coding DNA Sequence occurrences per gene and country
+Haemophilus_SA_cdscount <- Haemophilus_SA_gene_sample %>%
+  filter(CDS != "" & 
+         Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+         ) %>%
+  group_by(Country, Gene) %>%
+  summarise(CDS_count = n(), 
+            .groups = "drop") %>%
+arrange(Country, desc(CDS_count))
+Haemophilus_SA_cdscount
+
+# Calculate frequency genes
+Haemophilus_SA_genefreq <- Haemophilus_SA_cdscount %>%
+  left_join(Haemophilus_SA_genecount, 
+            by = "Country") %>%
+  mutate(Frequency = CDS_count / Genome_count)
+Haemophilus_SA_genefreq
+```
+
+```{r reformat Haemophilus_SA_genefreq to wide format columns}
+Haemophilus_SA_genefreq_wide <- Haemophilus_SA_genefreq %>%
+  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
+pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+Haemophilus_SA_genefreq_wide
+
+```
+
+```{r plot scatter graph comparing between Cambodia and United Kingdom}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `United Kingdom`)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "United Kingdom") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing between Cambodia and Thailand}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `Thailand`)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "Thailand") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing between Camboida and South Africa}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing between United Kingdom and Thailand}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = `United Kingdom`, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "Thailand") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing between United Kingdom and South Africa}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = `United Kingdom`, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot scatter graph comparing between Thailand and South Africa}
+ggplot(Haemophilus_SA_genefreq_wide, 
+       aes(x = Thailand, 
+           y = `South Africa`)) + 
+  geom_point(alpha = 0.7, 
+             color = "orange") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "green")+ 
+  labs(title = "Haemophilus influenzae including SA\nFrequency genes by Country", 
+       x = "Thailand", 
+       y = "South Africa") + 
+  theme_minimal()
+```
+
+```{r plot histogram comparing between Cambodia, UK, Thailand and South Africa}
+ggplot(Haemophilus_SA_genefreq, 
+       aes(x = Frequency)) + 
+  geom_histogram(color = "brown") + 
+  facet_wrap(~ Country) + 
+  theme_minimal(base_size = 14) + 
+  labs(title = "Haemophilus influenzae including SA\nGene Frequency Distribution", 
+       x = "Frequency", 
+       y = "Number of Observation") + 
+  theme(strip.text = element_text(face = "bold", size = 9), 
+        plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+
+### We will analize 
+
+
 
 
 ## Compare strain frequncies between samples
