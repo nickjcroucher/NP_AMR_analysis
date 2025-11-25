@@ -1930,7 +1930,7 @@ Haemoinflu_version2_cdscount
 
 # Calculate frequency genes
 Haemoinflu_version2_genefreq <- Haemoinflu_version2_cdscount %>%
-  left_join(Haemophilus_SA_genecount, 
+  left_join(Haemoinflu_version2_genecount, 
             by = "Country") %>%
   mutate(Frequency = CDS_count / Genome_count)
 Haemoinflu_version2_genefreq
