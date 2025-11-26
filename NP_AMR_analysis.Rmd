@@ -2181,7 +2181,7 @@ ggplot(Mcat_version3_genefreq,
   theme(strip.text = element_text(face = "bold", size = 9), 
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
-### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.95 
+### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.95 and as well after completed run Panaroo.
 
 ```{r import data 2nd Hinflu version3 gene presence and absence after running Panaroo}
 Hinflu_version3_gene_preabsence <- read.csv(
@@ -2203,34 +2203,101 @@ Hinflu_version3_gene_preabsence <- read.csv(
 Hinflu_version3_gene_preabsence
 ```
 
-```{r merge two data between Hinflu_version3_gene_preabsence and sample_df and}
-
+```{r merge two data between Hinflu_version3_gene_preabsence and sample_df}
+Hinflu_version3_gene_sample <- left_join(Hinflu_version3_gene_preabsence, sample_df, by = "npg_run_id")
+Hinflu_version3_gene_sample
 ```
 
 ```{r calculate number of genes and frequency genes for Hinfluenzae}
+# Count distinct genomes per country
+Hinflu_version3_genecount <- Hinflu_version3_gene_sample %>%
+  filter(!is.na(npg_run_id),
+    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+    ) %>%
+  group_by(Country) %>%
+  summarise(Genome_count = n_distinct(npg_run_id),
+    .groups = "drop")
+Hinflu_version3_genecount
 
+# Count Coding DNA Sequence occurrences per gene and country
+Hinflu_version3_cdscount <- Hinflu_version3_gene_sample %>%
+  filter(CDS != "" & 
+         Country %in% 
+           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+         ) %>%
+  group_by(Country, Gene) %>%
+  summarise(CDS_count = n(), 
+            .groups = "drop") %>%
+arrange(Country, desc(CDS_count))
+Hinflu_version3_cdscount
+
+# Calculate frequency genes
+Hinflu_version3_genefreq <- Hinflu_version3_cdscount %>%
+  left_join(Hinflu_version3_genecount, 
+            by = "Country") %>%
+  mutate(Frequency = CDS_count / Genome_count)
+Hinflu_version3_genefreq
 ```
 
-```{r refomat columns to wide format columns}
-
+```{r reformat columns to wide format columns}
+Hinflu_version3_genefreq_wide <- Hinflu_version3_genefreq %>%
+  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
+pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+Hinflu_version3_genefreq_wide
 ```
 
 ```{r plot scatter graph between Cambodia and United Kingdom}
-
+ggplot(Hinflu_version3_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = `United Kingdom`)) + 
+  geom_point(alpha = 0.7, 
+             color = "blue") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "yellow")+ 
+  labs(title = "Version3 Haemophilus influenzae\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "United Kingdom") + 
+  theme_minimal()
 ```
 
 ```{r plot scatter graph between Cambodia and Thailand}
-
+ggplot(Hinflu_version3_genefreq_wide, 
+       aes(x = Cambodia, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "black") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "yellow")+ 
+  labs(title = "Version3 Haemophilus influenzae\nFrequency genes by Country", 
+       x = "Cambodia", 
+       y = "Thailand") + 
+  theme_minimal()
 ```
 
 ```{r plot scatter graph between United Kingdom and Thailand}
-
+ggplot(Hinflu_version3_genefreq_wide, 
+       aes(x = `United Kingdom`, 
+           y = Thailand)) + 
+  geom_point(alpha = 0.7, 
+             color = "darkgreen") + 
+  geom_abline(slope = 1, 
+              intercept = 0, 
+              linetype = "dashed", 
+              color = "red")+ 
+  labs(title = "Version3 Haemophilus influenzae\nFrequency genes by Country", 
+       x = "United Kingdom", 
+       y = "Thailand") + 
+  theme_minimal()
 ```
 
 ```{r plot histogram between United Kingdom, Cambodia and Thailand}
 ggplot(Hinflu_version3_genefreq, 
        aes(x = Frequency)) + 
-  geom_histogram(color = "red") + 
+  geom_histogram(color = "blue") + 
   facet_wrap(~ Country) + 
   theme_minimal(base_size = 14) + 
   labs(title = "Version3 Moraxella cattrrhalis including SA\nGene Frequency Distribution", 
@@ -2239,8 +2306,6 @@ ggplot(Hinflu_version3_genefreq,
   theme(strip.text = element_text(face = "bold", size = 9), 
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
-
-
 
 
 ## Compare strain frequncies between samples
