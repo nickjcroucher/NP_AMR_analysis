@@ -2170,12 +2170,12 @@ ggplot(Mcat_version3_genefreq_wide,
 ```
 
 ```{r plot histogram between United Kingdom, Cambodia, Thailand and South Africa}
-ggplot(Haemoinflu_version2_genefreq, 
+ggplot(Mcat_version3_genefreq, 
        aes(x = Frequency)) + 
-  geom_histogram(color = "lightyellow") + 
+  geom_histogram(color = "yellow") + 
   facet_wrap(~ Country) + 
   theme_minimal(base_size = 14) + 
-  labs(title = "Version2 Haemophilus influenzae including SA\nGene Frequency Distribution", 
+  labs(title = "Version3 Moraxella cattrrhalis including SA\nGene Frequency Distribution", 
        x = "Frequency", 
        y = "Number of Observation") + 
   theme(strip.text = element_text(face = "bold", size = 9), 
