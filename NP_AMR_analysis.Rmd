@@ -503,17 +503,20 @@ ggplot(data = assembly_species_filtering) +
 
 ### Re-filter dataset to get specific matching genomes of Moraxella cattarrhalis and Haemophilus influenzae
 ```{r filter two specific genomics of Mcat and Hinflu}
+
 specific_filter <- assembly_species_filtering %>%
   mutate(Species.x = recode(Species.x, "Moraxella_catarrhalis" = "Moraxella catarrhalis", "Haemophilus_influenzae" = "Haemophilus influenzae")) %>%
+  group_by(npg_run_id) %>%
+  mutate(proportion = matches / sum(matches)) %>%
+  mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
+  fill(Matching_proportion, .direction = "updown") %>%
   filter(!is.na(Species.x),
          !is.na(Species.y),
          Species.x %in% c("Moraxella catarrhalis", "Haemophilus influenzae"), 
          Species.x == Species.y) %>%
-  select(npg_run_id, `Total length`, `GC (%)`, N50, Species.x, matches, Total, name, sample_common_name, total_reads, Isolate, Cohort, Country, Region, Year, Description, Species.y) %>%
-  group_by(npg_run_id) %>%
-  mutate(proportion = matches / sum(matches)) %>%
-  mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-  fill(Matching_proportion, .direction = "updown")
+  select(npg_run_id, `Total length`, `GC (%)`, N50, Species.x, matches, Total, name, sample_common_name, total_reads, Isolate, Cohort, Country, Region, Year, Description, Species.y, Matching_proportion) %>% 
+  dplyr::filter(Matching_proportion > 0.66)
+
 specific_filter
 
 ```
@@ -530,7 +533,7 @@ Morax_filter
 
 ```{r generate list of npg_run_id Moraxella cattarrhalis}
 write.table(Morax_filter,
-            file = "./sample_data/npg_run_id_2ndfinal_Mcattarrhalis.csv",
+            file = "./sample_data/npg_run_id_4thfilter_Mcattarrhalis.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
@@ -549,14 +552,12 @@ Hinflu_filter
 ```{r generate npg_run_id list of Haemophilus influenzae}
 
 write.table(Hinflu_filter,
-            file = "./sample_data/npg_run_id_2ndfinal_Hinfluenzae.csv",
+            file = "./sample_data/npg_run_id_4thfilter_Hinfluenzae.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
 
 ```
-
-
 
 
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
