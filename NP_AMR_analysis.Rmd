@@ -839,155 +839,9 @@ join_epi_Global_data
 ## Use capsule typer to identify serotypes
 
 ## Use PopPUNK to categorise isolates
-
-
 ## Use Panaroo to identify genes
+
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
-
-```{r tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns}
-
-Moraxella_gene_presence <- read.csv(
-  "./panaroo_moraxella_file/Moraxella_gene_presence_absence.csv",
-  header = TRUE,
-  comment.char = "",
-  check.names = FALSE,
-  sep = ","
-  ) %>%
-  tidyr::pivot_longer(
-    cols = -c(
-      Gene,
-      `Non-unique Gene name`, 
-      Annotation
-      ),
-    names_to = "npg_run_id",
-    values_to = "CDS"
-    )
-Moraxella_gene_presence
-```
-
-```{r left_join Moraxella gene presence dataset with sample_df}
-
-Moraxella_gene_sample <- 
-  left_join(Moraxella_gene_presence, 
-            sample_df, 
-            by = "npg_run_id")
-Moraxella_gene_sample
-```
-
-```{r classifying Moraxella gene sample dataset in early and late year of UK country}
-
-UK_early_late_df <- Moraxella_gene_sample %>%
-  filter(Country == "United Kingdom",
-         Year %in% c(2007:2011, 2019:2020)
-         ) %>%
-  mutate(Period = 
-           case_when(Year >= 2007
-                     & Year <= 2011 ~ "Early",
-                     Year >= 2019 & Year <= 2020 ~ "Late")
-         )
-```
-
-```{r calculate the number of Moraxella genome in each dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand"),
-    Species == "Moraxella catarrhalis", 
-    !is.na(npg_run_id)
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id), 
-            .groups = "drop")
-Genome_Count
-```
-
-```{r calculate the number genome count and gene frequencies of Moraxella in dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Genome_Count
-
-Count_CDS <- Moraxella_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Count_CDS
-gene_freq <- Count_CDS %>%
-  left_join(Genome_Count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-gene_freq
-```
-
-```{r reform gene_freq to wide format}
-gene_freq_wide <- gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-  pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-gene_freq_wide
-```
-
-```{r plot scatter graph of frequency genes in between United Kingdom and Cambodia Country}
-
-ggplot(gene_freq_wide, 
-       aes(x = Cambodia, 
-           y = `United Kingdom`)) + 
-  geom_point(alpha = 0.7, 
-             color = "blue") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "red")+ 
-  labs(title = "Moraxella catarrhalis\nFrequency genes by Country", 
-       x = "Cambodia", 
-       y = "United Kingdom") + 
-  theme_minimal()
-```
-
-```{r plot scatter graph of Moraxella catarrhalis frequency genes in between United Kingdom and Thailand Country}
-ggplot(gene_freq_wide, 
-       aes(x = Thailand, 
-           y = `United Kingdom`)) + 
-  geom_point(alpha = 0.7, 
-             color = "blue") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "red") + 
-  labs(title = "Moraxella catarrhalis Frequency genes by Country", 
-       x = "Thailand", 
-       y = "United Kingdom") + 
-  theme_minimal()
-```
-
-```{r plot scatter graph of Moraxella frequency genes in between Cambodia and Thailand Country}
-ggplot(gene_freq_wide, 
-       aes(x = Thailand, 
-           y = Cambodia)) + 
-  geom_point(alpha = 0.7, 
-             color = "blue") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "red")+ 
-  labs(title = "Moraxella catrrhalis\nFrequency genes by Country", 
-       x = "Thailand", 
-       y = "Cambodia") + 
-  theme_minimal()
-```
-
-```{r plot histogram of Moraxella catrrhalis frequency genes comparing with each countries}
-
-ggplot(gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal()
-
-```
 
 ### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.66 and as well after completed Panaroo script.
 
@@ -1117,7 +971,7 @@ ggplot(Hinflu_version4_genefreq,
 
 ### We will analyze gene presence absence after re-filtered npg_run_id by N50, Total length, and matching proportion > 0.66 and then after ran Panaroo for Moraxella cattarrhalis. We will compare geneomic dataset of Moraxella cattarrhalis from South Africa, UK, Cambodia and Thailand.
 
-```{r import gene prensence absence file after ran quality control from Panaroo script}
+```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns}
 Mcat_version4_gene_preabsence <- read.csv(
   "./Mcat_SA_gene_presence_absence/4thMcat_gene_preabsence.csv",
   header = TRUE,
@@ -1140,6 +994,20 @@ Mcat_version4_gene_preabsence
 ```{r merge data between Mcat version4 gene presence absence and sample_df by npg run id}
 Mcat_version4_gene_sample <- left_join(Mcat_version4_gene_preabsence, sample_df, by = "npg_run_id")
 Mcat_version4_gene_sample
+```
+
+```{r classifying Moraxella gene sample dataset in early and late year of UK country}
+
+UK_early_late_df <- Mcat_version4_gene_sample %>%
+  filter(Country == "United Kingdom",
+         Year %in% c(2007:2011, 2019:2020)
+         ) %>%
+  mutate(Period = 
+           case_when(Year >= 2007
+                     & Year <= 2011 ~ "Early",
+                     Year >= 2019 & Year <= 2020 ~ "Late")
+         )
+UK_early_late_df
 ```
 
 ```{r calculate number genomes and frequnecy genes for M.cattarrhali}
