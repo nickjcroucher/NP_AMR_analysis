@@ -1157,6 +1157,20 @@ ggplot(Mcat_version4_genefreq,
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
+```{r install ggpairs packages}
+install.packages("GGally")
+library(GGally)
+
+```
+
+```{r creat pairs plot}
+ggpairs(Mcat_version4_genefreq, aes(color =  Country))
+```
+
+```{r }
+ggpairs(Mcat_version4_gene_sample,aes(color = Species))
+```
+
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
