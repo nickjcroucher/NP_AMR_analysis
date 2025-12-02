@@ -1289,7 +1289,6 @@ ggplot(Mcat_version4_genefreq,
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
-
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
