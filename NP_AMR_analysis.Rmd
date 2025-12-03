@@ -833,12 +833,12 @@ join_epi_Global_data
 
 ```
 
-
 ## Use AMR finder to identify resistance genes
 
 ## Use capsule typer to identify serotypes
 
 ## Use PopPUNK to categorise isolates
+
 ## Use Panaroo to identify genes
 
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
@@ -909,6 +909,7 @@ Hinflu_version4_genefreq_wide
 ```
 
 ```{r plot scatter graph between Cambodia and United Kingdom}
+
 ggplot(Hinflu_version4_genefreq_wide, 
        aes(x = Cambodia, 
            y = `United Kingdom`)) + 
@@ -922,6 +923,7 @@ ggplot(Hinflu_version4_genefreq_wide,
        x = "Cambodia", 
        y = "United Kingdom") + 
   theme_minimal()
+
 ```
 
 ```{r plot scatter graph between Cambodia and Thailand}
