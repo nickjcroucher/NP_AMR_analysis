@@ -908,7 +908,7 @@ pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
 Hinflu_version4_genefreq_wide
 ```
 
-```{r plot scatter graph between Cambodia and United Kingdom}
+```{r plot scatter graph between Cambodia-United Kingdom-1}
 
 ggplot(Hinflu_version4_genefreq_wide, 
        aes(x = Cambodia, 
@@ -926,7 +926,7 @@ ggplot(Hinflu_version4_genefreq_wide,
 
 ```
 
-```{r plot scatter graph between Cambodia and Thailand}
+```{r plot scatter graph between Cambodia-Thailand-1}
 ggplot(Hinflu_version4_genefreq_wide, 
        aes(x = Cambodia, 
            y = Thailand)) + 
@@ -942,7 +942,7 @@ ggplot(Hinflu_version4_genefreq_wide,
   theme_minimal()
 ```
 
-```{r plot scatter graph between United Kingdom and Thailand}
+```{r plot scatter graph between United Kingdom-Thailand-1}
 ggplot(Hinflu_version4_genefreq_wide, 
        aes(x = `United Kingdom`, 
            y = Thailand)) + 
@@ -958,7 +958,7 @@ ggplot(Hinflu_version4_genefreq_wide,
   theme_minimal()
 ```
 
-```{r plot histogram between United Kingdom, Cambodia and Thailand}
+```{r plot histogram between United Kingdom, Cambodia and Thailand-1}
 ggplot(Hinflu_version4_genefreq, 
        aes(x = Frequency)) + 
   geom_histogram(color = "blue") + 
@@ -1012,7 +1012,7 @@ UK_early_late_df <- Mcat_version4_gene_sample %>%
 UK_early_late_df
 ```
 
-```{r calculate number genomes and frequnecy genes for M.cattarrhali}
+```{r calculate number genomes and frequnecy genes for M.cattarrhalis}
 # Count distinct genomes per country
 Mcat_version4_genecount <- Mcat_version4_gene_sample %>%
   filter(!is.na(npg_run_id),
@@ -1050,7 +1050,7 @@ pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
 Mcat_version4_genefreq_wide
 ```
 
-```{r plot scatter graph between Cambodia and United Kingdom}
+```{r plot scatter graph between Cambodia-United Kingdom-2}
 ggplot(Mcat_version4_genefreq_wide, 
        aes(x = Cambodia, 
            y = `United Kingdom`)) +
@@ -1066,7 +1066,7 @@ ggplot(Mcat_version4_genefreq_wide,
   theme_minimal()
 ```
 
-```{r plot scatter graph between Cambodia and Thailand}
+```{r plot scatter graph between Cambodia-Thailand-2}
 ggplot(Mcat_version4_genefreq_wide, 
        aes(x = Cambodia, 
            y = Thailand)) + 
@@ -1082,7 +1082,7 @@ ggplot(Mcat_version4_genefreq_wide,
   theme_minimal()
 ```
 
-```{r plot scatter graph between Cambodia and South Africa}
+```{r plot scatter graph between Cambodia-South Africa-2}
 ggplot(Mcat_version4_genefreq_wide, 
        aes(x = Cambodia, 
            y = `South Africa`)) + 
@@ -1098,7 +1098,7 @@ ggplot(Mcat_version4_genefreq_wide,
   theme_minimal()
 ```
 
-```{r plot scatter graph between United Kingdom and Thailand}
+```{r plot scatter graph between United Kingdom-Thailand-2}
 ggplot(Mcat_version4_genefreq_wide, 
        aes(x = `United Kingdom`,
            y = Thailand)) + 
