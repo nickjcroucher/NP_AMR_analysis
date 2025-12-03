@@ -1159,12 +1159,6 @@ ggplot(Mcat_version4_genefreq,
         plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
-```{r install ggpairs packages}
-install.packages("GGally")
-library(GGally)
-
-```
-
 ```{r plot ggpairs for Moraxella cattarrhalis}
 
 ggpairs(Mcat_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
