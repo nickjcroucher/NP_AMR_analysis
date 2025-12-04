@@ -1172,3 +1172,12 @@ ggpairs(Hinflu_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "Unit
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
+
+```{r look at cluster for Mcattarrhali}
+Mcat_numeric <- as.data.frame(sapply(Mcat_version4_genefreq_wide, as.numeric))
+
+Mcat_dist_matrix <- dist(Mcat_numeric)
+
+plot(Mcat_dist_matrix, main = "Cluster Dendrogram of M. cattarrhalis")
+
+```
