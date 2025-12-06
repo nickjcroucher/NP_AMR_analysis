@@ -12,6 +12,7 @@ require(magrittr)
 require(tidyverse)
 require(stringr)
 require(GGally)
+
 ```
 
 ## Load data from project
@@ -1173,11 +1174,15 @@ ggpairs(Hinflu_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "Unit
 
 ## Compare gene frequencies between samples
 
-```{r look at cluster for Mcattarrhali}
-Mcat_numeric <- as.data.frame(sapply(Mcat_version4_genefreq_wide, as.numeric))
+```{r look at cluster for Hinfluenzae}
+D <- read.dist("Haemo_influ_viz4_core_distances.phylip")
+nj_tree <- nj(D)
+plot(nj_tree)
+```
 
-Mcat_dist_matrix <- dist(Mcat_numeric)
 
-plot(Mcat_dist_matrix, main = "Cluster Dendrogram of M. cattarrhalis")
+```{r}
 
+tree <- read.tree("./Haemo_influ_viz4_core_distances.nwk")
+plot(tree)
 ```
