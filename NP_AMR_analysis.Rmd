@@ -1200,7 +1200,7 @@ poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResi
 
 The distance distribution for the seroresistant isolates demonstrates the isolates are <1% divergent in the core genome, with ~12.5% divergence in the accessory genome.
 
-The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boudary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
+The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boundary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
 
 ``` {bash Refine model to seroresistant isolates}
 
@@ -1219,6 +1219,39 @@ poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_
 ```
 
 The output is available to view on [microreact](https://microreact.org/project/cYSZ1g2Scstfbg1hVpoe7r-seroresistant-moraxella-poppunk) using the [file](./PopPUNK_analysis/Mcat_seroResistant_viz.microreact).
+
+Finally, we arrive at a classification of all *Moraxella catarrhalis* isolates:
+
+``` {r Classification of Mcat isolates}
+
+mcat_strains_df <-
+  mcat_categorisation %>% 
+    dplyr::select(-Cluster) %>% 
+    dplyr::rename(Classification = Label) %>% 
+    dplyr::left_join(
+      read_csv("./PopPUNK_analysis/Mcat_seroSensitive_refined_model_db_clusters.csv") %>% 
+        dplyr::rename(SerosensitiveCluster = Cluster) %>% 
+        dplyr::mutate(SerosensitiveCluster = paste0("Serosensitive_",SerosensitiveCluster)),
+      by = "Taxon"
+    ) %>% 
+    dplyr::left_join(
+      read_csv("./PopPUNK_analysis/Mcat_seroResistant_refined_model_db_clusters.csv") %>% 
+        dplyr::rename(SeroresistantCluster = Cluster) %>% 
+        dplyr::mutate(SeroresistantCluster = paste0("Seroresistant_",SeroresistantCluster)),
+      by = "Taxon"
+    ) %>% 
+    dplyr::mutate(
+      Cluster =
+        dplyr::case_when(
+          Classification == "Seroresistant" ~ SeroresistantCluster,
+          Classification == "Serosensitive" ~ SerosensitiveCluster,
+          TRUE ~ gsub(" ","_",Classification)
+        )
+    ) %>% 
+    dplyr::select(Taxon,Classification,Cluster)
+
+```
+
 
 ## Use Panaroo to identify genes
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
