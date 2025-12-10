@@ -1252,6 +1252,39 @@ mcat_strains_df <-
 
 ```
 
+### Querying the *H. influenzae* PopPUNK scheme
+
+The *H. influenzae* v2 [database](https://www.bacpop.org/poppunk-databases/) was queried:
+
+``` {bash Hflu PopPUNK query, eval = FALSE}
+
+poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk_input.txt --output Hinflu_poppunk_query --update-db --threads 8
+
+```
+
+This generated in this distance distribution:
+
+![Haemophilus query distance distribution](./PopPUNK_analysis/Hinflu_poppunk_query_distanceDistribution.png)
+
+The output was visualised:
+
+``` {bash Hflu PopPUNK visualisation, eval = FALSE}
+
+poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Haemo_influ_viz4 --microreact --threads 8 --include-files Hflu_include.file --overwrite
+
+```
+
+The output can be viewed on [Microreact](https://microreact.org/project/qCSg4Ut9QYfAXo3tK3gTDu-h-influenzae-poppunk), generated from this [file](./PopPUNK_analysis/Hflu_viz.microreact).
+
+The clustering can be processed:
+
+``` {r Process Haemophilus clustering data}
+
+# Needs to be filtered using the NPG list
+hflu_strains_df <-
+  read_csv("./PopPUNK_analysis/Hinflu_poppunk_query_clusters.csv")
+
+```
 
 ## Use Panaroo to identify genes
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
