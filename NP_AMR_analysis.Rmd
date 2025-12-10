@@ -1101,7 +1101,7 @@ This results in a boundary:
 
 This classification can be visualised:
 
-``` {bash Visualise the overall Moraxella population structure}
+``` {bash Visualise the overall Moraxella population structure, eval = FALSE}
 
 poppunk_visualise --ref-db Mcat_poppunk_db --model-dir Mcat_seroClassification_db --microreact --output Mcat_seroClassification_viz --gpu-dist
 
@@ -1149,7 +1149,7 @@ ggplot(mcat_categorisation,
 
 Separate PopPUNK databases can be generated for the seroresistant and serosensitive isolates:
 
-``` {bash Prune main databases into}
+``` {bash Prune main databases into seroresistant and serosensitive, eval = FALSE}
 
 rm -rf Mcat_seroSensitive_db Mcat_seroResistant_db
 # Copy the overall database for pruning
@@ -1169,7 +1169,7 @@ poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroRes
 
 First, a DBSCAN model can be fitted to the smaller set of serosensitive isolates:
 
-``` {bash Fit model to serosensitive isolates}
+``` {bash Fit model to serosensitive isolates, eval = FALSE}
 
 poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --gpu-graph
 
@@ -1178,7 +1178,7 @@ poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSens
 ![DBSCAN fit to serosensitive isolate](./PopPUNK_analysis/Mcat_seroSensitive_model_db_dbscan.png)
 The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.0701298,0.08763877) and end of (0.81559259,0.69867307), using the positions of the DBSCAN clusters:
 
-``` {bash Refine model to serosensitive isolates}
+``` {bash Refine model to serosensitive isolates, eval = FALSE}
 
 poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Serosensitive.manual_start
 
@@ -1190,7 +1190,7 @@ The output is available to view on [microreact](https://microreact.org/project/r
 
 A DBSCAN model can also be fitted to the seroresistant isolates:
 
-``` {bash Fit model to seroresistant isolates}
+``` {bash Fit model to seroresistant isolates, eval = FALSE}
 
 poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db --gpu-graph
 
@@ -1202,7 +1202,7 @@ The distance distribution for the seroresistant isolates demonstrates the isolat
 
 The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boundary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
 
-``` {bash Refine model to seroresistant isolates}
+``` {bash Refine model to seroresistant isolates, eval = FALSE}
 
 poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Seroresistant.manual_start
 
@@ -1212,7 +1212,7 @@ poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroR
 
 The output can then be visualised, and the strains classified:
 
-``` {bash Refine model to seroresistant isolates}
+``` {bash Refine model to seroresistant isolates, eval = FALSE}
 
 poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_refined_model_db --threads 1 --output Mcat_seroResistant_viz --microreact
 
@@ -1287,6 +1287,7 @@ hflu_strains_df <-
 ```
 
 ## Use Panaroo to identify genes
+
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
 ```{r tidy up the Moraxell gene presence absence columns to longer format columns}
