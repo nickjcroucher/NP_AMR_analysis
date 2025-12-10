@@ -840,6 +840,221 @@ join_epi_Global_data
 
 ## Use PopPUNK to categorise isolates
 
+### Definition of the *M. catarrhalis* PopPUNK scheme
+
+The *M. catarrhalis* population can be divided into serosensitive and seroresistant isolates. The serosensitive isolates are associated with deeper branches than the seroresistant isolates. Therefore it is necessary to define separate PopPUNK schemes for these two types.
+
+First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.5:
+
+``` {bash Calculate PopPUNK distances, eval = FALSE}
+
+poppunk --create-db --output Mcat_poppunk_db --r-files Mcat_poppunk.in --threads 24 --gpu-dist --min-k 13 --max-k 39
+
+```
+
+The distance distribution shows:
+
+![Pairwise distance distribution](./PopPUNK_analysis/Mcat_poppunk_db_distanceDistribution.png)
+
+An initial refinement was used to identify a boundary separating the serosensitive and seroresistant isolates. This required searching the region bounded by (0.025,0.25) and (0.0325,0.275):
+
+``` {bash Calculate PopPUNK distances, eval = FALSE}
+
+poppunk --fit-model refine --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db --gpu-graph  --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
+
+```
+
+This results in a boundary:
+
+![Boundary](./PopPUNK_analysis/Mcat_seroClassification_db_refined_fit.png)
+
+This classification can be visualised:
+
+``` {bash Visualise the overall Moraxella population structure, eval = FALSE}
+
+poppunk_visualise --ref-db Mcat_poppunk_db --model-dir Mcat_seroClassification_db --microreact --output Mcat_seroClassification_viz --gpu-dist
+
+```
+
+These isolates can be viewed in [microreact](https://microreact.org/project/hQ9WcBim9Yspg9vEvVPWqr-moraxella-population-structure) - the file is available as [Mcat_seroClassification_viz.microreact](./PopPUNK_analysis/Mcat_seroClassification_viz.microreact).
+
+In accordance with [previous](https://www.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.001488) [work](https://www.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.000820), The isolates can therefore be classified as seroresistant (cluster 1), serosensitive (cluster 2), atypical cluster 1 (cluster 3), and atypical cluster 2 (cluster 4).
+
+``` {r Read in Moraxella categorisation}
+
+cluster_labels = tibble(
+  Cluster = 1:4,
+  Label = c("Seroresistant","Serosensitive","Atypical 1","Atypical 2")
+)
+
+mcat_categorisation <-
+  read.csv("./PopPUNK_analysis/Mcat_seroClassification_db_clusters.csv") %>%
+    dplyr::left_join(cluster_labels, by = "Cluster")
+
+mcat_non_seroResistant_list <-
+  mcat_categorisation %>% dplyr::filter(Label != "Seroresistant") %>% dplyr::pull(Taxon)
+
+mcat_non_seroSensitive_list <-
+  mcat_categorisation %>% dplyr::filter(Label != "Serosensitive") %>% dplyr::pull(Taxon)
+
+write.table(mcat_non_seroResistant_list,
+            file = "./PopPUNK_analysis/Mcat_non_seroResistant.names",
+            quote = FALSE,
+            col.names = FALSE,
+            row.names = FALSE)
+
+write.table(mcat_non_seroSensitive_list,
+            file = "./PopPUNK_analysis/Mcat_non_seroSensitive.names",
+            quote = FALSE,
+            col.names = FALSE,
+            row.names = FALSE)
+
+ggplot(mcat_categorisation,
+       aes(x = Label)) +
+  geom_bar() +
+  theme_bw()
+
+```
+
+Separate PopPUNK databases can be generated for the seroresistant and serosensitive isolates:
+
+``` {bash Prune main databases into seroresistant and serosensitive, eval = FALSE}
+
+rm -rf Mcat_seroSensitive_db Mcat_seroResistant_db
+# Copy the overall database for pruning
+mkdir Mcat_seroSensitive_db
+mkdir Mcat_seroResistant_db
+for f in Mcat_poppunk_db/*; do
+  g=`basename $f`;
+  cp $f Mcat_seroSensitive_db/Mcat_seroSensitive_db${g#Mcat_poppunk_db};
+  cp $f Mcat_seroResistant_db/Mcat_seroResistant_db${g#Mcat_poppunk_db};
+done
+# Prune the serosensitive database
+poppunk --qc-db --ref-db Mcat_seroSensitive_db --remove-samples Mcat_non_seroSensitive.names --type-isolate SAMEA5130801_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+# Prune the seroresistant database
+poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroResistant.names --type-isolate SAMEA4622306_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+
+```
+
+First, a DBSCAN model can be fitted to the smaller set of serosensitive isolates:
+
+``` {bash Fit model to serosensitive isolates, eval = FALSE}
+
+poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --gpu-graph
+
+```
+
+![DBSCAN fit to serosensitive isolate](./PopPUNK_analysis/Mcat_seroSensitive_model_db_dbscan.png)
+The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.0701298,0.08763877) and end of (0.81559259,0.69867307), using the positions of the DBSCAN clusters:
+
+``` {bash Refine model to serosensitive isolates, eval = FALSE}
+
+poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Serosensitive.manual_start
+
+```
+
+![Refined fit to serosensitive isolates](./PopPUNK_analysis/Mcat_seroSensitive_refined_model_db_refined_fit.png)
+
+The output is available to view on [microreact](https://microreact.org/project/rpga9c9gmDfso7kugYhs8G-serosensitive-moraxella-poppunk) using the [file](./PopPUNK_analysis/Mcat_seroSensitive_viz.microreact).
+
+A DBSCAN model can also be fitted to the seroresistant isolates:
+
+``` {bash Fit model to seroresistant isolates, eval = FALSE}
+
+poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db --gpu-graph
+
+```
+
+![DBSCAN fit to seroresistant isolate](./PopPUNK_analysis/Mcat_seroResistant_model_db_dbscan.png)
+
+The distance distribution for the seroresistant isolates demonstrates the isolates are <1% divergent in the core genome, with ~12.5% divergence in the accessory genome.
+
+The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boundary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
+
+``` {bash Refine model to seroresistant isolates, eval = FALSE}
+
+poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Seroresistant.manual_start
+
+```
+
+![Refined fit to seroresistant isolates](./PopPUNK_analysis/Mcat_seroResistant_refined_model_db_refined_fit.png)
+
+The output can then be visualised, and the strains classified:
+
+``` {bash Refine model to seroresistant isolates, eval = FALSE}
+
+poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_refined_model_db --threads 1 --output Mcat_seroResistant_viz --microreact
+
+```
+
+The output is available to view on [microreact](https://microreact.org/project/cYSZ1g2Scstfbg1hVpoe7r-seroresistant-moraxella-poppunk) using the [file](./PopPUNK_analysis/Mcat_seroResistant_viz.microreact).
+
+Finally, we arrive at a classification of all *Moraxella catarrhalis* isolates:
+
+``` {r Classification of Mcat isolates}
+
+mcat_strains_df <-
+  mcat_categorisation %>% 
+    dplyr::select(-Cluster) %>% 
+    dplyr::rename(Classification = Label) %>% 
+    dplyr::left_join(
+      read_csv("./PopPUNK_analysis/Mcat_seroSensitive_refined_model_db_clusters.csv") %>% 
+        dplyr::rename(SerosensitiveCluster = Cluster) %>% 
+        dplyr::mutate(SerosensitiveCluster = paste0("Serosensitive_",SerosensitiveCluster)),
+      by = "Taxon"
+    ) %>% 
+    dplyr::left_join(
+      read_csv("./PopPUNK_analysis/Mcat_seroResistant_refined_model_db_clusters.csv") %>% 
+        dplyr::rename(SeroresistantCluster = Cluster) %>% 
+        dplyr::mutate(SeroresistantCluster = paste0("Seroresistant_",SeroresistantCluster)),
+      by = "Taxon"
+    ) %>% 
+    dplyr::mutate(
+      Cluster =
+        dplyr::case_when(
+          Classification == "Seroresistant" ~ SeroresistantCluster,
+          Classification == "Serosensitive" ~ SerosensitiveCluster,
+          TRUE ~ gsub(" ","_",Classification)
+        )
+    ) %>% 
+    dplyr::select(Taxon,Classification,Cluster)
+
+```
+
+### Querying the *H. influenzae* PopPUNK scheme
+
+The *H. influenzae* v2 [database](https://www.bacpop.org/poppunk-databases/) was queried:
+
+``` {bash Hflu PopPUNK query, eval = FALSE}
+
+poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk_input.txt --output Hinflu_poppunk_query --update-db --threads 8
+
+```
+
+This generated in this distance distribution:
+
+![Haemophilus query distance distribution](./PopPUNK_analysis/Hinflu_poppunk_query_distanceDistribution.png)
+
+The output was visualised:
+
+``` {bash Hflu PopPUNK visualisation, eval = FALSE}
+
+poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Haemo_influ_viz4 --microreact --threads 8 --include-files Hflu_include.file --overwrite
+
+```
+
+The output can be viewed on [Microreact](https://microreact.org/project/qCSg4Ut9QYfAXo3tK3gTDu-h-influenzae-poppunk), generated from this [file](./PopPUNK_analysis/Hflu_viz.microreact).
+
+The clustering can be processed:
+
+``` {r Process Haemophilus clustering data}
+
+# Needs to be filtered using the NPG list
+hflu_strains_df <-
+  read_csv("./PopPUNK_analysis/Hinflu_poppunk_query_clusters.csv")
+
+```
+
 ## Use Panaroo to identify genes
 
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
