@@ -1065,6 +1065,19 @@ hflu_strains_extract <- hflu_strains_df %>%
 
 ```
 
+```{r}
+
+hflu_strains_extract1 <- hflu_strains_df %>%
+  
+  mutate(npg_run_id = 
+           if_else(str_detect(Taxon, "_|#"), Taxon, "NA"), 
+         id_run = 
+           if_else(str_detect(Taxon, "#"), 
+                   str_extract(Taxon, "^[^#]+"), "NA"))
+
+```
+
+
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
 
 hflu_extract_sample_df <- right_join(sample_df, hflu_strains_extract, by = "id_run")
@@ -1116,63 +1129,28 @@ mcat_strains_sample
 
 ```
 
-Mcat_version4_genecount <- Mcat_version4_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_count = n_distinct(npg_run_id),
-    .groups = "drop")
-
-Mcat_version4_cdscount <- Mcat_version4_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Mcat_version4_genefreq <- Mcat_version4_cdscount %>%
-  left_join(Mcat_version4_genecount, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_count)
-Mcat_version4_genefreq
-
-
 ```{r calculate frequencies}
 mcat_strains_freq <- mcat_strains_sample %>%
   filter(!is.na(npg_run_id),
+         !is.na(Classification),
+         !is.na(Cluster),
+         !is.na(Species), 
          Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  group_by(Country) %>%
-  summarise(Strains = n_distinct(npg_run_id), .groups = "drop")
+  select(id_run, npg_run_id, Country, Region, Year, Species, Classification, Cluster) %>%
+  group_by(Country, Year) %>%
+  summarise(Strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
+  arrange(Country, Year)
 mcat_strains_freq
 
-mcat_strainscount_freq <- mcat_strains_freq %>% 
+mcat_count_freq <- mcat_strains_freq %>%
   group_by(Country) %>%
-  summarise(Strains_count = n(), 
-            .groups = "drop") %>%
-  arrange(Country, desc(Strains_count))
-mcat_strainscount_freq
-
-mcat_count_freq <- mcat_strainscount_freq %>%
-  left_join(mcat_strains_freq, 
-            by = "Country") %>%
   mutate(Frequency = Strains_count / (sum(Strains_count)) * 100)
 mcat_count_freq
 ```
 
-```{r format columns to wider columns}
-mcat_strains_freqwide <- mcat_strains_freq %>%
-  select(Country, , Frequency) %>%
-  pivot_wider(id_cols = Year, names_from = Country, values_from = Frequency)
-mcat_strains_freqwide
-
-```
-
 ```{r plot strain frequencies per country and year}
 
-ggplot(mcat_strains_freqwide, aes(x = Cambodia, y = Year) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Year", y = "Frequency", fill = "Cluster")
+ggplot(mcat_count_freq, aes(x = Year, y = Frequency, fill = Country)) + geom_col(position = "dodge") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Year", y = "Frequency", fill = "Cluster")
 ```
 
 ### Use Panaroo to identify genes
