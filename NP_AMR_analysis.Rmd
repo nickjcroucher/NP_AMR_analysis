@@ -1080,51 +1080,61 @@ hflu_strains_extract1 <- hflu_strains_df %>%
 
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
 
-hflu_extract_sample_df <- right_join(sample_df, hflu_strains_extract, by = "id_run")
+hflu_extract_sample_df <- sample_df %>%
+  inner_join(hflu_strains_extract1, by = "npg_run_id") %>% 
+  select(npg_run_id, Country, Region, Year, Species, Taxon, Cluster)
 hflu_extract_sample_df
 
 ```
 
-```{r merge NPG_sample_df with hflu_strains_df by Taxon}
-
-hflu_strains_npg_sample <- merg_NPG_sample_df %>%
-  inner_join(hflu_strains_df, by = "Taxon")
-hflu_strains_npg_sample
-```
-
 ```{r calculate frequencies}
-Hinflu_freq <- hflu_strains_npg_sample %>%
-  group_by(npg_run_id, Country, Year, Taxon, Cluster) %>%
-  summarise(Count = n(), .group = "drop") %>%
-  group_by(Country, Year) %>%
-  mutate(Frequency = Count / sum(Count))
+hflu_freq <- hflu_extract_sample_df %>%
+  filter(!is.na(npg_run_id),
+         !is.na(Species),
+         !is.na(Country),
+         Country %in% c("United Kingdom", "Cambodia", "Thailand")) %>%
+  group_by(Country, Cluster) %>%
+  summarise(strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
+  arrange(Country)
+hflu_freq
 
-```
-
-```{r format columns to wider columns}
-Hinflu_freq_wide <- Hinflu_freq %>%
-  pivot_wider(names_from = Cluster, values_from = Frequency, values_fill = 0)
+hflu_strains_freq <- hflu_freq %>%
+  group_by(Country) %>% 
+  mutate(Frequency = strains_count / sum(strains_count))
+hflu_strains_freq
 
 ```
 
 ```{r plot strain frequencies per country and year}
 
-ggplot(Hinflu_freq_wide, aes(x = Year, y = Frequency, fill = as.factor(Cluster))) + geom_bar(stat = "identity", position = "stack") + facet_wrap(~ Country) + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Year", y = "Frequency", fill = "Cluster")
+ggplot(hflu_strains_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
+```
+```{r reformat columns of hflu_strains_freq to wide format columns}
+hflu_strains_widefreq <- hflu_strains_freq %>%
+  filter(!is.na(Country),
+         Country %in% c("Cambodia", "Thailand", "United Kingdom")) %>%
+  select(Country, Cluster, strains_count, Frequency) %>%
+pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
+hflu_strains_widefreq
+
 ```
 
+```{r plot ggpair for Hflu}
+ggpairs(hflu_strains_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
 
+```
 
 ```{r format Taxon column and rename Taxon as npg_run_id}
 
 mcat_strains_rename <- mcat_strains_df %>%
-  mutate(Taxon = gsub("_fa$", "", Taxon)) %>%
+  mutate(Taxon = gsub("_fa$", "", Taxon)) %>% 
   rename(npg_run_id = Taxon)
 mcat_strains_rename
   
 ```
 
 ```{r merge sample_df with mcat_strains_rename}
-mcat_strains_sample <- left_join(sample_df, mcat_strains_rename, by = "npg_run_id")
+mcat_strains_sample <- right_join(sample_df, mcat_strains_rename, by = "npg_run_id") 
 mcat_strains_sample
 
 ```
@@ -1137,20 +1147,32 @@ mcat_strains_freq <- mcat_strains_sample %>%
          !is.na(Species), 
          Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
   select(id_run, npg_run_id, Country, Region, Year, Species, Classification, Cluster) %>%
-  group_by(Country, Year) %>%
+  group_by(Country, Cluster) %>%
   summarise(Strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
-  arrange(Country, Year)
+  arrange(Country)
 mcat_strains_freq
 
 mcat_count_freq <- mcat_strains_freq %>%
   group_by(Country) %>%
-  mutate(Frequency = Strains_count / (sum(Strains_count)) * 100)
+  mutate(Frequency = Strains_count / sum(Strains_count))
 mcat_count_freq
 ```
 
 ```{r plot strain frequencies per country and year}
 
-ggplot(mcat_count_freq, aes(x = Year, y = Frequency, fill = Country)) + geom_col(position = "dodge") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Year", y = "Frequency", fill = "Cluster")
+ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_col(position = "dodge") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
+```
+
+```{r format columns to wide columns}
+mcat_count_widefreq <- mcat_count_freq %>%
+  select(Country, Cluster, Strains_count, Frequency) %>%
+pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
+mcat_count_widefreq
+
+```
+
+```{r plot ggpairs of Moraxella}
+ggpairs(mcat_count_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
 ```
 
 ### Use Panaroo to identify genes
@@ -1485,16 +1507,3 @@ ggpairs(Hinflu_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "Unit
 ## Compare strain frequncies between samples
 
 ## Compare gene frequencies between samples
-
-```{r look at cluster for Hinfluenzae}
-D <- read.dist("Haemo_influ_viz4_core_distances.phylip")
-nj_tree <- nj(D)
-plot(nj_tree)
-```
-
-
-```{r}
-
-tree <- read.tree("./Haemo_influ_viz4_core_distances.nwk")
-plot(tree)
-```
