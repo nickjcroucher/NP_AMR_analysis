@@ -1065,7 +1065,7 @@ hflu_strains_extract <- hflu_strains_df %>%
 
 ```
 
-```{r}
+```{r reformat the columns of Taxon as the npg_run_id}
 
 hflu_strains_extract1 <- hflu_strains_df %>%
   
@@ -1085,6 +1085,16 @@ hflu_extract_sample_df <- sample_df %>%
   select(npg_run_id, Country, Region, Year, Species, Taxon, Cluster)
 hflu_extract_sample_df
 
+```
+
+```{r export file as csv format}
+
+write.table(hflu_extract_sample_df,
+            file = "./PopPUNK_analysis/hflu_strains.csv",
+            sep = "\t",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
 ```
 
 ```{r calculate frequencies}
@@ -1109,6 +1119,7 @@ hflu_strains_freq
 
 ggplot(hflu_strains_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
 ```
+
 ```{r reformat columns of hflu_strains_freq to wide format columns}
 hflu_strains_widefreq <- hflu_strains_freq %>%
   filter(!is.na(Country),
@@ -1124,6 +1135,7 @@ ggpairs(hflu_strains_widefreq, columns = c("Cambodia", "Thailand", "United Kingd
 
 ```
 
+
 ```{r format Taxon column and rename Taxon as npg_run_id}
 
 mcat_strains_rename <- mcat_strains_df %>%
@@ -1134,7 +1146,9 @@ mcat_strains_rename
 ```
 
 ```{r merge sample_df with mcat_strains_rename}
-mcat_strains_sample <- right_join(sample_df, mcat_strains_rename, by = "npg_run_id") 
+mcat_strains_sample <- sample_df %>% 
+  right_join(mcat_strains_rename, by = "npg_run_id") %>%
+  select(npg_run_id, Country, Year, Species, Classification, Cluster)
 mcat_strains_sample
 
 ```
@@ -1146,8 +1160,8 @@ mcat_strains_freq <- mcat_strains_sample %>%
          !is.na(Cluster),
          !is.na(Species), 
          Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  select(id_run, npg_run_id, Country, Region, Year, Species, Classification, Cluster) %>%
-  group_by(Country, Cluster) %>%
+  select(npg_run_id, Country, Year, Species, Classification, Cluster) %>%
+  group_by(Country, Cluster, Year) %>%
   summarise(Strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
   arrange(Country)
 mcat_strains_freq
@@ -1156,6 +1170,16 @@ mcat_count_freq <- mcat_strains_freq %>%
   group_by(Country) %>%
   mutate(Frequency = Strains_count / sum(Strains_count))
 mcat_count_freq
+```
+
+```{r export file as csv format}
+
+write.table(mcat_strains_sample,
+            file = "./PopPUNK_analysis/hflu_strains.csv",
+            sep = "\t",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
 ```
 
 ```{r plot strain frequencies per country and year}
@@ -1176,6 +1200,8 @@ mcat_count_widefreq
 ```{r plot ggpairs of Moraxella}
 ggpairs(mcat_count_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
 ```
+
+
 
 ### Use Panaroo to identify genes
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
