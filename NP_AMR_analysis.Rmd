@@ -1087,15 +1087,6 @@ hflu_extract_sample_df
 
 ```
 
-```{r export file as csv format}
-
-write.table(hflu_extract_sample_df,
-            file = "./PopPUNK_analysis/hflu_strains.csv",
-            sep = "\t",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
 
 ```{r calculate frequencies}
 hflu_freq <- hflu_extract_sample_df %>%
@@ -1118,6 +1109,16 @@ hflu_strains_freq
 ```{r plot strain frequencies per country and year}
 
 ggplot(hflu_strains_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
+```
+
+```{r export file as csv format}
+
+write.table(hflu_strains_sample_df,
+            file = "./PopPUNK_analysis/hflu_strains.csv",
+            sep = "\t",
+            col.names = FALSE,
+            row.names = FALSE,
+            quote = FALSE)
 ```
 
 ```{r reformat columns of hflu_strains_freq to wide format columns}
@@ -1188,10 +1189,12 @@ ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_
 ```
 
 ```{r format columns to wide columns}
-mcat_count_widefreq <- mcat_count_freq %>%
+mcat_count_widefreq <- mcat_count_freq %>% 
   filter(!is.na(Country), 
-         Country %in% c("Cambodia", "United Kingdom", "Thailand", "South Africa")) %>%
-  select(Country, Cluster, Strains_count, Frequency) %>%
+         !is.na(Cluster),
+         Country %in% c("Cambodia", "United Kingdom", "Thailand", "South Africa")) %>% 
+  select(Country, Cluster, Frequency) %>%
+  
 pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
 mcat_count_widefreq
 
