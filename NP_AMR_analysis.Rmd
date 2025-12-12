@@ -1189,15 +1189,13 @@ ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_
 ```
 
 ```{r format columns to wide columns}
+
 mcat_count_widefreq <- mcat_count_freq %>% 
   filter(!is.na(Country), 
-         !is.na(Cluster),
          Country %in% c("Cambodia", "United Kingdom", "Thailand", "South Africa")) %>% 
-  select(Country, Cluster, Frequency) %>%
-  
-pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
+  select(Country, Cluster, Strains_count, Frequency) %>% 
+  pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
 mcat_count_widefreq
-
 ```
 
 ```{r plot ggpairs of Moraxella}
