@@ -1111,9 +1111,17 @@ hflu_strains_freq
 ggplot(hflu_strains_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
 ```
 
-```{r export file as csv format}
+```{r filter npg, country, and year from hflu_extract_sample_df}
 
-write.table(hflu_strains_sample_df,
+hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
+  select(npg_run_id, Country, Year)
+hflu_filter_extract_sample
+
+```
+
+```{r export hflu filter extract data as csv format}
+
+write.table(hflu_filter_extract_sample,
             file = "./PopPUNK_analysis/hflu_strains.csv",
             sep = "\t",
             col.names = FALSE,
@@ -1173,9 +1181,16 @@ mcat_count_freq <- mcat_strains_freq %>%
 mcat_count_freq
 ```
 
-```{r export file as csv format}
+```{r filter npg, country and year from mcat strains sample data}
 
-write.table(mcat_strains_sample,
+mcat_filter_strains_sample <- mcat_strains_sample %>%
+  select(npg_run_id, Country, Year)
+mcat_filter_strains_sample
+```
+
+```{r export mcat filter strains sample to be csv file}
+
+write.table(mcat_filter_strains_sample,
             file = "./PopPUNK_analysis/mcat_strains.csv",
             sep = "\t",
             col.names = FALSE,
@@ -1191,18 +1206,15 @@ ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_
 ```{r format columns to wide columns}
 
 mcat_count_widefreq <- mcat_count_freq %>% 
-  filter(!is.na(Country), 
-         Country %in% c("Cambodia", "United Kingdom", "Thailand", "South Africa")) %>% 
-  select(Country, Cluster, Strains_count, Frequency) %>% 
-  pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
+  filter(!is.na(Country)) %>%
+  select(Country, Cluster, Frequency) %>% 
+  pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency, values_fn = list(Frequency = sum), values_fill = 0)
 mcat_count_widefreq
 ```
 
 ```{r plot ggpairs of Moraxella}
 ggpairs(mcat_count_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
 ```
-
-
 
 ### Use Panaroo to identify genes
 After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
