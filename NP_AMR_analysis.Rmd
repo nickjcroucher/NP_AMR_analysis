@@ -1206,7 +1206,8 @@ ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_
 ```{r format columns to wide columns}
 
 mcat_count_widefreq <- mcat_count_freq %>% 
-  filter(!is.na(Country)) %>%
+  filter(!is.na(Country),
+         Frequency != 0) %>%
   select(Country, Cluster, Frequency) %>% 
   pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency, values_fn = list(Frequency = sum), values_fill = 0)
 mcat_count_widefreq
