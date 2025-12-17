@@ -1558,7 +1558,8 @@ Mcat_Hflu_amr <- read.table("./Mcat_Hflu_amr.tab",
                             comment.char = "",
                             check.names = FALSE,
                             quote = "",
-                            sep = "\t")
+                            sep = "\t", 
+                            col.names = c("npg_run_id", "AB_resistance"))
 Mcat_Hflu_amr
 ```
 
@@ -1568,7 +1569,8 @@ Southafrica_Mcat_amr <- read.csv("./southafrica_Mcat_amr.tab",
                                  comment.char = "",
                                  check.names = FALSE, 
                                  quote = "", 
-                                 sep = "\t")
+                                 sep = "\t", 
+                                 col.names = c("npg_run_id", "AB_resistance"))
 Southafrica_Mcat_amr
 ```
 
