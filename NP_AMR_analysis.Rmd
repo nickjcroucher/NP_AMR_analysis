@@ -1589,7 +1589,9 @@ Hicap_hflu <- read.table("./all_hicap_hflu.tab",
                          comment.char = "",
                          check.names = FALSE,
                          quote = "",
-                         sep = "\t")
+                         sep = "\t", 
+                         col.names = c("npg_run_id", "predicted_serotype", "attributes", "genes_identified", "locus_location", "region_I_genes", "region_II_genes", "region_III_genes"))
+
 Hicap_hflu
 
 ```
