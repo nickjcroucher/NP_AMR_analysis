@@ -1055,15 +1055,7 @@ hflu_strains_df <-
   read_csv("./PopPUNK_analysis/Hinflu_poppunk_query_clusters.csv")
 
 ```
-
-```{r}
-
-hflu_strains_extract <- hflu_strains_df %>%
-  
-  mutate(npg_run_id = Taxon,
-         id_run = str_extract(Taxon, "^[0-9]+"))
-
-```
+## Compare strain frequncies between samples of *M.cattarrhalis*
 
 ```{r reformat the columns of Taxon as the npg_run_id}
 
@@ -1076,7 +1068,6 @@ hflu_strains_extract1 <- hflu_strains_df %>%
                    str_extract(Taxon, "^[^#]+"), "NA"))
 
 ```
-
 
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
 
@@ -1144,6 +1135,7 @@ ggpairs(hflu_strains_widefreq, columns = c("Cambodia", "Thailand", "United Kingd
 
 ```
 
+## Compare strain frequncies between samples of *H.influenzae*
 
 ```{r format Taxon column and rename Taxon as npg_run_id}
 
@@ -1546,6 +1538,46 @@ ggpairs(Mcat_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "United
 ggpairs(Hinflu_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "United Kingdom"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
 ```
 
-## Compare strain frequncies between samples
 
+## We will find the antibiotic resistance of each isolated M.cattarrhalis strains with abritamr bioinformatics software
+
+```{r command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x ab
+ritamr_job.$N; N=($N+1); done
+```
+
+```{r line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains in UK, Cambodia and Thailand}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
+```
+
+```{r import file of Mcat_Hflu_amr}
+Mcat_Hflu_amr <- read.tab("./Mcat_Hflu_amr.tab", header = TRUE, sep = "\t", stringAsFactors = FALSE)
+Mcat_Hflu_amr
+```
+
+```{r import file of southafrica_Mcat_amr}
+Southafrica_Mcat_amr <- read.tab("./southafrica_Mcat_amr.tab", header = TRUE, sep = "\t", stringSAFactors = FALSE)
+Southafrica_Mcat_amr
+```
+
+## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
+
+```{r command line for bioinformatic analysis of Hicap with each H.influenzae strains}
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
+out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
+
+```
+
+```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
+
+Hicap_hflu <- read.tab("./all_hicap_hflu.tab", header = TRUE, sep = "\t", stringAsFactors = FALSE)
+Hicap_hflu
+
+```
+
+```{r merge Hicap_hflu with }
+
+```
 ## Compare gene frequencies between samples
