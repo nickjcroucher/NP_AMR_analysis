@@ -1579,12 +1579,12 @@ Southafrica_Mcat_amr
 ```{r command line for bioinformatic analysis of Hicap with each H.influenzae strains}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
 out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
-
 ```
+
 
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
-Hicap_hflu <- read.table("./all_hicap_hflu.tab", 
+Hicap_hflu <- read.table("./all_hicap_hflu.tab",
                          header = TRUE, 
                          comment.char = "",
                          check.names = FALSE,
