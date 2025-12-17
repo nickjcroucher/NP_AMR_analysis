@@ -1553,12 +1553,22 @@ declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.
 ```
 
 ```{r import file of Mcat_Hflu_amr}
-Mcat_Hflu_amr <- read.tab("./Mcat_Hflu_amr.tab", header = TRUE, sep = "\t", stringAsFactors = FALSE)
+Mcat_Hflu_amr <- read.table("./Mcat_Hflu_amr.tab", 
+                            header = TRUE,
+                            comment.char = "",
+                            check.names = FALSE,
+                            quote = "",
+                            sep = "\t")
 Mcat_Hflu_amr
 ```
 
 ```{r import file of southafrica_Mcat_amr}
-Southafrica_Mcat_amr <- read.tab("./southafrica_Mcat_amr.tab", header = TRUE, sep = "\t", stringSAFactors = FALSE)
+Southafrica_Mcat_amr <- read.csv("./southafrica_Mcat_amr.tab", 
+                                 header = TRUE, 
+                                 comment.char = "",
+                                 check.names = FALSE, 
+                                 quote = "", 
+                                 sep = "\t")
 Southafrica_Mcat_amr
 ```
 
@@ -1572,7 +1582,12 @@ out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N
 
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
-Hicap_hflu <- read.tab("./all_hicap_hflu.tab", header = TRUE, sep = "\t", stringAsFactors = FALSE)
+Hicap_hflu <- read.table("./all_hicap_hflu.tab", 
+                         header = TRUE, 
+                         comment.char = "",
+                         check.names = FALSE,
+                         quote = "",
+                         sep = "\t")
 Hicap_hflu
 
 ```
