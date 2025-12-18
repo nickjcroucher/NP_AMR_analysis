@@ -1574,6 +1574,11 @@ Southafrica_Mcat_amr <- read.csv("./southafrica_Mcat_amr.tab",
 Southafrica_Mcat_amr
 ```
 
+```{r merge Mcat_Hflu_amr and Southafrica_Mcat_amr by ngg_run_id}
+Mcat_Hflu_SA_amr <- full_join(Mcat_Hflu_amr, Southafrica_Mcat_amr, by = "npg_run_id")
+Mcat_Hflu_SA_amr
+```
+
 ## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
 
 ```{r command line for bioinformatic analysis of Hicap with each H.influenzae strains}
@@ -1585,14 +1590,14 @@ out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
 Hicap_hflu <- read.table("./all_hicap_hflu.tab",
-                         header = TRUE, 
+                         header = FALSE, 
                          comment.char = "",
                          check.names = FALSE,
                          quote = "",
                          sep = "\t", 
-                         col.names = c("npg_run_id", "predicted_serotype", "attributes", "genes_identified", "locus_location", "region_I_genes", "region_II_genes", "region_III_genes"))
-
-Hicap_hflu
+                         fill = TRUE, 
+                         colClasses = c("character", "character", rep("NULL", 6)),
+                         col.names = c("npg_run_id", "predicted_serotype"))
 
 ```
 
