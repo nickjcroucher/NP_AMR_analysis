@@ -1564,7 +1564,7 @@ Mcat_Hflu_amr
 ```
 
 ```{r import file of southafrica_Mcat_amr}
-Southafrica_Mcat_amr <- read.csv("./southafrica_Mcat_amr.tab", 
+Southafrica_Mcat_amr <- read.csv("./SAfrica_amr_summary.txt", 
                                  header = TRUE, 
                                  comment.char = "",
                                  check.names = FALSE, 
@@ -1579,12 +1579,47 @@ Mcat_Hflu_SA_amr <- bind_rows(Mcat_Hflu_amr, Southafrica_Mcat_amr)
 Mcat_Hflu_SA_amr
 ```
 
+
+```{r get rid of the columns name}
+Mcat_Hflu_SA_amr_wide_df <-
+  Mcat_Hflu_SA_amr %>%
+  # Split into list column
+  mutate(gene_list = str_split(AB_resistance, ",")) %>%
+  # Clean whitespace
+  mutate(gene_list = map(gene_list, str_trim)) %>%
+  # Unnest to long format
+  unnest(gene_list) %>%
+  # Remove original column
+  select(-AB_resistance) %>%
+  # Add presence indicator
+  mutate(present = "Present") %>%
+  distinct() %>% 
+  # Pivot to wide format
+  pivot_wider(
+    names_from = gene_list,
+    values_from = present,
+    values_fill = "Absent"
+  )
+```
+
 ```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
 Mcat_microreact_df <- 
-  left_join(mcat_filter_strains_sample, 
-            Mcat_Hflu_SA_amr,
-            by = "npg_run_id")
+  left_join(mcat_strains_sample, 
+            Mcat_Hflu_SA_amr_wide_df,
+            by = "npg_run_id") %>%
+  rename(id = npg_run_id) %>% 
+  dplyr::mutate(id = paste0(id,"_fa"))
+
 Mcat_microreact_df
+```
+
+```{r export file microreact file}
+write.table(Mcat_microreact_df,
+            file = "./microreact_analysis/Mcat_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
 ```
 
 ## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
@@ -1613,14 +1648,33 @@ Hicap_hflu <-
 
 ```
 
-```{r merge Hicap_hflu with }
+```{r merge Hicap_hflu with hflu_extract_sample_df by n}
 
 Hflu_microreact_df <-
-  left_join(hflu_filter_extract_sample,
+  left_join(hflu_extract_sample_df,
             Hicap_hflu,
             by = "npg_run_id") %>% 
     dplyr::mutate(serotype = dplyr::if_else(is.na(serotype),"NT",serotype))
 Hflu_microreact_df
 ```
+
+```{r merge Mcat_Hflu_SA_amr and Hflu_microreact_df by npg_run_id for finding the AB resistance}
+
+Hflu_microreact_resistnace <- left_join(Hflu_microreact_df, Mcat_Hflu_SA_amr_wide_df, by = "npg_run_id") %>%
+  rename(id = npg_run_id)
+Hflu_microreact_resistnace
+
+```
+
+```{r export the file from microreact}
+
+write.table(Hflu_microreact_resistnace,
+            file = "./microreact_analysis/Hflu_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+```
+
 
 ## Compare gene frequencies between samples
