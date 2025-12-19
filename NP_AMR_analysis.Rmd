@@ -561,7 +561,6 @@ write.table(Hinflu_filter,
 
 ```
 
-
 ## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
 
 ```{r create a proportion}
@@ -1343,6 +1342,7 @@ ggplot(Hinflu_version4_genefreq,
 ### We will analyze gene presence absence after re-filtered npg_run_id by N50, Total length, and matching proportion > 0.66 and then after ran Panaroo for Moraxella cattarrhalis. We will compare geneomic dataset of Moraxella cattarrhalis from South Africa, UK, Cambodia and Thailand.
 
 ```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns}
+
 Mcat_version4_gene_preabsence <- read.csv(
   "./Mcat_SA_gene_presence_absence/4thMcat_gene_preabsence.csv",
   header = TRUE,
@@ -1575,8 +1575,16 @@ Southafrica_Mcat_amr
 ```
 
 ```{r merge Mcat_Hflu_amr and Southafrica_Mcat_amr by ngg_run_id}
-Mcat_Hflu_SA_amr <- full_join(Mcat_Hflu_amr, Southafrica_Mcat_amr, by = "npg_run_id")
+Mcat_Hflu_SA_amr <- bind_rows(Mcat_Hflu_amr, Southafrica_Mcat_amr)
 Mcat_Hflu_SA_amr
+```
+
+```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
+Mcat_microreact_df <- 
+  left_join(mcat_filter_strains_sample, 
+            Mcat_Hflu_SA_amr,
+            by = "npg_run_id")
+Mcat_microreact_df
 ```
 
 ## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
@@ -1589,19 +1597,30 @@ out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N
 
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
-Hicap_hflu <- read.table("./all_hicap_hflu.tab",
-                         header = FALSE, 
+Hicap_hflu <-
+  read.table("./all_hicap4_hflu.tab",
+                         header = TRUE, 
                          comment.char = "",
                          check.names = FALSE,
                          quote = "",
-                         sep = "\t", 
-                         fill = TRUE, 
-                         colClasses = c("character", "character", rep("NULL", 6)),
-                         col.names = c("npg_run_id", "predicted_serotype"))
+                         sep = "\t") %>% 
+      dplyr::mutate(serotype =
+                      dplyr::if_else(grepl("truncated_genes",status),
+                                           paste0(serotype," (inactivated)"),
+                                           serotype)
+                                     ) %>% 
+      dplyr::select(-status)
 
 ```
 
 ```{r merge Hicap_hflu with }
 
+Hflu_microreact_df <-
+  left_join(hflu_filter_extract_sample,
+            Hicap_hflu,
+            by = "npg_run_id") %>% 
+    dplyr::mutate(serotype = dplyr::if_else(is.na(serotype),"NT",serotype))
+Hflu_microreact_df
 ```
+
 ## Compare gene frequencies between samples
