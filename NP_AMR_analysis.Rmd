@@ -1626,7 +1626,8 @@ left_join_amr_sample_df <-
 Mcat_Hflu_SA_amr_wide_df %>%
   dplyr::left_join(sample_df, 
                    by = by_cols) %>% 
-  dplyr::mutate(across(all_of(right_only_cols), ~ tidyr::replace_na(.x, fill_value)))
+  dplyr::mutate(across(all_of(right_only_cols), 
+                       ~ tidyr::replace_na(.x, fill_value)))
 }
 
 ```
@@ -1642,6 +1643,18 @@ Mcat_microreact_df <-
 Mcat_microreact_df
 ```
 
+```{r}
+
+result_Mcat_microreact2 <- 
+  left_join_amr_sample_df(Mcat_Hflu_SA_amr_wide_df, 
+                          mcat_strains_sample, 
+                          by_cols = "npg_run_id") %>% 
+  rename(id = npg_run_id) %>% 
+  dplyr::mutate(id = paste0(id,"_fa"))
+result_Mcat_microreact2
+```
+
+
 ```{r export file microreact file}
 write.table(Mcat_microreact_df,
             file = "./microreact_analysis/Mcat_microreact.csv",
@@ -1650,6 +1663,8 @@ write.table(Mcat_microreact_df,
             row.names = FALSE,
             quote = FALSE)
 ```
+
+
 
 ## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
 
