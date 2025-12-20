@@ -1553,7 +1553,7 @@ declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.
 ```
 
 ```{r import file of Mcat_Hflu_amr}
-Mcat_Hflu_amr <- read.table("./Mcat_Hflu_amr.tab", 
+Mcat_Hflu_amr <- read.table("./amr and hicap_analysis/Mcat_Hflu_amr.tab", 
                             header = TRUE,
                             comment.char = "",
                             check.names = FALSE,
@@ -1564,7 +1564,7 @@ Mcat_Hflu_amr
 ```
 
 ```{r import file of southafrica_Mcat_amr}
-Southafrica_Mcat_amr <- read.csv("./SAfrica_amr_summary.txt", 
+Southafrica_Mcat_amr <- read.csv("./amr and hicap_analysis/SAfrica_amr_summary.txt", 
                                  header = TRUE, 
                                  comment.char = "",
                                  check.names = FALSE, 
@@ -1602,6 +1602,26 @@ Mcat_Hflu_SA_amr_wide_df <-
   )
 ```
 
+```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
+
+left_join_amr_sample_df <- 
+  function(sample_df, 
+           Mcat_Hflu_SA_amr_wide_df, 
+           by_cols, 
+           fill_value = "Absent") {
+# Columns that exist only in the AMR wide dataset in right table
+    right_only_cols <- 
+      setdiff(names(Mcat_Hflu_SA_amr_wide_df), 
+              names(sample_df))
+# Perform left join and fill only right table columns
+Mcat_Hflu_SA_amr_wide_df %>%
+  dplyr::left_join(sample_df, 
+                   by = by_cols) %>% 
+  dplyr::mutate(across(all_of(right_only_cols), ~ tidyr::replace_na(.x, fill_value)))
+}
+
+```
+
 ```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
 Mcat_microreact_df <- 
   left_join(mcat_strains_sample, 
@@ -1633,7 +1653,7 @@ out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
 Hicap_hflu <-
-  read.table("./all_hicap4_hflu.tab",
+  read.table(".amr and hicap_analysis/all_hicap4_hflu.tab",
                          header = TRUE, 
                          comment.char = "",
                          check.names = FALSE,
@@ -1648,7 +1668,7 @@ Hicap_hflu <-
 
 ```
 
-```{r merge Hicap_hflu with hflu_extract_sample_df by n}
+```{r merge Hicap_hflu with hflu_extract_sample_df by Hicap_hflu}
 
 Hflu_microreact_df <-
   left_join(hflu_extract_sample_df,
