@@ -1611,28 +1611,8 @@ Mcat_Hflu_SA_amr_wide_df <-
   )
 ```
 
-```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
-
-left_join_amr_sample_df <- 
-  function(sample_df, 
-           Mcat_Hflu_SA_amr_wide_df, 
-           by_cols, 
-           fill_value = "Absent") {
-# Columns that exist only in the AMR wide dataset in right table
-    right_only_cols <- 
-      setdiff(names(Mcat_Hflu_SA_amr_wide_df), 
-              names(sample_df))
-# Perform left join and fill only right table columns
-Mcat_Hflu_SA_amr_wide_df %>%
-  dplyr::left_join(sample_df, 
-                   by = by_cols) %>% 
-  dplyr::mutate(across(all_of(right_only_cols), 
-                       ~ tidyr::replace_na(.x, fill_value)))
-}
-
-```
-
 ```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
+
 Mcat_microreact_df <- 
   left_join(mcat_strains_sample, 
             Mcat_Hflu_SA_amr_wide_df,
@@ -1643,20 +1623,43 @@ Mcat_microreact_df <-
 Mcat_microreact_df
 ```
 
+```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
+
+left_join_amr_sample_df <- 
+  function(sample_df, 
+           Mcat_Hflu_SA_amr_wide_df, 
+           by_cols = "npg_run_id",
+           fill_value = "Absent") {
+# Columns that exist only in the AMR wide dataset in right table
+    right_only_cols <- 
+      setdiff(names(Mcat_Hflu_SA_amr_wide_df), 
+              names(sample_df))
+# Perform left join and fill only right table columns
+sample_df %>%
+  dplyr::left_join(Mcat_Hflu_SA_amr_wide_df, 
+                   by = by_cols) %>% 
+  dplyr::mutate(
+    across(.cols = all_of(right_only_cols),.fns = 
+                         ~ tidyr::replace_na(.x, fill_value)))
+}
+
+```
+
 ```{r}
 
 result_Mcat_microreact2 <- 
-  left_join_amr_sample_df(Mcat_Hflu_SA_amr_wide_df, 
-                          mcat_strains_sample, 
-                          by_cols = "npg_run_id") %>% 
-  rename(id = npg_run_id) %>% 
+  left_join_amr_sample_df(mcat_strains_sample, 
+                          Mcat_Hflu_SA_amr_wide_df,
+                          by_cols = "npg_run_id", 
+                          fill_value = "Absent") %>% 
+  dplyr::rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa"))
 result_Mcat_microreact2
 ```
 
 
 ```{r export file microreact file}
-write.table(Mcat_microreact_df,
+write.table(result_Mcat_microreact2,
             file = "./microreact_analysis/Mcat_microreact.csv",
             sep = ",",
             col.names = TRUE,
