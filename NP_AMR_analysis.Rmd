@@ -1638,6 +1638,7 @@ left_join_amr_sample_df <-
 sample_df %>%
   dplyr::left_join(Mcat_Hflu_SA_amr_wide_df, 
                    by = by_cols) %>% 
+  dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE))) %>%
   dplyr::mutate(
     across(.cols = all_of(right_only_cols),.fns = 
                          ~ tidyr::replace_na(.x, fill_value)))
@@ -1653,7 +1654,8 @@ result_Mcat_microreact2 <-
                           by_cols = "npg_run_id", 
                           fill_value = "Absent") %>% 
   dplyr::rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa"))
+  dplyr::mutate(id = paste0(id,"_fa")) %>% 
+  dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE)))
 result_Mcat_microreact2
 ```
 
