@@ -1071,12 +1071,16 @@ hflu_strains_extract1 <- hflu_strains_df %>%
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
 
 hflu_extract_sample_df <- sample_df %>%
-  inner_join(hflu_strains_extract1, by = "npg_run_id") %>% 
-  select(npg_run_id, Country, Year, Species, Cluster)
+  inner_join(hflu_strains_extract1, 
+             by = "npg_run_id") %>% 
+  select(npg_run_id, 
+         Country, 
+         Year, 
+         Species, 
+         Cluster)
 hflu_extract_sample_df
 
 ```
-
 
 ```{r calculate frequencies}
 hflu_freq <- hflu_extract_sample_df %>%
@@ -1098,13 +1102,54 @@ hflu_strains_freq
 
 ```{r plot strain frequencies per country and year}
 
-ggplot(hflu_strains_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_bar(stat = "identity", position = "stack") + theme_minimal() + labs(title = "H. influenzae strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
+ggplot(hflu_strains_freq, 
+       aes(x = Cluster, 
+           y = Frequency, 
+           fill = Country)) + 
+  geom_bar(stat = "identity", 
+           position = "stack") + 
+  theme_minimal() + 
+  labs(title = "H. influenzae strain frequencies\nby country and year", 
+       x = "Cluster", 
+       y = "Frequency", 
+       fill = "Country")
+```
+
+## We will find How many strains are there of Hinfluenzae species? How many in each country (make some plots)
+
+```{r calculate the number of strain for Hinfluenzae species}
+
+Hinflu_species_counts <- hflu_extract_sample_df %>%
+  count(Species, name = "n_strains")
+Hinflu_species_counts
+
+```
+```{r count strains per country}
+Hinflu_strains_country <- hflu_extract_sample_df %>%
+  count(Country, 
+        name = "n_strains")
+Hinflu_strains_country
+```
+
+```{r plot the number of strains per country}
+
+ggplot(Hinflu_strains_country, 
+       aes(x = Country, 
+           y = n_strains)) + 
+  geom_col() + 
+  theme_classic() + 
+  geom_text(aes(label = n_strains), 
+            vjust = -0.5, 
+            size = 4)
+
 ```
 
 ```{r filter npg, country, and year from hflu_extract_sample_df}
 
 hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
-  select(npg_run_id, Country, Year)
+  select(npg_run_id, 
+         Country, 
+         Year)
 hflu_filter_extract_sample
 
 ```
@@ -1123,14 +1168,25 @@ write.table(hflu_filter_extract_sample,
 hflu_strains_widefreq <- hflu_strains_freq %>%
   filter(!is.na(Country),
          Country %in% c("Cambodia", "Thailand", "United Kingdom")) %>%
-  select(Country, Cluster, strains_count, Frequency) %>%
-pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency)
+  select(Country, 
+         Cluster, 
+         strains_count, 
+         Frequency) %>%
+pivot_wider(id_cols = Cluster, 
+            names_from = Country, 
+            values_from = Frequency)
 hflu_strains_widefreq
 
 ```
 
 ```{r plot ggpair for Hflu}
-ggpairs(hflu_strains_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
+ggpairs(hflu_strains_widefreq, 
+        columns = c("Cambodia", 
+                    "Thailand", 
+                    "United Kingdom"), 
+        upper = list(continuous = "cor"), 
+        lower = list(continuous = "smooth"), 
+        diag = list(continuous = "densityDiag"))
 
 ```
 
@@ -1147,8 +1203,14 @@ mcat_strains_rename
 
 ```{r merge sample_df with mcat_strains_rename}
 mcat_strains_sample <- sample_df %>% 
-  right_join(mcat_strains_rename, by = "npg_run_id") %>%
-  select(npg_run_id, Country, Year, Species, Classification, Cluster)
+  right_join(mcat_strains_rename, 
+             by = "npg_run_id") %>%
+  select(npg_run_id, 
+         Country, 
+         Year, 
+         Species, 
+         Classification, 
+         Cluster)
 mcat_strains_sample
 
 ```
@@ -1170,6 +1232,35 @@ mcat_count_freq <- mcat_strains_freq %>%
   group_by(Country) %>%
   mutate(Frequency = Strains_count / sum(Strains_count))
 mcat_count_freq
+```
+
+## We will find How many strains are there of Mcat species? How many in each country (make some plots)
+
+```{r calculate the number of Mcat strains}
+
+mcat_species_counts <- mcat_strains_sample %>%
+  count(Species, name = "n_strains")
+mcat_species_counts
+
+```
+
+```{r calculate the species in each country}
+
+mcat_strains_country <- mcat_strains_sample %>%
+  count(Country, name = "n_strains")
+mcat_strains_country
+```
+
+```{r plot the graph}
+ggplot(mcat_strains_country, 
+       aes(x = Country, 
+           y = n_strains)) + 
+  geom_col() + 
+  theme_classic() + 
+  geom_text(aes(label = n_strains), 
+            vjust = -0.5, 
+            size = 4)
+
 ```
 
 ```{r filter npg, country and year from mcat strains sample data}
