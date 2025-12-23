@@ -1753,7 +1753,7 @@ result_Mcat_microreact2
 
 ```{r export file microreact file}
 write.table(result_Mcat_microreact2,
-            file = "./microreact_analysis/Mcat_microreact.csv",
+            file = "./microreact_analysis/Mcat_microreact2.csv",
             sep = ",",
             col.names = TRUE,
             row.names = FALSE,
