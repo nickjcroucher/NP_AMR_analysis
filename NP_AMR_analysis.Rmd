@@ -1061,7 +1061,8 @@ hflu_strains_df <-
 hflu_strains_extract1 <- hflu_strains_df %>%
   
   mutate(npg_run_id = 
-           if_else(str_detect(Taxon, "_|#"), Taxon, "NA"), 
+           if_else(str_detect(Taxon, "_|#"), 
+                   Taxon, "NA"), 
          id_run = 
            if_else(str_detect(Taxon, "#"), 
                    str_extract(Taxon, "^[^#]+"), "NA"))
@@ -1088,8 +1089,10 @@ hflu_freq <- hflu_extract_sample_df %>%
          !is.na(Species),
          !is.na(Country),
          Country %in% c("United Kingdom", "Cambodia", "Thailand")) %>%
-  group_by(Country, Cluster) %>%
-  summarise(strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
+  group_by(Country, 
+           Cluster) %>%
+  summarise(strains_count = n_distinct(npg_run_id), 
+            .groups = "drop") %>%
   arrange(Country)
 hflu_freq
 
@@ -1120,7 +1123,8 @@ ggplot(hflu_strains_freq,
 ```{r calculate the number of strain for Hinfluenzae species}
 
 Hinflu_species_counts <- hflu_extract_sample_df %>%
-  count(Species, name = "n_strains")
+  count(Species, 
+        name = "n_strains")
 Hinflu_species_counts
 
 ```
@@ -1222,9 +1226,18 @@ mcat_strains_freq <- mcat_strains_sample %>%
          !is.na(Cluster),
          !is.na(Species), 
          Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  select(npg_run_id, Country, Year, Species, Classification, Cluster) %>%
-  group_by(npg_run_id, Country, Cluster, Year) %>%
-  summarise(Strains_count = n_distinct(npg_run_id), .groups = "drop") %>%
+  select(npg_run_id, 
+         Country, 
+         Year, 
+         Species, 
+         Classification, 
+         Cluster) %>%
+  group_by(npg_run_id, 
+           Country, 
+           Cluster, 
+           Year) %>%
+  summarise(Strains_count = n_distinct(npg_run_id), 
+            .groups = "drop") %>%
   arrange(Country)
 mcat_strains_freq
 
@@ -1239,7 +1252,8 @@ mcat_count_freq
 ```{r calculate the number of Mcat strains}
 
 mcat_species_counts <- mcat_strains_sample %>%
-  count(Species, name = "n_strains")
+  count(Species, 
+        name = "n_strains")
 mcat_species_counts
 
 ```
@@ -1247,7 +1261,8 @@ mcat_species_counts
 ```{r calculate the species in each country}
 
 mcat_strains_country <- mcat_strains_sample %>%
-  count(Country, name = "n_strains")
+  count(Country, 
+        name = "n_strains")
 mcat_strains_country
 ```
 
@@ -1266,7 +1281,9 @@ ggplot(mcat_strains_country,
 ```{r filter npg, country and year from mcat strains sample data}
 
 mcat_filter_strains_sample <- mcat_strains_sample %>%
-  select(npg_run_id, Country, Year)
+  select(npg_run_id, 
+         Country, 
+         Year)
 mcat_filter_strains_sample
 ```
 
@@ -1282,7 +1299,16 @@ write.table(mcat_filter_strains_sample,
 
 ```{r plot strain frequencies per country and year}
 
-ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_col(position = "dodge") + theme_minimal() + labs(title = "M. cattarrhalis strain frequencies\nby country and year", x = "Cluster", y = "Frequency", fill = "Country")
+ggplot(mcat_count_freq, 
+       aes(x = Cluster, 
+           y = Frequency, 
+           fill = Country)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() + 
+  labs(title = "M. cattarrhalis strain frequencies\nby country and year", 
+       x = "Cluster", 
+       y = "Frequency", 
+       fill = "Country")
 ```
 
 ```{r format columns to wide columns}
@@ -1290,8 +1316,14 @@ ggplot(mcat_count_freq, aes(x = Cluster, y = Frequency, fill = Country)) + geom_
 mcat_count_widefreq <- mcat_count_freq %>% 
   filter(!is.na(Country),
          Frequency != 0) %>%
-  select(Country, Cluster, Frequency) %>% 
-  pivot_wider(id_cols = Cluster, names_from = Country, values_from = Frequency, values_fn = list(Frequency = sum), values_fill = 0)
+  select(Country, 
+         Cluster, 
+         Frequency) %>% 
+  pivot_wider(id_cols = Cluster, 
+              names_from = Country, 
+              values_from = Frequency, 
+              values_fn = list(Frequency = sum), 
+              values_fill = 0)
 mcat_count_widefreq
 ```
 
@@ -1300,28 +1332,49 @@ mcat_strains_serotype <- mcat_count_freq  %>%
   filter(!is.na(npg_run_id),
          !is.na(Cluster),
          Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  group_by(Country, Cluster) %>%
-  summarise(Total_strains = sum(Strains_count, na.rm = TRUE), 
-            Total_frequency = sum(Frequency, na.rm = TRUE), .groups = "drop")
+  group_by(Country, 
+           Cluster) %>%
+  summarise(Total_strains = sum(Strains_count, 
+                                na.rm = TRUE), 
+            Total_frequency = sum(Frequency,
+                                  na.rm = TRUE), 
+            .groups = "drop")
 mcat_strains_serotype
 ```
 
 ```{r plot the seroresistant and serosensitive comparing the countries}
 
-ggplot(mcat_strains_serotype, aes(x = Cluster, y = Total_strains, fill = Country)) + geom_col(position = "dodge") + labs(title = "Seroresistant vs Serosensitive\nof M. catarrhalis by Country", x = "Country", y = "Total Strains")
+ggplot(mcat_strains_serotype, 
+       aes(x = Cluster, 
+           y = Total_strains, 
+           fill = Country)) + 
+  geom_col(position = "dodge") + 
+  labs(title = "Seroresistant vs Serosensitive\nof M. catarrhalis by Country", 
+       x = "Country", y = "Total Strains")
 ```
 
-```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
-mcat_strains_genes <- 
-  inner_join(Mcat_version4_gene_sample, 
-            mcat_count_freq,
-            by = "npg_run_id")
-mcat_strains_genes
+## We try to find resistance genes of M.cattarrhalis
 
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+mcat_strains_genes <- mcat_strains_sample %>%
+  right_join(Mcat_version4_gene_sample, 
+             by = "npg_run_id") %>% 
+  select(npg_run_id, 
+         Gene,
+         `Non-unique Gene name`, 
+         Annotation, 
+         CDS, 
+         Country, 
+         Year)
 ```
 
 ```{r plot ggpairs of Moraxella}
-ggpairs(mcat_count_widefreq, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
+ggpairs(mcat_count_widefreq, 
+        columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), 
+        upper = list(continuous = "cor"), 
+        lower = list(continuous = "smooth"), 
+        diag = list(continuous = "densityDiag"))
 ```
 
 ### Use Panaroo to identify genes
@@ -1350,7 +1403,9 @@ Hinflu_version4_gene_preabsence
 ```
 
 ```{r merge two data between Hinflu_version3_gene_preabsence and sample_df}
-Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence, sample_df, by = "npg_run_id")
+Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence, 
+                                         sample_df, 
+                                         by = "npg_run_id")
 Hinflu_version4_gene_sample
 ```
 
@@ -1387,8 +1442,14 @@ Hinflu_version4_genefreq
 
 ```{r reformat columns to wide format columns}
 Hinflu_version4_genefreq_wide <- Hinflu_version4_genefreq %>%
-  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+  select(Country, 
+         Gene, 
+         CDS_count, 
+         Genome_count, 
+         Frequency) %>%
+pivot_wider(id_cols = Gene, 
+            names_from = Country, 
+            values_from = Frequency)
 Hinflu_version4_genefreq_wide
 ```
 
@@ -1479,7 +1540,9 @@ Mcat_version4_gene_preabsence
 ```
 
 ```{r merge data between Mcat version4 gene presence absence and sample_df by npg run id}
-Mcat_version4_gene_sample <- left_join(Mcat_version4_gene_preabsence, sample_df, by = "npg_run_id")
+Mcat_version4_gene_sample <- left_join(Mcat_version4_gene_preabsence, 
+                                       sample_df, 
+                                       by = "npg_run_id")
 Mcat_version4_gene_sample
 ```
 
@@ -1530,8 +1593,14 @@ Mcat_version4_genefreq
 
 ```{r reformat columns of Mcattarrhalis to wide columns}
 Mcat_version4_genefreq_wide <- Mcat_version4_genefreq %>%
-  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
+  select(Country, 
+         Gene, 
+         CDS_count, 
+         Genome_count, 
+         Frequency) %>%
+pivot_wider(id_cols = Gene, 
+            names_from = Country, 
+            values_from = Frequency)
 Mcat_version4_genefreq_wide
 ```
 
@@ -1646,12 +1715,20 @@ ggplot(Mcat_version4_genefreq,
 
 ```{r plot ggpairs for Moraxella cattarrhalis}
 
-ggpairs(Mcat_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
+ggpairs(Mcat_version4_genefreq_wide, 
+        columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), 
+        upper = list(continuous = "cor"), 
+        lower = list(continuous = "smooth"), 
+        diag = list(continuous = "densityDiag"))
 ```
 
 ```{r plot ggpairs for Haemophilus influenzae}
 
-ggpairs(Hinflu_version4_genefreq_wide, columns = c("Cambodia", "Thailand", "United Kingdom"), upper = list(continuous = "cor"), lower = list(continuous = "smooth"), diag = list(continuous = "densityDiag"))
+ggpairs(Hinflu_version4_genefreq_wide, 
+        columns = c("Cambodia", "Thailand", "United Kingdom"), 
+        upper = list(continuous = "cor"), 
+        lower = list(continuous = "smooth"), 
+        diag = list(continuous = "densityDiag"))
 ```
 
 
