@@ -1357,16 +1357,16 @@ ggplot(mcat_strains_serotype,
 
 ```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
 
-mcat_strains_genes <- mcat_strains_sample %>% 
-  right_join(Mcat_version4_gene_sample, 
-             by = "npg_run_id") %>% 
+mcat_strains_genes <- Mcat_version4_gene_sample %>% 
   select(npg_run_id, 
          Gene,
          `Non-unique Gene name`, 
          Annotation, 
          CDS, 
          Country, 
-         Year)
+         Year) %>% 
+  right_join(mcat_strains_sample, 
+             by = "npg_run_id")
 ```
 
 ```{r plot ggpairs of Moraxella}
