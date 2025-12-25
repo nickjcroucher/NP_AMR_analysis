@@ -1353,11 +1353,11 @@ ggplot(mcat_strains_serotype,
        x = "Country", y = "Total Strains")
 ```
 
-## We try to find resistance genes of M.cattarrhalis
+## We try to find resistance genes of *M.cattarrhalis*
 
 ```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
 
-mcat_strains_genes <- mcat_strains_sample %>%
+mcat_strains_genes <- mcat_strains_sample %>% 
   right_join(Mcat_version4_gene_sample, 
              by = "npg_run_id") %>% 
   select(npg_run_id, 
@@ -1370,6 +1370,7 @@ mcat_strains_genes <- mcat_strains_sample %>%
 ```
 
 ```{r plot ggpairs of Moraxella}
+
 ggpairs(mcat_count_widefreq, 
         columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), 
         upper = list(continuous = "cor"), 
