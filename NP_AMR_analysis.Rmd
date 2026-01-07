@@ -1911,9 +1911,21 @@ Mcat_SA_amr_wide
 ```{r merge Mcat_SA_amr_wide and mcat_strains_sample with npg_run_id}
 
 Mcat_SA_microreact <- 
-  left_join(Mcat_SA_amr_wide, 
-            mcat_strains_sample,
+  left_join(mcat_strains_sample, 
+            Mcat_SA_amr_wide,
             by = "npg_run_id") %>%
+  filter(is!.na(blaBRO-1),
+         is!.na(tet(B)),
+         is!.na(blaBRO-2),
+         is!.na(blaBRO-1*),
+         is!.na(catA2),
+         is!.na(aph(3'')-Ib),
+         is!.na(aph(6)-Id*),
+         is!.na(sul2),
+         is!.na(aph(6)-Id),
+         is!.na(aph(3'')-Ib*),
+         is!.na(blaBRO-1^),
+         is!.na(blaBRO-2*))) %>%
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa"))
 
