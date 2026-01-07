@@ -1911,14 +1911,15 @@ Mcat_SA_amr_wide
 ```{r merge Mcat_SA_amr_wide and mcat_strains_sample with npg_run_id}
 
 Mcat_SA_microreact <- 
-  left_join(mcat_strains_sample, 
-            Mcat_SA_amr_wide,
+  left_join(Mcat_SA_amr_wide, 
+            mcat_strains_sample,
             by = "npg_run_id") %>%
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa"))
 
 Mcat_SA_microreact
 ```
+
 
 ```{r export file microreact file}
 write.table(Mcat_SA_microreact,
