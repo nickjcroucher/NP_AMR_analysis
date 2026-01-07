@@ -1379,7 +1379,7 @@ ggpairs(mcat_count_widefreq,
 ```
 
 ### Use Panaroo to identify genes
-After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
+After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
 ### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.66 and as well after completed Panaroo script.
 
@@ -1733,7 +1733,7 @@ ggpairs(Hinflu_version4_genefreq_wide,
 ```
 
 
-## We will find the antibiotic resistance of each isolated M.cattarrhalis strains with abritamr bioinformatics software
+## We will find the antibiotic resistance of each isolated *M.cattarrhalis* strains with abritamr bioinformatics software
 
 ```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
 
@@ -1853,7 +1853,6 @@ result_Mcat_microreact2 <-
 result_Mcat_microreact2
 ```
 
-
 ```{r export file microreact file}
 write.table(result_Mcat_microreact2,
             file = "./microreact_analysis/Mcat_microreact2.csv",
@@ -1863,14 +1862,38 @@ write.table(result_Mcat_microreact2,
             quote = FALSE)
 ```
 
-## We will find the capsule of each isolated H.influenzae strains wiht Hicap bioinformatic software 
 
-```{bash command line for bioinformatic analysis of Hicap with each H.influenzae strains}
+## We will import the Mcat_SA_amr.tab file after ran the abritamr tool of antibiotic resistance analysis for *M.cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show. 
+
+```{bash command line for analyize each isolates which will resistance specifically antibiotic}
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/SA_assemblies\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
+```
+
+```{bash generate a Mcat_SA_amr.tab file for extracting all abritamr.txt files}
+echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > Mcat_SA_amr.tab
+```
+
+```{r import file of Mcat_SA_amr.tab to be ready generating CSV file}
+Mcat_SA_amr <- read.table("./amr and hicap_analysis/Mcat_SA_amr.tab", 
+                            header = TRUE,
+                            comment.char = "",
+                            check.names = FALSE,
+                            quote = "",
+                            sep = "\t", 
+                            col.names = c("npg_run_id", "AB_resistance"))
+Mcat_SA_amr
+
+```
+
+
+## We will find the capsule of each isolated *H.influenzae* strains wiht Hicap bioinformatic software 
+
+```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
 out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
 ```
 
-```{bash command line for extract all the file}
+```{bash command line for extracting all the file}
 
 echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap4_hflu.tab
 ```
