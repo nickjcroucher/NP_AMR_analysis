@@ -1733,137 +1733,12 @@ ggpairs(Hinflu_version4_genefreq_wide,
 ```
 
 
-## We will find the antibiotic resistance of each isolated *M.cattarrhalis* strains with abritamr bioinformatics software
+## We will import the Mcat_SA_amr.tab file after ran the abritamr bioinformatics tool of antibiotic resistance analysis for *M.cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show
 
-```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
+```{bash convert all *gff files from AMR_SAfrica to *fa format with SA_assemblies}
 
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x ab
-ritamr_job.$N; N=($N+1); done
+for f in /rds/general/user/skaing/home/NP_AMR/AMR_SAfrica/*.gff; do g=`basename $f`; cp -s ../SA_assemblies/${g%gff}fa .; done
 ```
-
-```{bash command line for extracting all files}
-echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > SAfrica_amr_summary.txt
-
-```
-
-```{bash line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains in UK, Cambodia and Thailand}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
-```
-
-```{bash command line for extracting all files}
-echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > Mcat_Hflu_amr.tab
-```
-
-```{r import file of Mcat_Hflu_amr}
-Mcat_amr <- read.table("./amr and hicap_analysis/Mcat_Hflu_amr.tab", 
-                            header = FALSE,
-                            comment.char = "",
-                            check.names = FALSE,
-                            quote = "",
-                            sep = "\t", 
-                       col.names = c("npg_run_id", "AB_resistance"))
-Mcat_amr
-```
-
-```{r import file of southafrica_Mcat_amr}
-Southafrica_Mcat_amr <- read.csv("./amr and hicap_analysis/SAfrica_amr_summary.txt", 
-                                 header = TRUE, 
-                                 comment.char = "",
-                                 check.names = FALSE, 
-                                 quote = "", 
-                                 sep = "\t", 
-                                 col.names = c("npg_run_id", "AB_resistance"))
-Southafrica_Mcat_amr
-```
-
-```{r merge Mcat_Hflu_amr and Southafrica_Mcat_amr by ngg_run_id}
-Mcat_Hflu_SA_amr <- bind_rows(Mcat_amr, Southafrica_Mcat_amr)
-Mcat_Hflu_SA_amr
-```
-
-
-```{r get rid of the columns name}
-Mcat_Hflu_SA_amr_wide_df <-
-  Mcat_Hflu_SA_amr %>%
-  # Split into list column
-  mutate(gene_list = str_split(AB_resistance, ",")) %>%
-  # Clean whitespace
-  mutate(gene_list = map(gene_list, str_trim)) %>%
-  # Unnest to long format
-  unnest(gene_list) %>%
-  # Remove original column
-  select(-AB_resistance) %>%
-  # Add presence indicator
-  mutate(present = "Present") %>%
-  distinct() %>% 
-  # Pivot to wide format
-  pivot_wider(
-    names_from = gene_list,
-    values_from = present,
-    values_fill = "Absent"
-  )
-```
-
-```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
-
-Mcat_microreact_df <- 
-  left_join(mcat_strains_sample, 
-            Mcat_Hflu_SA_amr_wide_df,
-            by = "npg_run_id") %>%
-  rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa"))
-
-Mcat_microreact_df
-```
-
-```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
-
-left_join_amr_sample_df <- 
-  function(sample_df, 
-           Mcat_Hflu_SA_amr_wide_df, 
-           by_cols = "npg_run_id",
-           fill_value = "Absent") {
-# Columns that exist only in the AMR wide dataset in right table
-    right_only_cols <- 
-      setdiff(names(Mcat_Hflu_SA_amr_wide_df), 
-              names(sample_df))
-# Perform left join and fill only right table columns
-sample_df %>%
-  dplyr::left_join(Mcat_Hflu_SA_amr_wide_df, 
-                   by = by_cols) %>% 
-  dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE))) %>%
-  dplyr::mutate(
-    across(.cols = all_of(right_only_cols),.fns = 
-                         ~ tidyr::replace_na(.x, fill_value)))
-}
-
-```
-
-```{r re-try other codes to filter amr strains}
-
-result_Mcat_microreact2 <- 
-  left_join_amr_sample_df(mcat_strains_sample, 
-                          Mcat_Hflu_SA_amr_wide_df,
-                          by_cols = "npg_run_id", 
-                          fill_value = "Absent") %>% 
-  dplyr::rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa")) %>% 
-  dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE)))
-result_Mcat_microreact2
-```
-
-```{r export file microreact file}
-write.table(result_Mcat_microreact2,
-            file = "./microreact_analysis/Mcat_microreact2.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-
-## We will import the Mcat_SA_amr.tab file after ran the abritamr tool of antibiotic resistance analysis for *M.cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show. 
 
 ```{bash command line for analyize each isolates which will resistance specifically antibiotic}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/SA_assemblies\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
@@ -1917,10 +1792,8 @@ Mcat_SA_microreact <-
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa")) %>% 
   mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x)))
-
 Mcat_SA_microreact
 ```
-
 
 ```{r export file microreact file}
 write.table(Mcat_SA_microreact,
@@ -1931,8 +1804,11 @@ write.table(Mcat_SA_microreact,
             quote = FALSE)
 ```
 
+## We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
 
-## We will find the capsule of each isolated *H.influenzae* strains wiht Hicap bioinformatic software 
+```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies}
+for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
+```
 
 ```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
