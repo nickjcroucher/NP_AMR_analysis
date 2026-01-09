@@ -1148,6 +1148,16 @@ ggplot(Hinflu_strains_country,
 
 ```
 
+```{r plot the correlation matrics}
+
+ggplot(Hinflu_strains_country, aes(x = Country, y = n_strains, fill = n_strains)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "blue", high = "red") + 
+  theme_minimal()
+
+```
+
+
 ```{r filter npg, country, and year from hflu_extract_sample_df}
 
 hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
