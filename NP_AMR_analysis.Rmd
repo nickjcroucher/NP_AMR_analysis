@@ -1229,6 +1229,23 @@ mcat_strains_sample
 
 ```
 
+```{r find seroresistant and serosensitive in each countries}
+
+mcat_summary <- mcat_strains_sample %>%
+  filter(Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
+  group_by(Country, Classification) %>%
+  summarise(
+    total = n(),
+    .groups = "drop"
+  ) %>%
+  tidyr::pivot_wider(
+    names_from = Classification,
+    values_from = total,
+    values_fill = 0
+  )
+mcat_summary
+```
+
 ```{r calculate frequencies}
 mcat_strains_freq <- mcat_strains_sample %>%
   filter(!is.na(npg_run_id),
@@ -1257,7 +1274,7 @@ mcat_count_freq <- mcat_strains_freq %>%
 mcat_count_freq
 ```
 
-## We will find How many strains are there of Mcat species? How many in each country (make some plots)
+## We will find How many strains are there of *M.cattarrhalis* species? How many in each country (make some plots)
 
 ```{r calculate the number of Mcat strains}
 
@@ -1285,7 +1302,6 @@ ggplot(mcat_strains_country,
   geom_text(aes(label = n_strains), 
             vjust = -0.5, 
             size = 4)
-
 ```
 
 ```{r filter npg, country and year from mcat strains sample data}
@@ -1360,23 +1376,9 @@ ggplot(mcat_strains_serotype,
            fill = Country)) + 
   geom_col(position = "dodge") + 
   labs(title = "Seroresistant vs Serosensitive\nof M. catarrhalis by Country", 
-       x = "Country", y = "Total Strains")
-```
-
-## We try to find resistance genes of *M.cattarrhalis*
-
-```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
-
-mcat_strains_genes <- Mcat_version4_gene_sample %>% 
-  select(npg_run_id, 
-         Gene,
-         `Non-unique Gene name`, 
-         Annotation, 
-         CDS, 
-         Country, 
-         Year) %>% 
-  right_join(mcat_strains_sample, 
-             by = "npg_run_id")
+       x = "Country", y = "Total Strains") + 
+  theme(axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"))
 ```
 
 ```{r plot ggpairs of Moraxella}
@@ -1386,6 +1388,57 @@ ggpairs(mcat_count_widefreq,
         upper = list(continuous = "cor"), 
         lower = list(continuous = "smooth"), 
         diag = list(continuous = "densityDiag"))
+```
+
+## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
+
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+mcat_strains_genes <- Mcat_version4_gene_sample %>% 
+  select(npg_run_id, 
+         Gene,
+         `Non-unique Gene name`, 
+         Annotation, 
+         CDS) %>% 
+  left_join(mcat_strains_sample, 
+             by = "npg_run_id")
+mcat_strains_genes
+```
+
+```{r calculation of gene frequency by classification}
+gene_freq_classification <- mcat_strains_genes %>%
+  group_by(Classification, Gene) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(Classification) %>%
+  mutate(freq = count / sum(count) *100 )
+gene_freq_classification
+```
+
+```{r plot the graph for gene frequency by seroresistant and serosensitive populations}
+
+ggplot(gene_freq_classification, aes(x = Gene, y = freq, fill = Classification)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Gene Frequency in Seroresistant vs Serosensitive Populations",
+    x = "Gene",
+    y = "Frequency"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(
+    title = "Gene Frequency Heatmap",
+    x = "Gene",
+    y = "Classification"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
 ```
 
 ### Use Panaroo to identify genes
