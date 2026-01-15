@@ -1432,7 +1432,43 @@ ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq))
 
 ```
 
+```{r import the all_mobtypers_test2.csv after running MOB suite}
+
+Mcat_Hflu_mobsuite <- read.csv("./MOB_suite/all_mobtypers_test2.csv", 
+                              header = TRUE, 
+                              quote = "", 
+                              comment.char = "", 
+                              check.names = FALSE,
+                              sep = "\t", 
+                              col.names = c("sample_id", 
+                                            "num_contigs", 
+                                            "size", 
+                                            "gc", 
+                                            "md5", 
+                                            "rep_type(s)",
+                                            "rep_type_accession(s)", 
+                                            "relaxase_type(s)", 
+                                            "relaxase_type_accession(s)", 
+                                            "mpf_type", 
+                                            "mpf_type_accession(s)", 
+                                            "orit_type(s)", 
+                                            "orit_accession(s)", 
+                                            "predicted_mobility", 
+                                            "mash_nearest_neighbor", 
+                                            "mash_neighbor_distance", 
+                                            "mash_neighbor_identification", 
+                                            "primary_cluster_id", 
+                                            "secondary_cluster_idpredicted_host_range_overall_rank", 
+                                            "predicted_host_range_overall_name", 
+                                            "observed_host_range_ncbi_rank", 
+                                            "observed_host_range_ncbi_name",
+                                            "reported_host_range_lit_rank", 
+                                            "reported_host_range_lit_name", 
+                                            "associated_pmid(s)"))
+```
+
 ### Use Panaroo to identify genes
+
 After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
 ### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.66 and as well after completed Panaroo script.
