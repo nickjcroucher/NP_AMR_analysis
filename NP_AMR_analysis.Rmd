@@ -1066,7 +1066,6 @@ hflu_strains_extract1 <- hflu_strains_df %>%
          id_run = 
            if_else(str_detect(Taxon, "#"), 
                    str_extract(Taxon, "^[^#]+"), "NA"))
-
 ```
 
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
@@ -1080,7 +1079,6 @@ hflu_extract_sample_df <- sample_df %>%
          Species, 
          Cluster)
 hflu_extract_sample_df
-
 ```
 
 ```{r calculate frequencies}
@@ -1100,7 +1098,6 @@ hflu_strains_freq <- hflu_freq %>%
   group_by(Country) %>% 
   mutate(Frequency = strains_count / sum(strains_count))
 hflu_strains_freq
-
 ```
 
 ```{r plot strain frequencies per country and year}
@@ -1126,7 +1123,6 @@ Hinflu_species_counts <- hflu_extract_sample_df %>%
   count(Species, 
         name = "n_strains")
 Hinflu_species_counts
-
 ```
 ```{r count strains per country}
 Hinflu_strains_country <- hflu_extract_sample_df %>%
@@ -1145,7 +1141,6 @@ ggplot(Hinflu_strains_country,
   geom_text(aes(label = n_strains), 
             vjust = -0.5, 
             size = 4)
-
 ```
 
 ```{r plot the correlation matrics}
@@ -1154,7 +1149,6 @@ ggplot(Hinflu_strains_country, aes(x = Country, y = n_strains, fill = n_strains)
   geom_tile() + 
   scale_fill_gradient(low = "blue", high = "red") + 
   theme_minimal()
-
 ```
 
 
@@ -1165,7 +1159,6 @@ hflu_filter_extract_sample <- hflu_extract_sample_df %>%
          Country, 
          Year)
 hflu_filter_extract_sample
-
 ```
 
 ```{r export hflu filter extract data as csv format}
@@ -1179,6 +1172,7 @@ write.table(hflu_filter_extract_sample,
 ```
 
 ```{r reformat columns of hflu_strains_freq to wide format columns}
+
 hflu_strains_widefreq <- hflu_strains_freq %>%
   filter(!is.na(Country),
          Country %in% c("Cambodia", "Thailand", "United Kingdom")) %>%
@@ -1190,7 +1184,6 @@ pivot_wider(id_cols = Cluster,
             names_from = Country, 
             values_from = Frequency)
 hflu_strains_widefreq
-
 ```
 
 ```{r plot ggpair for Hflu}
@@ -1201,7 +1194,6 @@ ggpairs(hflu_strains_widefreq,
         upper = list(continuous = "cor"), 
         lower = list(continuous = "smooth"), 
         diag = list(continuous = "densityDiag"))
-
 ```
 
 ## Compare strain frequncies between samples of *H.influenzae*
@@ -1212,10 +1204,10 @@ mcat_strains_rename <- mcat_strains_df %>%
   mutate(Taxon = gsub("_fa$", "", Taxon)) %>% 
   rename(npg_run_id = Taxon)
 mcat_strains_rename
-  
 ```
 
 ```{r merge sample_df with mcat_strains_rename}
+
 mcat_strains_sample <- sample_df %>% 
   right_join(mcat_strains_rename, 
              by = "npg_run_id") %>%
@@ -1226,7 +1218,6 @@ mcat_strains_sample <- sample_df %>%
          Classification, 
          Cluster)
 mcat_strains_sample
-
 ```
 
 ```{r find seroresistant and serosensitive in each countries}
@@ -1282,7 +1273,6 @@ mcat_species_counts <- mcat_strains_sample %>%
   count(Species, 
         name = "n_strains")
 mcat_species_counts
-
 ```
 
 ```{r calculate the species in each country}
@@ -1354,6 +1344,7 @@ mcat_count_widefreq
 ```
 
 ```{r calculate the number of seroresistant and serosensitive in each countries}
+
 mcat_strains_serotype <- mcat_count_freq  %>%
   filter(!is.na(npg_run_id),
          !is.na(Cluster),
@@ -1406,6 +1397,7 @@ mcat_strains_genes
 ```
 
 ```{r calculation of gene frequency by classification}
+
 gene_freq_classification <- mcat_strains_genes %>%
   group_by(Classification, Gene) %>%
   summarise(count = n(), .groups = "drop") %>%
@@ -1437,7 +1429,6 @@ ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq))
   ) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
 
 ```
 
@@ -1532,7 +1523,6 @@ ggplot(Hinflu_version4_genefreq_wide,
        x = "Cambodia", 
        y = "United Kingdom") + 
   theme_minimal()
-
 ```
 
 ```{r plot scatter graph between Cambodia-Thailand-1}
@@ -1820,7 +1810,6 @@ Mcat_SA_amr <- read.table("./amr and hicap_analysis/Mcat_SA_amr.tab",
                             sep = "\t", 
                             col.names = c("npg_run_id", "AB_resistance"))
 Mcat_SA_amr
-
 ```
 
 ```{r get rid of the columns name}
@@ -1898,7 +1887,6 @@ Hicap_hflu <-
                                            serotype)
                                      ) %>% 
       dplyr::select(-status)
-
 ```
 
 ```{r merge Hicap_hflu with hflu_extract_sample_df by Hicap_hflu}
