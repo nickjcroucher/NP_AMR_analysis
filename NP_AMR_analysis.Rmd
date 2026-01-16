@@ -461,7 +461,10 @@ ggplot(species_sample_df,
 ```
 
 ```{r merge two datasets between assembly_stats_df and species_sample_df}
-assembly_species_merge <- left_join(assembly_stats_df, species_sample_df, by = "npg_run_id")
+assembly_species_merge <- 
+  left_join(assembly_stats_df, 
+            species_sample_df, 
+            by = "npg_run_id")
 assembly_species_merge
 
 ```
@@ -1434,37 +1437,46 @@ ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq))
 
 ```{r import the all_mobtypers_test2.csv after running MOB suite}
 
-Mcat_Hflu_mobsuite <- read.csv("./MOB_suite/all_mobtypers_test2.csv", 
-                              header = TRUE, 
+Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtypers_test2.csv", 
+                              header = FALSE, 
                               quote = "", 
                               comment.char = "", 
                               check.names = FALSE,
                               sep = "\t", 
-                              col.names = c("sample_id", 
-                                            "num_contigs", 
-                                            "size", 
-                                            "gc", 
-                                            "md5", 
+                              col.names = c("npg_run_id",
+                                              "plasmid",
+                                            "num_contigs",
+                                            "size",
+                                            "gc",
+                                            "md5",
                                             "rep_type(s)",
-                                            "rep_type_accession(s)", 
-                                            "relaxase_type(s)", 
-                                            "relaxase_type_accession(s)", 
-                                            "mpf_type", 
-                                            "mpf_type_accession(s)", 
-                                            "orit_type(s)", 
-                                            "orit_accession(s)", 
-                                            "predicted_mobility", 
-                                            "mash_nearest_neighbor", 
-                                            "mash_neighbor_distance", 
-                                            "mash_neighbor_identification", 
-                                            "primary_cluster_id", 
-                                            "secondary_cluster_idpredicted_host_range_overall_rank", 
-                                            "predicted_host_range_overall_name", 
-                                            "observed_host_range_ncbi_rank", 
+                                            "rep_type_accession(s)",
+                                            "relaxase_type(s)",
+                                            "relaxase_type_accession(s)",
+                                            "mpf_type",
+                                            "mpf_type_accession(s)",
+                                            "orit_type(s)",
+                                            "orit_accession(s)",
+                                            "predicted_mobility",
+                                            "mash_nearest_neighbor",
+                                            "mash_neighbor_distance",
+                                            "mash_neighbor_identification",
+                                            "primary_cluster_id",
+                                            "secondary_cluster_id",
+                              "predicted_host_range_overall_rank", 
+                                            "predicted_host_range_overall_name",
+                                            "observed_host_range_ncbi_rank",
                                             "observed_host_range_ncbi_name",
-                                            "reported_host_range_lit_rank", 
-                                            "reported_host_range_lit_name", 
-                                            "associated_pmid(s)"))
+                                            "reported_host_range_lit_rank",
+                                            "reported_host_range_lit_name",
+                                            "associated_pmid(s)")
+                              )
+
+
+Mcat_Hflu_mobsuite_summary_df <-
+  Mcat_Hflu_mobsuite %>% 
+    dplyr::select(npg_run_id,plasmid)
+
 ```
 
 ### Use Panaroo to identify genes
@@ -1877,6 +1889,9 @@ Mcat_SA_microreact <-
   left_join(mcat_strains_sample, 
             Mcat_SA_amr_wide,
             by = "npg_run_id") %>%
+  left_join(Mcat_Hflu_mobsuite_summary_df,
+            by = "npg_run_id") %>%
+  dplyr::mutate(plasmid = dplyr::if_else(is.na(plasmid),"None detected",plasmid)) %>%
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa")) %>% 
   mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x)))
@@ -1930,7 +1945,10 @@ Hicap_hflu <-
 Hflu_microreact_df <-
   left_join(hflu_extract_sample_df,
             Hicap_hflu,
-            by = "npg_run_id") %>% 
+            by = "npg_run_id") %>%
+    left_join(Mcat_Hflu_mobsuite_summary_df,
+            by = "npg_run_id") %>%
+  dplyr::mutate(plasmid = dplyr::if_else(is.na(plasmid),"None detected",plasmid)) %>%
   dplyr::mutate(serotype = dplyr::if_else(is.na(serotype),"NT",serotype))
 
 Hflu_microreact_df
