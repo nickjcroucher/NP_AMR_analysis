@@ -2162,7 +2162,11 @@ write.table(Hflu_microreact_df_2,
 
 ```{r merge two file of Hflu_microreact_df_2 and Hflu_microreact_resistnace for H.influenzae isolates}
 
-Hinflu_
+Hinflu_amr_mobsuite <- left_join(Hflu_microreact_df_2,
+                                 Hflu_microreact_resistnace,
+                                 by = "id") %>%
+  select(-Country.y, -Year.y, -Species.y, -Cluster.y, -serotype.y)
+Hinflu_amr_mobsuite
 ```
 
 ## Compare gene frequencies between samples
