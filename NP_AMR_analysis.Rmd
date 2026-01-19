@@ -1980,13 +1980,13 @@ Southafrica_Mcat_amr
 ```
 
 ```{r merge Mcat_Hflu_amr and Southafrica_Mcat_amr by ngg_run_id}
-Mcat_Hflu_SA_amr <- bind_rows(Mcat_amr, Southafrica_Mcat_amr)
-Mcat_Hflu_SA_amr
+Mcat_SA_amr <- bind_rows(Mcat_amr, Southafrica_Mcat_amr)
+Mcat_SA_amr
 ```
 
 ```{r get rid of the columns name}
-Mcat_Hflu_SA_amr_wide_df <-
-  Mcat_Hflu_SA_amr %>%
+Mcat_SA_amr_wide_df <-
+  Mcat_SA_amr %>%
   # Split into list column
   mutate(gene_list = str_split(AB_resistance, ",")) %>%
   # Clean whitespace
@@ -2009,7 +2009,7 @@ Mcat_Hflu_SA_amr_wide_df <-
 ```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
 Mcat_microreact_df <-  
   left_join(mcat_strains_sample, 
-            Mcat_Hflu_SA_amr_wide_df,
+            Mcat_SA_amr_wide_df,
             by = "npg_run_id") %>%
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa"))
@@ -2019,17 +2019,17 @@ Mcat_microreact_df
 ```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
 left_join_amr_sample_df <- 
   function(sample_df,
-           Mcat_Hflu_SA_amr_wide_df,
+           Mcat_SA_amr_wide_df,
            by_cols = "npg_run_id",
            fill_value = "Absent") {
 # Columns that exist only in the AMR wide dataset in right table
     right_only_cols <- 
-      setdiff(names(Mcat_Hflu_SA_amr_wide_df),
+      setdiff(names(Mcat_SA_amr_wide_df),
               names(sample_df))
 
 # Perform left join and fill only right table columns
 sample_df %>%
-  dplyr::left_join(Mcat_Hflu_SA_amr_wide_df, 
+  dplyr::left_join(Mcat_SA_amr_wide_df, 
                    by = by_cols) %>%
   dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE))) %>%
   dplyr::mutate(
@@ -2042,7 +2042,7 @@ sample_df %>%
 
 result_Mcat_microreact2 <-
   left_join_amr_sample_df(mcat_strains_sample,
-                          Mcat_Hflu_SA_amr_wide_df,
+                          Mcat_SA_amr_wide_df,
                           by_cols = "npg_run_id",
                           fill_value = "Absent") %>%
   dplyr::rename(id = npg_run_id) %>% 
@@ -2080,7 +2080,7 @@ echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'i
 ```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
 
 Hicap_hflu <-
-  read.table("./amr and hicap_analysis/all_hicap4_hflu.tab",
+  read.table("./amr_hicap_analysis/all_hicap4_hflu.tab",
                          header = TRUE, 
                          comment.char = "",
                          check.names = FALSE,
@@ -2161,5 +2161,9 @@ write.table(Hflu_microreact_df_2,
             quote = FALSE)
 ```
 
+```{r find antibiotic resistance for H.influ isolates}
+
+Hinlfu_amr_
+```
 
 ## Compare gene frequencies between samples
