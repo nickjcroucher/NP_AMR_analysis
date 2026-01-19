@@ -2170,7 +2170,8 @@ Hinflu_amr_mobsuite <- left_join(Hflu_microreact_df_2,
          Year = Year.x,
          Species = Species.x,
          Cluster = Cluster.x,
-         serotype = serotype.x)
+         serotype = serotype.x) %>%
+  select(where(~ !all(.x == "Absent")))
 
 Hinflu_amr_mobsuite
 
