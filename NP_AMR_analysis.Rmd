@@ -1435,55 +1435,6 @@ ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq))
 
 ```
 
-```{r import the all_mobtypers_test2.csv after running MOB suite}
-
-Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtypers_test2.csv", 
-                              header = FALSE, 
-                              quote = "", 
-                              comment.char = "", 
-                              check.names = FALSE,
-                              sep = "\t", 
-                              col.names = c("npg_run_id",
-                                              "plasmid",
-                                            "num_contigs",
-                                            "size",
-                                            "gc",
-                                            "md5",
-                                            "rep_type(s)",
-                                            "rep_type_accession(s)",
-                                            "relaxase_type(s)",
-                                            "relaxase_type_accession(s)",
-                                            "mpf_type",
-                                            "mpf_type_accession(s)",
-                                            "orit_type(s)",
-                                            "orit_accession(s)",
-                                            "predicted_mobility",
-                                            "mash_nearest_neighbor",
-                                            "mash_neighbor_distance",
-                                            "mash_neighbor_identification",
-                                            "primary_cluster_id",
-                                            "secondary_cluster_id",
-                              "predicted_host_range_overall_rank", 
-                                            "predicted_host_range_overall_name",
-                                            "observed_host_range_ncbi_rank",
-                                            "observed_host_range_ncbi_name",
-                                            "reported_host_range_lit_rank",
-                                            "reported_host_range_lit_name",
-                                            "associated_pmid(s)")
-                              )
-
-
-Mcat_Hflu_mobsuite_summary_df <-
-  Mcat_Hflu_mobsuite %>% 
-    dplyr::select(npg_run_id,plasmid) %>%
-    dplyr::mutate(Present = "Present") %>% 
-    tidyr::pivot_wider(id_cols = npg_run_id,
-                       names_from = plasmid,
-                       values_from = "Present",
-                       values_fill = "Absent")
-
-```
-
 ### Use Panaroo to identify genes
 
 After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
@@ -1838,6 +1789,54 @@ ggpairs(Hinflu_version4_genefreq_wide,
         diag = list(continuous = "densityDiag"))
 ```
 
+## We use MOB Suite of bioinformatic tool to analysis plasmid for *M.cattarrhalis* and *H.influenzae*
+
+```{r import the all_mobtypers_test2.csv after running MOB suite}
+
+Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtypers_test2.csv", 
+                              header = FALSE, 
+                              quote = "", 
+                              comment.char = "", 
+                              check.names = FALSE,
+                              sep = "\t", 
+                              col.names = c("npg_run_id", 
+                                            "plasmid",
+                                            "num_contigs",
+                                            "size",
+                                            "gc",
+                                            "md5",
+                                            "rep_type(s)",
+                                            "rep_type_accession(s)",
+                                            "relaxase_type(s)",
+                                            "relaxase_type_accession(s)",
+                                            "mpf_type",
+                                            "mpf_type_accession(s)",
+                                            "orit_type(s)",
+                                            "orit_accession(s)",
+                                            "predicted_mobility",
+                                            "mash_nearest_neighbor",
+                                            "mash_neighbor_distance",
+                                            "mash_neighbor_identification",
+                                            "primary_cluster_id",
+                                            "secondary_cluster_id", 
+                                            "predicted_host_range_overall_rank", 
+                                            "predicted_host_range_overall_name",
+                                            "observed_host_range_ncbi_rank",
+                                            "observed_host_range_ncbi_name",
+                                            "reported_host_range_lit_rank",
+                                            "reported_host_range_lit_name",
+                                            "associated_pmid(s)")
+                              )
+
+Mcat_Hflu_mobsuite_summary_df <-
+  Mcat_Hflu_mobsuite %>% 
+    dplyr::select(npg_run_id,plasmid) %>%
+    dplyr::mutate(Present = "Present") %>% 
+    tidyr::pivot_wider(id_cols = npg_run_id,
+                       names_from = plasmid,
+                       values_from = "Present",
+                       values_fill = "Absent")
+```
 
 ## We will import the Mcat_SA_amr.tab file after ran the abritamr bioinformatics tool of antibiotic resistance analysis for *M.cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show
 
@@ -2161,9 +2160,9 @@ write.table(Hflu_microreact_df_2,
             quote = FALSE)
 ```
 
-```{r find antibiotic resistance for H.influ isolates}
+```{r merge two file of Hflu_microreact_df_2 and Hflu_microreact_resistnace for H.influenzae isolates}
 
-Hinlfu_amr_
+Hinflu_
 ```
 
 ## Compare gene frequencies between samples
