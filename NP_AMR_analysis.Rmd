@@ -1932,7 +1932,7 @@ write.table(Mcat_SA_microreact_2,
             quote = FALSE)
 ```
 
-## We will find the antibiotic resistance of each isolated *M.cattarrhalis* strains with abritamr bioinformatics software
+## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
 ```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
@@ -2061,9 +2061,6 @@ write.table(result_Mcat_microreact2,
  
 ```
  
-## We will import the Mcat_SA_amr.tab file after ran the abritamr tool of antibiotic resistance analysis for *M.cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show. 
-
-
 ## We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
 
 ```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies}
