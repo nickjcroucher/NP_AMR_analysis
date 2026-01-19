@@ -2165,8 +2165,15 @@ write.table(Hflu_microreact_df_2,
 Hinflu_amr_mobsuite <- left_join(Hflu_microreact_df_2,
                                  Hflu_microreact_resistnace,
                                  by = "id") %>%
-  select(-Country.y, -Year.y, -Species.y, -Cluster.y, -serotype.y)
+  select(-Country.y, -Year.y, -Species.y, -Cluster.y, -serotype.y) %>%
+  rename(Country = Country.x, 
+         Year = Year.x,
+         Species = Species.x,
+         Cluster = Cluster.x,
+         serotype = serotype.x)
+
 Hinflu_amr_mobsuite
+
 ```
 
 ## Compare gene frequencies between samples
