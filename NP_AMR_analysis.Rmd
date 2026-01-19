@@ -2176,4 +2176,13 @@ Hinflu_amr_mobsuite
 
 ```
 
+```{r extract csv file of Hinflu_amr_mobsuite}
+write.table(Hinflu_amr_mobsuite,
+            file = "./microreact_analysis/Hinflu_amr_mobsuite.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+```
+
 ## Compare gene frequencies between samples
