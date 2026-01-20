@@ -1854,7 +1854,7 @@ echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[
 ```
 
 ```{r import file of Mcat_SA_amr.tab to be ready generating CSV file}
-Mcat_SA_amr <- read.table("./amr and hicap_analysis/Mcat_SA_amr.tab", 
+Mcat_SA_amr <- read.table("./amr_hicap_analysis/Mcat_SA_amr.tab", 
                             header = FALSE,
                             comment.char = "",
                             check.names = FALSE,
@@ -1886,6 +1886,7 @@ Mcat_SA_amr_wide <-
   )
 Mcat_SA_amr_wide
 ```
+
 ```{r merge Mcat_SA_amr_wide and mcat_strains_sample with "npg_run_id"}
 Mcat_SA_microreact <- 
   left_join(mcat_strains_sample, 
@@ -1930,6 +1931,7 @@ write.table(Mcat_SA_microreact_2,
             row.names = FALSE,
             quote = FALSE)
 ```
+
 
 ## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
