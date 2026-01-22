@@ -2182,4 +2182,50 @@ ggplot(Mcat_genes_amr_precent, aes(x = Present_genes, y = Country, fill = Percen
 
 ```
 
+## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
+ 
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+mcat_strains_genes <- Mcat_version4_gene_sample %>% 
+  select(npg_run_id, 
+         Gene,
+         `Non-unique Gene name`, 
+         Annotation, 
+         CDS) %>% 
+  left_join(mcat_strains_sample, 
+             by = "npg_run_id")
+mcat_strains_genes
+```
+ 
+```{r calculation of gene frequency by classification}
+ 
+gene_freq_classification <- mcat_strains_genes %>%
+  group_by(Classification, Gene) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(Classification) %>%
+  mutate(freq = count / sum(count) *100)
+gene_freq_classification
+```
+
+```{r plot the graph for gene frequency by seroresistant and serosensitive populations}
+ggplot(gene_freq_classification, aes(x = Gene, y = freq, fill = Classification)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Gene Frequency in Seroresistant vs Serosensitive Populations",
+    x = "Gene",
+    y = "Frequency"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(gene_freq_classification, aes(x = Gene, y = Classification, fill = freq)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(
+    title = "Gene Frequency Heatmap",
+    x = "Gene",
+    y = "Classification") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
 ## Compare gene frequencies between samples
