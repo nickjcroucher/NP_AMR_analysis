@@ -1881,6 +1881,14 @@ write.table(Mcat_SA_microreact_2,
             quote = FALSE)
 ```
 
+```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
+Mcat_SA_microreact_2_longer <- Mcat_SA_microreact_2 %>% 
+  pivot_longer(cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), name_to = "resistant_genes", values_to = "value") %>% 
+  filter(value != "Absent") %>% 
+  mutate(type = case_when(resistant_genes %in% c("AG261", "AB778", "AC411", "AE018") ~ "plasmid", TRUE ~ "amr_gene"))
+Mcat_SA_microreact_2_longer
+```
+
 ## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
 ```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
@@ -2136,7 +2144,8 @@ write.table(Hinflu_amr_mobsuite,
             quote = FALSE)
 ```
 
-## We try to find % of resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
+
+## We try to find % of isolates carrying different resistance genes of *M.cattarrhalis* in different countries
 
 ```{r merge data of Mcat_SA_amr_wide and mcat_strains_sample by "npg_run_id"}
 
@@ -2164,22 +2173,39 @@ Mcat_genes_amr_country <- Mcat_genes_amr_long %>%
 # Count present genes per isolate
 Mcat_genes_amr_count <- Mcat_genes_amr_long %>%
   filter(Number_Resistant_Genes != "Absent") %>%
-  count(Country, npg_run_id, name = "Present_genes")
+  count(Country, npg_run_id, Cluster, name = "Present_genes")
+Mcat_genes_amr_count
 
 # Calculate percentages
 Mcat_genes_amr_precent <- Mcat_genes_amr_count %>%
-  left_join(Mcat_genes_amr_country, by = "Country") %>%
+  left_join(Mcat_genes_amr_country, 
+            by = "Country") %>%
   mutate(Percent = Present_genes / (Total_isolates)*100)
 Mcat_genes_amr_precent
 
 ```
 
-```{r}
+```{r plot geom_tile show the distribution of resistance genes by country and by strain}
 
 ggplot(Mcat_genes_amr_precent, aes(x = Present_genes, y = Country, fill = Percent)) +
   geom_tile() +
   scale_fill_gradient(low = "blue", high = "red")
 
+```
+
+```{r plot geom_tile}
+
+ggplot(Mcat_genes_amr_precent, aes(x = Present_genes, y = Country, fill = Percent)) +
+  geom_tile(color = "blue") +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(
+    title = "Percentage of Isolates Carrying Each Resistance Gene",
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Isolates"
+  )
 ```
 
 ## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
@@ -2199,12 +2225,15 @@ mcat_strains_genes
  
 ```{r calculation of gene frequency by classification}
  
-gene_freq_classification <- mcat_strains_genes %>%
-  group_by(Classification, Gene) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  group_by(Classification) %>%
-  mutate(freq = count / sum(count) *100)
+gene_freq_classification <- mcat_strains_genes %>% 
+  filter(Classification == Seroresistant) %>%
+  dplyr::group_by(Gene) %>% 
+  dplyr::mutate(Total = sum(Classification)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Gene, Classification) %>% 
+  mutate(Frequnency = sum(Classification == Seroresistant)/Total)
 gene_freq_classification
+
 ```
 
 ```{r plot the graph for gene frequency by seroresistant and serosensitive populations}
