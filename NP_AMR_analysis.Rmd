@@ -2226,12 +2226,10 @@ mcat_strains_genes
 ```{r calculation of gene frequency by classification}
  
 gene_freq_classification <- mcat_strains_genes %>% 
-  filter(Classification == Seroresistant) %>%
   dplyr::group_by(Gene) %>% 
-  dplyr::mutate(Total = sum(Classification)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::group_by(Gene, Classification) %>% 
-  mutate(Frequnency = sum(Classification == Seroresistant)/Total)
+  dplyr::summarise(Total = n(), 
+                   Seroresistant_count = sum(Classification == "Seroresistant"), 
+                   Frequnency = Seroresistant_count/Total)
 gene_freq_classification
 
 ```
