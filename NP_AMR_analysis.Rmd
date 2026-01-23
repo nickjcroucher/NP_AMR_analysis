@@ -2235,7 +2235,7 @@ gene_freq_classification
 ```
 
 ```{r plot the graph for gene frequency by seroresistant and serosensitive populations}
-ggplot(gene_freq_classification, aes(x = Gene, y = freq, fill = Classification)) +
+ggplot(gene_freq_classification, aes(x = Gene, y = Seroresistant_count, fill = Frequnency)) +
   geom_col(position = "dodge") +
   labs(
     title = "Gene Frequency in Seroresistant vs Serosensitive Populations",
