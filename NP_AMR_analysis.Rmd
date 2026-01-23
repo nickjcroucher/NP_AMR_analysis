@@ -1146,15 +1146,6 @@ ggplot(Hinflu_strains_country,
             size = 4)
 ```
 
-```{r plot the correlation matrics}
-
-ggplot(Hinflu_strains_country, aes(x = Country, y = n_strains, fill = n_strains)) + 
-  geom_tile() + 
-  scale_fill_gradient(low = "blue", high = "red") + 
-  theme_minimal()
-```
-
-
 ```{r filter npg, country, and year from hflu_extract_sample_df}
 
 hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
@@ -1883,10 +1874,14 @@ write.table(Mcat_SA_microreact_2,
 
 ```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
 Mcat_SA_microreact_2_longer <- Mcat_SA_microreact_2 %>% 
-  pivot_longer(cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), name_to = "resistant_genes", values_to = "value") %>% 
-  filter(value != "Absent") %>% 
-  mutate(type = case_when(resistant_genes %in% c("AG261", "AB778", "AC411", "AE018") ~ "plasmid", TRUE ~ "amr_gene"))
+  pivot_longer(
+    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
+    names_to = "resistant_genes",
+    values_to = "value") %>% 
+  filter(value == "Present") %>% 
+  mutate(plasmid = case_when(id %in% c("AG261", "AB778", "AC411", "AE018") ~ "plasmid", TRUE ~ "non_plasmid" ))
 Mcat_SA_microreact_2_longer
+
 ```
 
 ## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
