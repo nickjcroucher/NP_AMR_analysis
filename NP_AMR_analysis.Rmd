@@ -1912,7 +1912,7 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
   )
 ```
 
-## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
+## After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
 ```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
@@ -1935,37 +1935,37 @@ echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[
 
 ```
 
-```{r import file of Mcat_Hflu_amr}
-Mcat_amr <- read.table("./amr_hicap_analysis/amr_summary.txt", 
+```{r import file of Hinflu_amr}
+Hinflu_amr <- read.table("./amr_hicap_analysis/amr_summary.txt", 
                             header = FALSE,
                             comment.char = "",
                             check.names = FALSE,
                             quote = "",
                             sep = "\t",
                        col.names = c("npg_run_id", "AB_resistance"))
-Mcat_amr
+Hinflu_amr
 
 ```
 
-```{r import file of southafrica_Mcat_amr}
+```{r import file of southafrica_Hinflu_amr}
 
-Southafrica_Mcat_amr <- read.csv("./amr_hicap_analysis/SAfrica_amr_summary.txt", 
+Southafrica_Hinflu_amr <- read.csv("./amr_hicap_analysis/SAfrica_amr_summary.txt", 
                                  header = FALSE, 
                                  comment.char = "",
                                  check.names = FALSE, 
                                  quote = "",
                                  sep = "\t",
                                  col.names = c("npg_run_id", "AB_resistance"))
-Southafrica_Mcat_amr
+Southafrica_Hinflu_amr
 ```
 
-```{r merge Mcat_Hflu_amr and Southafrica_Mcat_amr by ngg_run_id}
-Mcat_SA_amr <- bind_rows(Mcat_amr, Southafrica_Mcat_amr)
-Mcat_SA_amr
+```{r merge Hinflu_amr and Southafrica_Hinflu_amr by ngg_run_id}
+Hinflu_SA_amr <- bind_rows(Hinflu_amr, Southafrica_Hinflu_amr)
+Hinflu_SA_amr
 ```
 
 ```{r get rid of the columns name}
-Mcat_SA_amr_wide_df <-
+Hinflu_SA_amr_wide_df <-
   Mcat_SA_amr %>%
   # Split into list column
   mutate(gene_list = str_split(AB_resistance, ",")) %>%
@@ -1986,20 +1986,20 @@ Mcat_SA_amr_wide_df <-
   )
 ```
 
-```{r merge Mcat_Hflu_SA_amr and mcat_filter_strains_sample with npg_run_id}
-Mcat_microreact_df <-  
-  left_join(mcat_strains_sample, 
-            Mcat_SA_amr_wide_df,
+```{r merge Hinflu_SA_amr_wide_df and hflu_extract_sample_df with npg_run_id}
+Hinflu_microreact_df <-  
+  left_join(hflu_extract_sample_df, 
+            Hinflu_SA_amr_wide_df,
             by = "npg_run_id") %>%
   rename(id = npg_run_id) %>% 
   dplyr::mutate(id = paste0(id,"_fa"))
-Mcat_microreact_df
+Hinflu_microreact_df
 ```
 
 ```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
 left_join_amr_sample_df <- 
   function(sample_df,
-           Mcat_SA_amr_wide_df,
+           Hinflu_SA_amr_wide_df,
            by_cols = "npg_run_id",
            fill_value = "Absent") {
 # Columns that exist only in the AMR wide dataset in right table
@@ -2021,8 +2021,8 @@ sample_df %>%
 ```{r re-try other codes to filter amr strains}
 
 result_Mcat_microreact2 <-
-  left_join_amr_sample_df(mcat_strains_sample,
-                          Mcat_SA_amr_wide_df,
+  left_join_amr_sample_df(hflu_extract_sample_df,
+                          Hinflu_SA_amr_wide_df,
                           by_cols = "npg_run_id",
                           fill_value = "Absent") %>%
   dplyr::rename(id = npg_run_id) %>% 
@@ -2099,16 +2099,6 @@ Hflu_microreact_df_2 <-
   rename(id = npg_run_id)
 
 Hflu_microreact_df_2
-```
-
-```{r merge Mcat_Hflu_SA_amr and Hflu_microreact_df by npg_run_id for finding the AB resistance}
-
-Hflu_microreact_resistnace <- left_join(Hflu_microreact_df, 
-                                        Mcat_SA_amr_wide, 
-                                        by = "npg_run_id") %>% 
-  rename(id = npg_run_id)
-Hflu_microreact_resistnace
-
 ```
 
 ```{r export the file from microreact}
@@ -2210,6 +2200,42 @@ ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_
     axis.text.x = element_text(angle = 40, hjust = 1),
     panel.grid = element_blank()
   )
+```
+
+### We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
+
+```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
+Hinflu_genes_amr <- Hinflu_microreact_df %>% 
+  pivot_longer(cols = -c(id , Country, Year, Species, Cluster),
+    names_to = "Hinflu_resistant_gene",
+    values_to = "status_resistant_genes") %>% 
+  group_by(Country, Hinflu_resistant_gene) %>%
+  summarise(Total = n(),
+            present = sum(status_resistant_genes != "Absent"),
+            percent_present = (present /Total) * 100, 
+            .groups = "drop") %>%
+  filter(present > 0)
+
+Hinflu_genes_amr
+
+```
+
+```{r plot geom_tile}
+ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = percent_present)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
+  labs(
+    title = "Percentage of H.influenzae Isolates Carrying Resistance Genes",
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Present"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
+  )
+
 ```
 
 ## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
