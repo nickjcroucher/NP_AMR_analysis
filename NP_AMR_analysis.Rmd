@@ -1872,16 +1872,44 @@ write.table(Mcat_SA_microreact_2,
             quote = FALSE)
 ```
 
+## Which resistance genes are associated with which plasmids?
+
 ```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
 Mcat_SA_microreact_2_longer <- Mcat_SA_microreact_2 %>% 
   pivot_longer(
     cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
     names_to = "resistant_genes",
-    values_to = "value") %>% 
-  filter(value == "Present") %>% 
-  mutate(plasmid = case_when(id %in% c("AG261", "AB778", "AC411", "AE018") ~ "plasmid", TRUE ~ "non_plasmid" ))
+    values_to = "value_gene") %>% 
+  pivot_longer(
+    cols = c("AG261", "AB778", "AC411", "AE018"), 
+    names_to = "plasmid",
+    values_to = "value_plasmid"
+  ) %>%
+  filter(value_gene != "Absent", 
+         value_plasmid != "Absent") %>%
+  group_by(resistant_genes, plasmid) %>%
+  summarise(count = n(), .groups = "drop")
 Mcat_SA_microreact_2_longer
+```
 
+```{r plot geom_tile}
+ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill = count)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(
+    low = "lightyellow",
+    high = "red",
+    name = "Count"
+  ) +
+  labs(
+    title = "Plasmid–Resistance-Gene\nAssociation of M.cattarrhalis",
+    x = "Plasmid",
+    y = "Resistance Gene"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
 ```
 
 ## After ran the Abritamr too of antibiotic resistance analysis for *M.cattarrhalis* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *M.cattarrhalis* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
@@ -2124,7 +2152,7 @@ Hinflu_amr_mobsuite <- left_join(Hflu_microreact_df_2,
          Species = Species.x,
          Cluster = Cluster.x,
          serotype = serotype.x) %>%
-  select(where(~ !all(.x == "Absent")))
+  select(where(~ !all(.x == "Absent", na.rm = TRUE)))
 
 Hinflu_amr_mobsuite
 
@@ -2140,6 +2168,7 @@ write.table(Hinflu_amr_mobsuite,
 ```
 
 
+
 ## We try to find % of isolates carrying different resistance genes of *M.cattarrhalis* in different countries
 
 ```{r merge data of Mcat_SA_amr_wide and mcat_strains_sample by "npg_run_id"}
@@ -2151,55 +2180,35 @@ mcat_genes_amr <-
 mcat_genes_amr
 ```
 
-```{r convert gene columns to long format}
+```{r convert gene columns to long format then count resistance genes per country not per isolate}
 
 Mcat_genes_amr_long <- mcat_genes_amr %>%
   pivot_longer(cols = -c(npg_run_id, Country, Year, Species, Classification, Cluster),
     names_to = "Resistant_Gene",
-    values_to = "Number_Resistant_Genes")
-
+    values_to = "Status_Resistant_Genes") %>%
+  group_by(Country, Resistant_Gene) %>%
+  summarise(Total = n(),
+            Present = sum(Status_Resistant_Genes == "Present", na.rm = TRUE),
+            Percent_present = (Present /Total) * 100, 
+            .groups = "drop")
 Mcat_genes_amr_long
-
-# Count isolates per country
-Mcat_genes_amr_country <- Mcat_genes_amr_long %>% 
-  distinct(npg_run_id, Country) %>%
-  count(Country, name = "Total_isolates")
-
-# Count present genes per isolate
-Mcat_genes_amr_count <- Mcat_genes_amr_long %>%
-  filter(Number_Resistant_Genes != "Absent") %>%
-  count(Country, npg_run_id, Cluster, name = "Present_genes")
-Mcat_genes_amr_count
-
-# Calculate percentages
-Mcat_genes_amr_precent <- Mcat_genes_amr_count %>%
-  left_join(Mcat_genes_amr_country, 
-            by = "Country") %>%
-  mutate(Percent = Present_genes / (Total_isolates)*100)
-Mcat_genes_amr_precent
-
 ```
 
 ```{r plot geom_tile show the distribution of resistance genes by country and by strain}
 
-ggplot(Mcat_genes_amr_precent, aes(x = Present_genes, y = Country, fill = Percent)) +
-  geom_tile() +
-  scale_fill_gradient(low = "blue", high = "red")
-
-```
-
-```{r plot geom_tile}
-
-ggplot(Mcat_genes_amr_precent, aes(x = Present_genes, y = Country, fill = Percent)) +
+ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_present)) +
   geom_tile(color = "blue") +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
   labs(
-    title = "Percentage of Isolates Carrying Each Resistance Gene",
+    title = "Percentage of M. catarrhalis Isolates Carrying Resistance Genes",
     x = "Resistance Gene",
     y = "Country",
-    fill = "% Isolates"
+    fill = "% Present"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
   )
 ```
 
