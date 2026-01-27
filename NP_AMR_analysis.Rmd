@@ -2,7 +2,9 @@
 title: "NP AMR analyses"
 author: "Nicholas Croucher"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -849,7 +851,7 @@ The *M. catarrhalis* population can be divided into serosensitive and seroresist
 
 First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.5:
 
-``` {bash Calculate PopPUNK distances, eval = FALSE}
+``` {r Calculate PopPUNK distances, eval = FALSE}
 
 poppunk --create-db --output Mcat_poppunk_db --r-files Mcat_poppunk.in --threads 24 --gpu-dist --min-k 13 --max-k 39
 
@@ -861,7 +863,7 @@ The distance distribution shows:
 
 An initial refinement was used to identify a boundary separating the serosensitive and seroresistant isolates. This required searching the region bounded by (0.025,0.25) and (0.0325,0.275):
 
-``` {bash Calculate PopPUNK distances, eval = FALSE}
+``` {r Calculate PopPUNK distances, eval = FALSE}
 
 poppunk --fit-model refine --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db --gpu-graph  --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
 
