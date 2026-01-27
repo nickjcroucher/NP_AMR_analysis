@@ -1914,7 +1914,7 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
 
 ```{r convert Hflu_microreact_df_2}
 Hinfluflu_microreact_2_longer <- Hflu_microreact_df_2 %>% 
-  pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, aph(3'')-Ib*, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
+  pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
                names_to = "Hinflu_resistant_gene", 
                values_to = "value_resistant_gene") %>% 
   pivot_longer(
@@ -1926,9 +1926,31 @@ values_to = "value_Hinflu_plasmid") %>%
   filter(value_resistant_gene != "Absent", 
          value_Hinflu_plasmid != "Absent") %>% 
   group_by(Hinflu_resistant_gene, Hinflu_plasmid) %>% 
-  summarise(count = n(), .groups = "drop")
-
+  summarise(Hinflu_count = n(), .groups = "drop")
+Hinfluflu_microreact_2_longer
 ```
+
+```{plot geom_tile to find resistant genes associtated with plasmid for H.influenzae}
+
+ggplot(Hinfluflu_microreact_2_longer, aes(x = Hinflu_plasmid, y = Hinflu_resistant_gene, fill = Hinflu_count)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(
+    low = "lightyellow",
+    high = "red",
+    name = "Count"
+  ) +
+  labs(
+    title = "Plasmid–Resistance-Gene\nAssociation of H.influenzae",
+    x = "Plasmid",
+    y = "Resistance Gene"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
+
 
 ## After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
