@@ -2003,6 +2003,59 @@ ggplot(Hinflu_microreact_2_longer,
   )
 ```
 
+```{r calculate the proportion of H.influenzae}
+Hinflu_microreact_2_longer_2 <- Hflu_microreact_df_2 %>% 
+  pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
+               names_to = "Hinflu_resistant_gene_2", 
+               values_to = "value_resistant_gene_2") %>% 
+  pivot_longer(
+    cols = c(`AF100`, `AB621`, `AC497`, `AB946`, `AE169`, `AF098`, `novel_e914484fa6adbecb8a8c8a21bda20586`, `novel_9b4919678e1694cf9ad485cd589cbe51`, `novel_d33ee37eefe86ec798ae4759eca0dfec`, `novel_a393a45de1d5da1f97e295df4fa6e928`, `novel_058a9c5c6f0355e99dfddf5ddd1752b6`, `novel_edca0cf77cac36c1883a81caa88f6c32`, `novel_dd75e64596acf766af00a25deaf5352c`, `novel_f15ab5254942466d924d099ed2d0243a`, `novel_ddd227b1761692236b12d550b3f57ccf`, `AE025`, `novel_f42c984c5c68ecd548f3988889265e6f`, `novel_56b1eea500397ddc7d8f72a322d03a90`, `novel_1542f46dea18d0b342d53899d34226f9`, `novel_e8c40b0f4850a17145382a0f7ed7d2f5`, `novel_9a8e27f9a8b36e52c2e34320b2dca18c`, `novel_fb33d66b7906966d373043a57d796e63`, `novel_7252eae1d6e12be301dc0056f22092f7`, `novel_3f8fbf9cc90fca5c329d5bb364c99769`, `novel_6d316276eda241ec0fac4a3c8f98d942`, `novel_781097c565a2d79af31c589179be2b68`, `novel_fcd2fb894595482f23499650f81c4184`, `novel_330fae4f79bbb1fe2faaa49d677e83bf`, `novel_240493d5bd8093208cc541399aacc2c2`,
+`novel_a39a9c7f7aa6650c621c471203a08346`, `novel_a382882662ffea703590d453daee6a28`, `novel_071630adf7395bed54463d0ce41009d5`, `novel_c09f917e4282e62f14a02ca58a181492`,
+`novel_9ae0ee4fc2c591bbe7869e621fab222b`, `novel_eaa4f6197d5832e909c2a865d6fa3fbe`, `novel_9e832218f8f971e99124780aca90e4c5`, `AB947`, `novel_d8141a41d8c5915ae50f9978ba0b6313`), 
+names_to = "Hinflu_plasmid_2", 
+values_to = "value_Hinflu_plasmid_2")
+
+# Step 2: Count bacteria with each plasmid (denominator)
+total_plasmid <- Hinflu_microreact_2_longer_2  %>%
+  filter(value_Hinflu_plasmid_2 != "Absent") %>%
+  distinct(id, Hinflu_plasmid_2) %>%
+  count(Hinflu_plasmid_2, name = "total_bacteria_and_plasmid")
+
+# Step 3: Count bacteria with gene and plasmid (numerator)
+plasmid_gene_counts <- Hinflu_microreact_2_longer_2  %>%
+  filter(value_resistant_gene_2 != "Absent",
+         value_Hinflu_plasmid_2 != "Absent") %>%
+  distinct(id, Hinflu_resistant_gene_2, Hinflu_plasmid_2) %>% 
+  count(Hinflu_resistant_gene_2, Hinflu_plasmid_2, name = "count_gene_plasmid")
+
+# Step 4: Join and compute proportion
+proportions_2 <- plasmid_gene_counts %>%
+  left_join(total_plasmid, by = "Hinflu_plasmid_2") %>%
+  mutate(proportion = count_gene_plasmid / total_bacteria_and_plasmid)
+proportions_2
+
+```
+
+```{r plot the proportion_2}
+ggplot(proportions_2, aes(x = Hinflu_plasmid_2, 
+                        y = Hinflu_resistant_gene_2, 
+                        fill = proportion)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
+  labs(
+    x = "Plasmid",
+    y = "Resistance Gene",
+    title = "Proportion of H.influenzae \nCarrying Each Resistance Gene per Plasmid"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
 ## After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
 ```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa}
