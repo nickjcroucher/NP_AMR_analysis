@@ -1913,6 +1913,57 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
     panel.grid = element_blank()
   )
 ```
+```{r}
+Mcat_SA_microreact_2_longer_2 <- Mcat_SA_microreact_2 %>% 
+  pivot_longer(
+    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
+    names_to = "resistant_genes",
+    values_to = "value_gene") %>% 
+  pivot_longer(
+    cols = c("AG261", "AB778", "AC411", "AE018"), 
+    names_to = "plasmid",
+    values_to = "value_plasmid")
+    
+# Step 2: Count bacteria with each plasmid (denominator)
+plasmid_totals <- Mcat_SA_microreact_2_longer_2 %>%
+  filter(value_plasmid != "Absent") %>%
+  distinct(id, plasmid) %>%
+  count(plasmid, name = "total_bacteria_with_plasmid")
+
+# Step 3: Count bacteria with gene and plasmid (numerator)
+gene_plasmid_counts <- Mcat_SA_microreact_2_longer_2 %>%
+  filter(value_gene != "Absent",
+         value_plasmid != "Absent") %>%
+  distinct(id, resistant_genes, plasmid) %>% 
+  count(resistant_genes, plasmid, name = "count_gene_and_plasmid")
+
+# Step 4: Join and compute proportion
+proportions <- gene_plasmid_counts %>%
+  left_join(plasmid_totals, by = "plasmid") %>%
+  mutate(proportion = count_gene_and_plasmid / total_bacteria_with_plasmid)
+proportions
+
+```
+
+```{r plot geom_tile}
+
+ggplot(proportions, aes(x = plasmid, 
+                        y = resistant_genes, 
+                        fill = proportion)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
+  labs(
+    x = "Plasmid",
+    y = "Resistance Gene",
+    title = "Proportion of M.cattarrhalis \nCarrying Each Resistance Gene per Plasmid"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
 
 ```{r convert Hflu_microreact_df_2}
 Hinflu_microreact_2_longer <- Hflu_microreact_df_2 %>% 
