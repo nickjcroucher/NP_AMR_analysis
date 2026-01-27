@@ -2275,31 +2275,4 @@ ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = perc
 
 ```
 
-
-## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistant populations 
- 
-```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
-
-mcat_strains_genes <- Mcat_version4_gene_sample %>% 
-  select(npg_run_id, 
-         Gene,
-         `Non-unique Gene name`, 
-         Annotation, 
-         CDS) %>% 
-  left_join(mcat_strains_sample, 
-             by = "npg_run_id")
-mcat_strains_genes
-```
- 
-```{r calculation of gene frequency by classification}
- 
-gene_freq_classification <- mcat_strains_genes %>% 
-  dplyr::group_by(Gene) %>% 
-  dplyr::summarise(Total = n(), 
-                   Seroresistant_count = sum(Classification == "Seroresistant"), 
-                   Frequnency = Seroresistant_count/Total)
-gene_freq_classification
-
-```
-
 ## Compare gene frequencies between samples
