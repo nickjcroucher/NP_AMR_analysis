@@ -1216,6 +1216,29 @@ mcat_strains_sample <- sample_df %>%
 mcat_strains_sample
 ```
 
+```{r find the frequency of Mcat before and after 2012}
+mcat_freq_before_after_2012 <- specific_filter %>%
+  filter(Country == "United Kingdom") %>% 
+  mutate(period = ifelse(Year < 2012, "2012 and After", "Before 2012"),
+         is_mcat = Species.x == "Moraxella catarrhalis") %>%
+  group_by(period) %>%
+  summarise(mcat_count_before = sum(is_mcat), 
+            total_before = n(), 
+            frequency_mcat_before = mcat_count_before / total_before)
+mcat_freq_before_after_2012
+
+ggplot(mcat_freq_before_after_2012, aes(x = period, y = frequency_mcat_before* 100)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "% of UK Moraxella catarrhalis Strains Before vs After 2012",
+    x = "Period",
+    y = "Percentage (%)"
+  ) +
+  theme_minimal()
+
+
+```
+
 ```{r find seroresistant and serosensitive in each countries}
 
 mcat_summary <- mcat_strains_sample %>%
