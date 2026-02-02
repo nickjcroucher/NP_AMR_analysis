@@ -1219,22 +1219,23 @@ mcat_strains_sample
 ```{r find the frequency of Mcat before and after 2012}
 mcat_freq_before_after_2012 <- specific_filter %>%
   filter(Country == "United Kingdom") %>% 
-  mutate(period = ifelse(Year < 2012, "2012 and After", "Before 2012"),
+  mutate(period = ifelse(Year < 2012, "Before 2012", "After 2012"),
          is_mcat = Species.x == "Moraxella catarrhalis") %>%
+  group_by(period, Species.x) %>%
+  summarise(count = n()) %>% 
   group_by(period) %>%
-  summarise(mcat_count_before = sum(is_mcat), 
-            total_before = n(), 
-            frequency_mcat_before = mcat_count_before / total_before)
+  rename(Species = Species.x) %>%
+  mutate(frequency_mcat_before_after = count /sum(count))
 mcat_freq_before_after_2012
 
-ggplot(mcat_freq_before_after_2012, aes(x = period, y = frequency_mcat_before* 100)) +
-  geom_col(fill = "steelblue") +
+ggplot(mcat_freq_before_after_2012, aes(x = period, y = frequency_mcat_before_after* 100, fill = Species)) +
+  geom_col(position = "dodge") +
   labs(
-    title = "% of UK Moraxella catarrhalis Strains Before vs After 2012",
-    x = "Period",
+    title = "% of UK Strains Before vs After 2012",
+    x = "Year",
     y = "Percentage (%)"
   ) +
-  theme_minimal()
+  theme_minimal() 
 
 
 ```
