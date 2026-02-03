@@ -1153,8 +1153,31 @@ ggplot(Hinflu_strains_country,
 hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
   select(npg_run_id, 
          Country, 
-         Year)
+         Year,
+         Species)
 hflu_filter_extract_sample
+```
+
+```{r calculate the frequnecies (%) of H.influenzae strain compared between timepoints in the UK}
+hinflu_freq_before_after <- hflu_filter_extract_sample %>% 
+  filter(Country == "United Kingdom") %>%
+  group_by(Year) %>%
+  summarise(year_hinflu = n(),
+            .groups = "drop") %>% 
+  mutate(frequency_all_hflu = (year_hinflu / sum(year_hinflu)) * 100)
+hinflu_freq_before_after
+
+ggplot(
+  hinflu_freq_before_after, 
+       aes(x = Year, y = frequency_all_hflu) + 
+         geom_line(size = 1.2, colour = "steelblue") + 
+         geom_point(size = 3, colour = "steelblue") + 
+         labs(title = "Frequency of H.influenzae Strains in the UK \nCompare between Timepoints",
+    x = "Year",
+    y = "Frequency (%)"
+  ) + 
+    theme_minimal(base_size = 14)
+  
 ```
 
 ```{r export hflu filter extract data as csv format}
@@ -1216,28 +1239,25 @@ mcat_strains_sample <- sample_df %>%
 mcat_strains_sample
 ```
 
-```{r find the frequency of Mcat before and after 2012}
-mcat_freq_before_after_2012 <- specific_filter %>%
-  filter(Country == "United Kingdom") %>% 
-  mutate(period = ifelse(Year < 2012, "Before 2012", "After 2012"),
-         is_mcat = Species.x == "Moraxella catarrhalis") %>%
-  group_by(period, Species.x) %>%
-  summarise(count = n()) %>% 
-  group_by(period) %>%
-  rename(Species = Species.x) %>%
-  mutate(frequency_mcat_before_after = count /sum(count))
-mcat_freq_before_after_2012
+```{r find the frequency (%) of M.cattarrhalis strain compared between each timepoints in the UK}
+mcat_freq_before_after <- mcat_strains_sample %>% 
+  filter(Country == "United Kingdom") %>%
+  group_by(Year) %>%
+  summarise(year_mcat = n(),
+            .groups = "drop") %>% 
+  mutate(frequency_all_mcat = (year_mcat / sum(year_mcat)) * 100)
+mcat_freq_before_after
 
-ggplot(mcat_freq_before_after_2012, aes(x = period, y = frequency_mcat_before_after* 100, fill = Species)) +
-  geom_col(position = "dodge") +
+ggplot(mcat_freq_before_after, 
+       aes(x = Year, y = frequency_all_mcat)) +
+  geom_line(size = 1.2, colour = "steelblue") +
+  geom_point(size = 3, colour = "steelblue") +
   labs(
-    title = "% of UK Strains Before vs After 2012",
+    title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between Timepoints",
     x = "Year",
-    y = "Percentage (%)"
+    y = "Frequency (%)"
   ) +
-  theme_minimal() 
-
-
+  theme_minimal(base_size = 14)
 ```
 
 ```{r find seroresistant and serosensitive in each countries}
@@ -1937,7 +1957,7 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
     panel.grid = element_blank()
   )
 ```
-```{r}
+```{r cacluate the proportion of Mcattarrhalis of resistance gene associated plasmid}
 Mcat_SA_microreact_2_longer_2 <- Mcat_SA_microreact_2 %>% 
   pivot_longer(
     cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
