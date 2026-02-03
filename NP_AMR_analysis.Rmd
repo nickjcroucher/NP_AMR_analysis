@@ -1166,18 +1166,11 @@ hinflu_freq_before_after <- hflu_filter_extract_sample %>%
             .groups = "drop") %>% 
   mutate(frequency_all_hflu = (year_hinflu / sum(year_hinflu)) * 100)
 hinflu_freq_before_after
+```
 
-ggplot(
-  hinflu_freq_before_after, 
-       aes(x = Year, y = frequency_all_hflu) + 
-         geom_line(size = 1.2, colour = "steelblue") + 
-         geom_point(size = 3, colour = "steelblue") + 
-         labs(title = "Frequency of H.influenzae Strains in the UK \nCompare between Timepoints",
-    x = "Year",
-    y = "Frequency (%)"
-  ) + 
-    theme_minimal(base_size = 14)
-  
+```{r plot graph}
+
+ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme_minimal()
 ```
 
 ```{r export hflu filter extract data as csv format}
@@ -1253,7 +1246,7 @@ ggplot(mcat_freq_before_after,
   geom_line(size = 1.2, colour = "steelblue") +
   geom_point(size = 3, colour = "steelblue") +
   labs(
-    title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between Timepoints",
+    title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between timepoints",
     x = "Year",
     y = "Frequency (%)"
   ) +
