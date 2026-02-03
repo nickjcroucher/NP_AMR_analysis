@@ -1170,7 +1170,15 @@ hinflu_freq_before_after
 
 ```{r plot graph}
 
-ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme_minimal()
+ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + scale_x_continuous(breaks = 2009:2020) + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme_minimal() + theme(
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12),
+    axis.text.x  = element_text(face = "bold", size = 10),
+    axis.text.y  = element_text(face = "bold", size = 10), 
+    axis.line.x = element_line(colour = "black", linewidth = 1.2),
+    axis.line.y = element_line(colour = "black", linewidth = 1.2), 
+    panel.border = element_blank()
+    )
 ```
 
 ```{r export hflu filter extract data as csv format}
@@ -1243,14 +1251,23 @@ mcat_freq_before_after
 
 ggplot(mcat_freq_before_after, 
        aes(x = Year, y = frequency_all_mcat)) +
-  geom_line(size = 1.2, colour = "steelblue") +
+  geom_line(size = 1.2, colour = "steelblue") + 
+  scale_x_continuous(breaks = 2009:2020) + 
   geom_point(size = 3, colour = "steelblue") +
   labs(
     title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between timepoints",
     x = "Year",
     y = "Frequency (%)"
   ) +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 12) + theme(
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12),
+    axis.text.x  = element_text(face = "bold", size = 10),
+    axis.text.y  = element_text(face = "bold", size = 10), 
+    axis.line.x = element_line(colour = "black", linewidth = 1.2),
+    axis.line.y = element_line(colour = "black", linewidth = 1.2), 
+    panel.border = element_blank()
+    )
 ```
 
 ```{r find seroresistant and serosensitive in each countries}
