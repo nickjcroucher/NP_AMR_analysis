@@ -1787,6 +1787,15 @@ ggpairs(Hinflu_version4_genefreq_wide,
 
 ## We use MOB Suite of bioinformatic tool to analysis plasmid for *M.cattarrhalis* and *H.influenzae*
 
+```{r after we had all *fa files for both M.cattarrhalis and H.influenzae in one directory in Ubuntu then we need to declare all those *fa files}
+
+declare -i N; N=1; for f in *.fa; do echo -en "#PBS -o mobsuite.^array_index^.o\n#PBS -e mobsuite.^array_index^.e\n#PBS -l walltime=04:00:00\n#PBS -l select=1:ncpus=1:mem=4gb\n" > mobsuite_job.$N; echo 'eval "$(~/miniforge3/condabin/conda shell.bash hook)"' >> mobsuite_job.$N; echo -en "conda activate mobenv\ncd /rds/general/user/skaing/home/Hflu_Mcat_mobsuite\nmob_recon -u --infile ${f} --outdir ${f%.fa}_mobtyper\n" >> mobsuite_job.$N; chmod +x mobsuite_job.$N; N=($N+1); done
+```
+
+```{r etract all analysis MOB Suite files as one csv file named all_mobtypers_test2.csv}
+head -n 1 37017_2#333_mobtyper/mobtyper_results.txt & for f in *_mobtyper/mobtyper_results.txt; do perl -lane 'if ($F[0] !~ /sample_id/) {print $_;}' ${f}; done | tr ':' '\t' > all_mobtypers_test2.csv
+```
+
 ```{r import the all_mobtypers_test2.csv after running MOB suite}
 
 Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtypers_test2.csv", 
