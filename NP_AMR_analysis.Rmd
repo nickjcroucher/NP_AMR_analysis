@@ -2349,13 +2349,14 @@ Hflu_microreact_resistnace <-
 Hflu_microreact_resistnace
 ```
 
-```{r merge two file of Hflu_microreact_df_2 and Hflu_microreact_resistnace for H.influenzae isolates}
+```{r merge two file of Mcat_Hflu_mobsuite_summary_df and Hflu_microreact_resistnace for H.influenzae isolates}
 
 Hinflu_amr_mobsuite <- 
   Mcat_Hflu_mobsuite_summary_df %>%
-  rename(id = npg_run_id) %>% 
-  left_join(Hflu_microreact_resistnace, 
-            by = "id") %>%
+  dplyr::rename(id = npg_run_id) %>% 
+  right_join(Hflu_microreact_resistnace, 
+            by = "id") %>% 
+  dplyr::mutate(id = paste0(id,"_fa")) %>% 
   select(where(~ !all(.x == "Absent", na.rm = TRUE)))
 Hinflu_amr_mobsuite
 
