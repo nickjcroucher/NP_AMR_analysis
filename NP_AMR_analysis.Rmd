@@ -2173,7 +2173,7 @@ Hinflu_SA_amr
 
 ```{r get rid of the columns name}
 Hinflu_SA_amr_wide_df <-
-  Mcat_SA_amr %>%
+  Hinflu_SA_amr %>%
   # Split into list column
   mutate(gene_list = str_split(AB_resistance, ",")) %>%
   # Clean whitespace
@@ -2191,6 +2191,7 @@ Hinflu_SA_amr_wide_df <-
     values_from = present,
     values_fill = "Absent"
   )
+Hinflu_SA_amr_wide_df
 ```
 
 ```{r merge Hinflu_SA_amr_wide_df and hflu_extract_sample_df with npg_run_id}
@@ -2208,15 +2209,15 @@ left_join_amr_sample_df <-
   function(sample_df,
            Hinflu_SA_amr_wide_df,
            by_cols = "npg_run_id",
-           fill_value = "Absent") {
+           fill_value = "Absence") {
 # Columns that exist only in the AMR wide dataset in right table
     right_only_cols <- 
-      setdiff(names(Mcat_SA_amr_wide_df),
+      setdiff(names(Hinflu_SA_amr_wide_df),
               names(sample_df))
 
 # Perform left join and fill only right table columns
 sample_df %>%
-  dplyr::left_join(Mcat_SA_amr_wide_df, 
+  dplyr::left_join(Hinflu_SA_amr_wide_df, 
                    by = by_cols) %>%
   dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE))) %>%
   dplyr::mutate(
@@ -2234,6 +2235,7 @@ result_Mcat_Hinflu_microreact2 <-
                           fill_value = "Absent") %>%
   dplyr::select(where(~ !all(.x == "Absence", na.rm = TRUE)))
 result_Mcat_Hinflu_microreact2
+
 ```
 
 ```{r export file microreact file}
@@ -2337,19 +2339,24 @@ write.table(Hflu_microreact_df_2,
             quote = FALSE)
 ```
 
+```{r merge Mcat_Hflu_SA_amr and Hflu_microreact_df by npg_run_id for finding the AB resistance}
+ 
+Hflu_microreact_resistnace <- 
+  left_join(Hflu_microreact_df, 
+            Hinflu_SA_amr_wide_df, 
+            by = "npg_run_id") %>%
+  rename(id = npg_run_id)
+Hflu_microreact_resistnace
+```
+
 ```{r merge two file of Hflu_microreact_df_2 and Hflu_microreact_resistnace for H.influenzae isolates}
 
-Hinflu_amr_mobsuite <- left_join(Hflu_microreact_df_2,
-                                 Hflu_microreact_resistnace,
-                                 by = "id") %>%
-  select(-Country.y, -Year.y, -Species.y, -Cluster.y, -serotype.y) %>%
-  rename(Country = Country.x, 
-         Year = Year.x,
-         Species = Species.x,
-         Cluster = Cluster.x,
-         serotype = serotype.x) %>%
+Hinflu_amr_mobsuite <- 
+  Mcat_Hflu_mobsuite_summary_df %>%
+  rename(id = npg_run_id) %>% 
+  left_join(Hflu_microreact_resistnace, 
+            by = "id") %>%
   select(where(~ !all(.x == "Absent", na.rm = TRUE)))
-
 Hinflu_amr_mobsuite
 
 ```
