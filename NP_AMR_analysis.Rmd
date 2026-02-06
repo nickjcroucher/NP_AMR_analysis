@@ -2042,6 +2042,15 @@ Mcat_frequency_cluster <- Mcat_SA_microreact_2 %>%
   filter(!is.na(early), !is.na(late))
 Mcat_frequency_cluster
 
+Mcat_2_test <- Mcat_SA_microreact_2 %>%
+  filter(Country == "United Kingdom") %>%
+  mutate(during = ifelse(Year < 2012, "early", "late")) %>%
+  group_by(during, Cluster) %>%
+  summarise(number = n(), .groups = "drop") %>%
+  group_by(during) %>%
+  mutate(freq = number / sum(number) * 100)
+Mcat_2_test
+
 ggplot(Mcat_frequency_cluster, aes(x = early, y = late, lable = Cluster)) +
   geom_line(size = 1.2, colour = "steelblue") + 
   geom_point(size = 3, colour = "steelblue") + 
