@@ -2028,6 +2028,33 @@ ggplot(proportions, aes(x = plasmid,
   )
 ```
 
+```{r frequency of Mcat cluster in early and late 2012 of the UK distribution}
+Mcat_frequency_cluster <- Mcat_SA_microreact_2 %>% 
+  filter(Country == "United Kingdom") %>% 
+  mutate(during = ifelse(Year < 2012, "early", "late")) %>% 
+  group_by(Cluster, during) %>% 
+  summarise(number = n(), .groups = "drop") %>% 
+  group_by(Cluster) %>% 
+  mutate(freq_Mcat_cluster = number / sum(number) * 100) %>%  
+  select(Cluster, during, freq_Mcat_cluster) %>% 
+  tidyr::pivot_wider(names_from = during, 
+                     values_from = freq_Mcat_cluster) %>% 
+  filter(!is.na(early), !is.na(late))
+Mcat_frequency_cluster
+
+ggplot(Mcat_frequency_cluster, aes(x = early, y = late, lable = Cluster)) +
+  geom_line(size = 1.2, colour = "steelblue") + 
+  geom_point(size = 3, colour = "steelblue") + 
+  labs(
+    title = "Frequency of M. catarrhalis Cluster in the UK\n at early and late year of 2012",
+    x = "Frequency before 2012",
+    y = "Frequency after 2012"
+  ) +
+  theme_minimal()
+
+```
+
+
 ```{r convert Hflu_microreact_df_2}
 Hinflu_microreact_2_longer <- Hflu_microreact_df_2 %>% 
   pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
