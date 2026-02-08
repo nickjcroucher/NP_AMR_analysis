@@ -2035,25 +2035,17 @@ Mcat_frequency_cluster <- Mcat_SA_microreact_2 %>%
   group_by(Cluster, during) %>% 
   summarise(number = n(), .groups = "drop") %>% 
   group_by(Cluster) %>% 
-  mutate(freq_Mcat_cluster = number / sum(number) * 100) %>%  
+  mutate(freq_Mcat_cluster = number / sum(number)) %>%  
   select(Cluster, during, freq_Mcat_cluster) %>% 
   tidyr::pivot_wider(names_from = during, 
-                     values_from = freq_Mcat_cluster) %>% 
+                     values_from = freq_Mcat_cluster, 
+                     values_fill = 0) %>% 
   filter(!is.na(early), !is.na(late))
 Mcat_frequency_cluster
-
-Mcat_2_test <- Mcat_SA_microreact_2 %>%
-  filter(Country == "United Kingdom") %>%
-  mutate(during = ifelse(Year < 2012, "early", "late")) %>%
-  group_by(during, Cluster) %>%
-  summarise(number = n(), .groups = "drop") %>%
-  group_by(during) %>%
-  mutate(freq = number / sum(number) * 100)
-Mcat_2_test
-
 ggplot(Mcat_frequency_cluster, aes(x = early, y = late, lable = Cluster)) +
   geom_line(size = 1.2, colour = "steelblue") + 
   geom_point(size = 3, colour = "steelblue") + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
   labs(
     title = "Frequency of M. catarrhalis Cluster in the UK\n at early and late year of 2012",
     x = "Frequency before 2012",
@@ -2061,6 +2053,36 @@ ggplot(Mcat_frequency_cluster, aes(x = early, y = late, lable = Cluster)) +
   ) +
   theme_minimal()
 
+
+Mcat_2_test <- Mcat_SA_microreact_2 %>%
+  filter(Country == "United Kingdom") %>% 
+  mutate(Mcat_period = ifelse(Year < 2012, "early", "late")) %>% 
+  group_by(Cluster, Mcat_period) %>%
+  summarise(Mcat_number_strains = n(), .groups = "drop") %>%
+  group_by(Mcat_period) %>%
+  mutate(Mcat_freq = Mcat_number_strains / sum(Mcat_number_strains) *100) %>% 
+  ungroup() %>%
+  select(Mcat_period, Mcat_freq, Cluster) %>% 
+  tidyr::pivot_wider(names_from = Mcat_period, 
+                     values_from = Mcat_freq, 
+                     values_fill = 0)
+Mcat_2_test
+ggplot(Mcat_2_test,
+       aes(x = early, y = late, colour = Cluster)) + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
+  geom_point(size = 3, alpha = 0.8, colour = "steelblue") + 
+  labs(
+    title = "Early vs Late Frequency of Moraxella catarrhalis Clusters (UK)",
+    x = "Early timepoint frequency (%)",
+    y = "Late timepoint frequency (%)"
+  ) +
+  theme_minimal(base_size = 12) + 
+  scale_x_continuous(expand = expansion(mult = 0.05)) +
+  scale_y_continuous(expand = expansion(mult = 0.05)) + 
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right"
+  )
 ```
 
 
