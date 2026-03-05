@@ -2526,4 +2526,19 @@ ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = perc
 
 ```
 
+## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistance populations
+
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+mcat_serosen_serore_genes <- Mcat_version4_gene_sample %>%
+  select(npg_run_id,
+         Gene, 
+         `Non-unique Gene name`,
+         Annotation,
+         CDS) %>%
+  left_join(mcat_strains_sample,
+            by = "npg_run_id")
+mcat_serosen_serore_genes
+```
+
 ## Compare gene frequencies between samples
