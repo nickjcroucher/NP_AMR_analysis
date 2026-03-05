@@ -2488,7 +2488,17 @@ ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_
   )
 ```
 
+```{r find the blaBRO-1, blaBRO-1*, blaBRO-2 gene in Mcat and filter the seroresistance and serosensitive}
 
+Mcat_serosen_seroresis <- Mcat_SA_microreact %>% 
+  select(id, Classification, 
+         `blaBRO-1`) %>% 
+  filter(`blaBRO-1` == "Present", Classification == "Seroresistant")
+Mcat_serosen_seroresis
+
+table(Mcat_serosen_seroresis$`blaBRO-1`)
+
+```
 
 ### We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
 
