@@ -863,7 +863,7 @@ The distance distribution shows:
 
 An initial refinement was used to identify a boundary separating the serosensitive and seroresistant isolates. This required searching the region bounded by (0.025,0.25) and (0.0325,0.275):
 
-``` {r Calculate PopPUNK distances, eval = FALSE}
+``` {r Refine PopPUNK model for Mcat, eval = FALSE}
 
 poppunk --fit-model refine --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db --gpu-graph  --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
 
@@ -986,7 +986,7 @@ poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroR
 
 The output can then be visualised, and the strains classified:
 
-``` {bash Refine model to seroresistant isolates, eval = FALSE}
+``` {bash Visualise PopPUNK database visualisation, eval = FALSE}
 
 poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_refined_model_db --threads 1 --output Mcat_seroResistant_viz --microreact
 
@@ -1086,7 +1086,8 @@ hflu_extract_sample_df <- sample_df %>%
 hflu_extract_sample_df
 ```
 
-```{r calculate frequencies}
+```{r Hflu calculate frequencies}
+
 hflu_freq <- hflu_extract_sample_df %>%
   filter(!is.na(npg_run_id),
          !is.na(Species),
@@ -1105,7 +1106,7 @@ hflu_strains_freq <- hflu_freq %>%
 hflu_strains_freq
 ```
 
-```{r plot strain frequencies per country and year}
+```{r Hflu plot strain frequencies per country and year}
 
 ggplot(hflu_strains_freq, 
        aes(x = Cluster, 
@@ -1287,7 +1288,8 @@ mcat_summary <- mcat_strains_sample %>%
 mcat_summary
 ```
 
-```{r calculate frequencies}
+```{r Mcat calculate frequencies}
+
 mcat_strains_freq <- mcat_strains_sample %>%
   filter(!is.na(npg_run_id),
          !is.na(Classification),
@@ -1363,7 +1365,7 @@ write.table(mcat_filter_strains_sample,
             quote = FALSE)
 ```
 
-```{r plot strain frequencies per country and year}
+```{r Mcat plot strain frequencies per country and year}
 
 ggplot(mcat_count_freq, 
        aes(x = Cluster, 
@@ -1873,7 +1875,8 @@ Mcat_SA_amr <- read.table("./amr_hicap_analysis/Mcat_SA_amr.tab",
 Mcat_SA_amr
 ```
 
-```{r get rid of the columns name}
+```{r Mcat get rid of the columns name}
+
 Mcat_SA_amr_wide <-
   Mcat_SA_amr %>%
   # Split into list column
@@ -1923,7 +1926,8 @@ Mcat_SA_microreact_2 <-
 Mcat_SA_microreact_2
 ```
 
-```{r export file microreact file}
+```{r Mcat export file microreact file}
+
 write.table(Mcat_SA_microreact,
             file = "./microreact_analysis/Mcat_SA_microreact.csv",
             sep = ",",
@@ -1961,7 +1965,8 @@ Mcat_SA_microreact_2_longer <- Mcat_SA_microreact_2 %>%
 Mcat_SA_microreact_2_longer
 ```
 
-```{r plot geom_tile}
+```{r plot geom_tile for Mcat resistance}
+
 ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill = count)) +
   geom_tile(color = "blue") +
   scale_fill_gradient(
@@ -2185,7 +2190,8 @@ ggplot(Hflu_frequency_cluster, aes(x = early, y = late, colour = Cluster)) +
 declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
 ```
 
-```{bash command line for extracting all files}
+```{bash command line for extracting South African AMR files}
+
 echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > SAfrica_amr_summary.txt
 
 ```
@@ -2196,7 +2202,7 @@ declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.
 
 ```
 
-```{bash command line for extracting all files}
+```{bash command line for extracting AMR files}
 
 echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > amr_summary.txt
 
@@ -2232,7 +2238,8 @@ Hinflu_SA_amr <- bind_rows(Hinflu_amr,
 Hinflu_SA_amr
 ```
 
-```{r get rid of the columns name}
+```{r Hflu get rid of the columns name}
+
 Hinflu_SA_amr_wide_df <-
   Hinflu_SA_amr %>%
   # Split into list column
@@ -2301,7 +2308,8 @@ result_Mcat_Hinflu_microreact2
 
 ```
 
-```{r export file microreact file}
+```{r Mcat2 export file microreact file}
+
 write.table(result_Mcat_microreact2,
             file = "./microreact_analysis/Mcat_microreact2.csv",
             sep = ",",
@@ -2381,7 +2389,7 @@ Hflu_microreact_df_2
 
 ```
 
-```{r export the file from microreact}
+```{r Hflu resistance export the file from microreact}
 
 write.table(Hflu_microreact_resistnace,
             file = "./microreact_analysis/Hflu_microreact_resistant.csv",
@@ -2391,7 +2399,7 @@ write.table(Hflu_microreact_resistnace,
             quote = FALSE)
 ```
 
-```{r export the file from microreact}
+```{r Hflu export the file from microreact}
 
 write.table(Hflu_microreact_df,
             file = "./microreact_analysis/Hinflu_microreact.csv",
@@ -2518,7 +2526,8 @@ Hinflu_genes_amr
 
 ```
 
-```{r plot geom_tile}
+```{r plot geom_tile for Hflu and resistance}
+
 ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = percent_present)) +
   geom_tile(color = "blue") +
   scale_fill_gradient(low = "lightyellow", high = "red") +
