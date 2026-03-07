@@ -1394,7 +1394,7 @@ if (!file.exists(hflu_tar)) {
 
 ```
 
-``` {r Next step}
+``` {r Next step, cache = FALSE}
 
 # 2. Inspect archive contents
 archive_info <- archive(hflu_tar)
@@ -1406,7 +1406,7 @@ if (nrow(archive_info) < 1) {
 
 ```
 
-``` {r one more step}
+``` {r one more step, cache = FALSE}
 
 # 3. Read the CSV from inside the archive
 hflu_conn <- archive_read(
