@@ -529,7 +529,7 @@ write.table(Hinflu_filter,
 
 ```
 
-## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
+### Filter dataset to samples where observed and expected species match
 
 ```{r create a proportion}
 
@@ -547,8 +547,6 @@ tidyr::fill(Matching_proportion, .direction = "updown") %>%
 proportion_threshold <- 0.95
 
 ```
-
-## We plot matching proportion for each types of species (Moraxella catarrhalis, Haemophilus influenzae and Mixed bacteria) to get the high quality species
 
 We will filter at a species matching proportion of `r proportion_threshold`.
 
@@ -569,7 +567,7 @@ ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
 
 ```
 
-## We use the genus level to analyse Moraxella
+### Test filtering at the genus level for Moraxella
 
 ```{r Moraxella at genus level}
 
@@ -598,7 +596,7 @@ ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
 
 ```
 
-## We try to remove the species with lower proportion of 0.95
+## Final filtering on sequence characteristics
 
 We want to keep samples with threshold:
 N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,000 bp, matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony.
@@ -715,20 +713,6 @@ ggplot(
     ) +
   ggtitle("Distribution of Haemophilus influenzae\nacross countries by year")
 
-```
-
-```{r get genomes to process}
-
-mcat_list <-
-  filtered_genus_df %>% 
-    dplyr::filter(Species.x == "Moraxella catarrhalis") %>% 
-    dplyr::select(npg_run_id)
-
-write.table(mcat_list,
-            file = "./sample_data/Mcat_single_isolates.txt",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
 ```
 
 ```{r import Global Hinf metadata microreact}
@@ -1395,6 +1379,52 @@ panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_pa
 ```
 
 Read in the gene presence/absence matrix for *H. influenzae*:
+
+```{r import_hinflu_panaroo, cache=FALSE}
+library(archive)
+
+hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
+
+# 1. Check that the tarball exists
+if (!file.exists(hflu_tar)) {
+  stop("Panaroo output file not found: ", hflu_tar,
+       "\nCheck that it is present and committed in the repo, ",
+       "and that the path is correct relative to NP_AMR_analysis.Rmd.")
+}
+
+# 2. Inspect archive contents
+archive_info <- archive(hflu_tar)
+print(archive_info)
+
+if (nrow(archive_info) < 1) {
+  stop("Archive ", hflu_tar, " is empty.")
+}
+
+# 3. Read the CSV from inside the archive
+hflu_conn <- archive_read(
+  hflu_tar,
+  file = "Hflu_gene_presence_absence.csv"
+  # or: file = archive_info$path[1]
+)
+
+Hinflu_version4_gene_preabsence <- read.csv(
+  hflu_conn,
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+    ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+  )
+
+```
 
 ```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
 
