@@ -1422,7 +1422,7 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 
 ```
 
-```{r calculate number of genes and frequency genes for Hinfluenzae}
+```{r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
 
 # Count distinct genomes per country
 Hinflu_version4_genecount <- Hinflu_version4_gene_sample %>%
