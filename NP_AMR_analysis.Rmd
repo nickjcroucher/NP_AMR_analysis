@@ -1425,14 +1425,20 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 ```{r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
 
 # Count distinct genomes per country
-Hinflu_version4_genecount <- Hinflu_version4_gene_sample %>%
-  filter(!is.na(npg_run_id) & Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & CDS != "") %>%
+Hflu_gene_count_df <-
+  Hinflu_version4_gene_sample %>%
+  dplyr::select(npg_run_id,Country,CDS) %>% 
+  dplyr::filter(!is.na(npg_run_id) & Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & CDS != "")
+  
+Hinflu_version4_genecount <-
+  Hflu_gene_count_df %>%
   group_by(Country) %>%
   summarise(Genome_count = n_distinct(npg_run_id),
     .groups = "drop")
 
 # Count Coding DNA Sequence occurrences per gene and country
-Hinflu_version4_cdscount <- Hinflu_version4_gene_sample %>%
+Hinflu_version4_cdscount <-
+  Hflu_gene_count_df %>%
   group_by(Country, Gene) %>%
   summarise(CDS_count = n(), 
             .groups = "drop") %>%
@@ -1597,16 +1603,24 @@ UK_early_late_df <- Mcat_version4_gene_sample %>%
 ```{r calculate number genomes and frequnecy genes for M.cattarrhalis}
 
 # Count distinct genomes per country
-Mcat_version4_genecount <- Mcat_version4_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_count = n_distinct(npg_run_id),
-    .groups = "drop")
+Mcat_gene_count_df <-
+  Mcat_version4_gene_sample %>%
+  dplyr::select(npg_run_id,Country,CDS) %>% 
+  dplyr::filter(!is.na(npg_run_id) & Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & CDS != "")
+  
+
+Mcat_version4_genecount <-
+  Mcat_gene_count_df %>%
+    filter(!is.na(npg_run_id),
+      Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+      ) %>%
+    group_by(Country) %>%
+    summarise(Genome_count = n_distinct(npg_run_id),
+      .groups = "drop")
 
 # Count Coding DNA Sequence occurrences per gene and country
-Mcat_version4_cdscount <- Mcat_version4_gene_sample %>%
+Mcat_version4_cdscount <-
+  Mcat_gene_count_df %>%
   filter(CDS != "" & 
          Country %in% 
            c("United Kingdom", "Cambodia", "Thailand", "South Africa")
