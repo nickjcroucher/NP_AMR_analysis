@@ -1392,6 +1392,10 @@ if (!file.exists(hflu_tar)) {
        "and that the path is correct relative to NP_AMR_analysis.Rmd.")
 }
 
+```
+
+``` {r Next step}
+
 # 2. Inspect archive contents
 archive_info <- archive(hflu_tar)
 print(archive_info)
@@ -1399,6 +1403,10 @@ print(archive_info)
 if (nrow(archive_info) < 1) {
   stop("Archive ", hflu_tar, " is empty.")
 }
+
+```
+
+``` {r one more step}
 
 # 3. Read the CSV from inside the archive
 hflu_conn <- archive_read(
