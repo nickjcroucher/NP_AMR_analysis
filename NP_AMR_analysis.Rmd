@@ -1380,65 +1380,23 @@ panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_pa
 
 Read in the gene presence/absence matrix for *H. influenzae*:
 
-```{r import_hinflu_panaroo, cache=FALSE}
-library(archive)
+```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
 
 hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
 
-# 1. Check that the tarball exists
-if (!file.exists(hflu_tar)) {
-  stop("Panaroo output file not found: ", hflu_tar,
-       "\nCheck that it is present and committed in the repo, ",
-       "and that the path is correct relative to NP_AMR_analysis.Rmd.")
-}
+tmp_dir  <- tempdir()
+hflu_fn <- "Hflu_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, hflu_fn)
 
-```
-
-``` {r Next step, cache = FALSE}
-
-# 2. Inspect archive contents
-archive_info <- archive(hflu_tar)
-print(archive_info)
-
-if (nrow(archive_info) < 1) {
-  stop("Archive ", hflu_tar, " is empty.")
-}
-
-```
-
-``` {r one more step, cache = FALSE}
-
-# 3. Read the CSV from inside the archive
-hflu_conn <- archive_read(
+archive::archive_extract(
   hflu_tar,
-  file = "Hflu_gene_presence_absence.csv"
-  # or: file = archive_info$path[1]
+  file = hflu_fn,
+  dir  = tmp_dir
 )
-
-Hinflu_version4_gene_preabsence <- read.csv(
-  hflu_conn,
-  header = TRUE,
-  comment.char = "",
-  check.names = FALSE,
-  sep = ","
-) %>%
-  tidyr::pivot_longer(
-    cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-    ),
-    names_to = "npg_run_id",
-    values_to = "CDS"
-  )
-
-```
-
-```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
 
 Hinflu_version4_gene_preabsence <-
   read.csv(
-    archive_read("./panaroo_output/Hflu_gene_presence_absence.tar.gz",file = 1),
+    tmp_path,
     header = TRUE,
     comment.char = "",
     check.names = FALSE,
@@ -1590,8 +1548,19 @@ Read in the gene presence/absence matrix:
 
 ```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
 
+mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
+
+mcat_fn <- "Mcat_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, mcat_fn)
+
+archive::archive_extract(
+  mcat_tar,
+  file = mcat_fn,
+  dir  = tmp_dir
+)
+
 Mcat_version4_gene_preabsence <- read.csv(
-  archive_read("./panaroo_output/Mcat_gene_presence_absence.tar.gz", file = 1),
+  tmp_path,
   header = TRUE,
   comment.char = "",
   check.names = FALSE,
