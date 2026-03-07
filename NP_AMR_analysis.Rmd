@@ -291,10 +291,6 @@ assembly_stats_df <-
       dplyr::mutate(Assembly = gsub(".assembly","",Assembly))
   ) %>% 
     dplyr::rename(npg_run_id = Assembly)
-# Join to sample information
-assembly_stats_df %<>%
-  dplyr::left_join(sample_df,
-                   by = "npg_run_id")
 
 ```
 
@@ -371,43 +367,6 @@ ggplot(data = assembly_join_sample) +
   scale_shape_manual(values = c(17,19, 20), 
                      labels = c("Haemophilus influenzae", "Moraxella catarrhalis", "Mixed bacteria")) + coord_cartesian(xlim = c(2005, 2021)) + 
   theme_minimal()
-
-```
-
-```{r filter npg_run_id list of Moraxella cattarrhalis}
-
-filter_Moraxella <- summary_df %>%
-  filter(Species == "Moraxella catarrhalis") %>%
-select(npg_run_id) %>%
-distinct()
-
-```
-
-```{r generate file of npg_run_id Moraxella cattarrhalis}
-
-write.table(filter_Moraxella,
-            file = "./sample_data/npg_run_id_Morax2_SA.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-```{r filter npg_run_id of Haemophilus influenzae}
-
-filter_Haemophilus <- summary_df %>%
-  filter(Species == "Haemophilus influenzae") %>%
-  select(npg_run_id) %>%
-  distinct()
-
-```
-
-```{r generate npg_run_id file of Haemophilus influenzae}
-
-write.table(filter_Haemophilus,
-            file = "./sample_data/npg_run_id_Haemo2_SA.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
 
 ```
 
@@ -664,7 +623,7 @@ ggplot(filtered_proportion,
   theme_minimal()
 ```
 
-## plot the characteristic of the filter data (country and years)
+### Test filtering at the genus level
 
 ```{r plot the filter dataset}
 
@@ -705,53 +664,7 @@ ggplot(data = plot_genus_df) +
 
 ```
 
-```{r filter npg_run_id of Moraxella }
-
-filter_Moraxella <- plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis") %>%
-  select(npg_run_id) %>%
-  distinct()
-
-```
-
-```{r generate npg_run_id list of Moraxella}
-
-write.table(filter_Moraxella,
-            file = "./sample_data/npg_run_id_Moraxella_cat.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r filter npg_run_id of Haemophilus}
-
-filter_Haemophilus <- plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae") %>%
-  select(npg_run_id) %>%
-  distinct()
-
-```
-
-```{r generate npg_run_id list of Haemophilus}
-
-write.table(filter_Haemophilus,
-            file = "./sample_data/npg_run_id_Haemo_influ.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-## Calculate genomes of each species and each countries in each years.
-
-```{r calculate genomes of each species}
-
-table(plot_genus_df$Species.y)
-table(plot_genus_df$Country)
-table(plot_genus_df$Year)
-
-```
+## Epidemiological characteristics
 
 ```{r Moraxella in each country and each year}
 
