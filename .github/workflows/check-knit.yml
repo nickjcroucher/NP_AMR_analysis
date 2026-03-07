@@ -37,13 +37,11 @@ jobs:
           extra-packages: |
             rmarkdown
             knitr
+            magrittr
             tidyverse
+            stringr
             GGally
-            # add any others you use explicitly:
-            # stringr
-            # readr
-            # etc.
-          needs: rmarkdown
+            archive
 
       - name: Render NP_AMR_analysis.Rmd
         run: |
