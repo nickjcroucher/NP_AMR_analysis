@@ -1426,19 +1426,13 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 
 # Count distinct genomes per country
 Hinflu_version4_genecount <- Hinflu_version4_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-    ) %>%
+  filter(!is.na(npg_run_id) & Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & CDS != "") %>%
   group_by(Country) %>%
   summarise(Genome_count = n_distinct(npg_run_id),
     .groups = "drop")
 
 # Count Coding DNA Sequence occurrences per gene and country
 Hinflu_version4_cdscount <- Hinflu_version4_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-         ) %>%
   group_by(Country, Gene) %>%
   summarise(CDS_count = n(), 
             .groups = "drop") %>%
