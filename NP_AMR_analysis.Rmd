@@ -1441,8 +1441,7 @@ Hinflu_version4_cdscount <-
   Hflu_gene_count_df %>%
   group_by(Country, Gene) %>%
   summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
+            .groups = "drop")
 
 # Calculate frequency genes
 Hinflu_version4_genefreq <- Hinflu_version4_cdscount %>%
@@ -1627,8 +1626,7 @@ Mcat_version4_cdscount <-
          ) %>%
   group_by(Country, Gene) %>%
   summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
+            .groups = "drop")
 
 # Calculate frequency genes
 Mcat_version4_genefreq <- Mcat_version4_cdscount %>%
