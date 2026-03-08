@@ -1425,24 +1425,57 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 ```{r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
 
 # Count distinct genomes per country
-Hinflu_version4_genefreq <-
-  Hinflu_version4_gene_sample %>%
-  dplyr::filter(!is.na(npg_run_id) & 
-                Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & 
-                CDS != "") %>% 
-  dplyr::select(npg_run_id,Country,Gene) %>% 
-    group_by(Country) %>%
-  mutate(Genome_count = n_distinct(npg_run_id)) %>% 
-  dplyr::ungroup() %>% 
-  group_by(Country, Gene) %>%
-  mutate(CDS_count = n_distinct(npg_run_id)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::select(Country, 
-         Gene, 
-         CDS_count, 
-         Genome_count) %>% 
-  dplyr::distinct() %>% 
-  dplyr::mutate(Frequency = CDS_count/Genome_count)
+# Hinflu_version4_genefreq <-
+#   Hinflu_version4_gene_sample %>%
+#   dplyr::filter(!is.na(npg_run_id) & 
+#                 Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") & 
+#                 CDS != "") %>% 
+#   dplyr::select(npg_run_id,Country,Gene) %>% 
+#     group_by(Country) %>%
+#   mutate(Genome_count = n_distinct(npg_run_id)) %>% 
+#   dplyr::ungroup() %>% 
+#   group_by(Country, Gene) %>%
+#   mutate(CDS_count = n_distinct(npg_run_id)) %>% 
+#   dplyr::ungroup() %>% 
+#   dplyr::select(Country, 
+#          Gene, 
+#          CDS_count, 
+#          Genome_count) %>% 
+#   dplyr::distinct() %>% 
+#   dplyr::mutate(Frequency = CDS_count/Genome_count)
+
+Hinflu_long_filtered <- Hinflu_version4_gene_sample %>%
+  dplyr::filter(
+    !is.na(npg_run_id),
+    CDS != "",
+    Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
+  ) %>%
+  dplyr::select(npg_run_id, Country, Gene)
+
+```
+
+``` {r Genomes per country}
+
+# 1. Genomes per country
+Hinflu_genome_counts <- Hinflu_long_filtered %>%
+  dplyr::distinct(npg_run_id, Country) %>%
+  dplyr::count(Country, name = "Genome_count")
+
+```
+
+``` {r Genes per country}
+# 2. CDS counts per gene and country
+Hinflu_gene_counts <- Hinflu_long_filtered %>%
+  dplyr::distinct(npg_run_id, Country, Gene) %>%  # each genome counted once per gene
+  dplyr::count(Country, Gene, name = "CDS_count")
+```
+
+``` {r Combine freqs}
+# 3. Frequencies
+Hinflu_version4_genefreq <- Hinflu_gene_counts %>%
+  dplyr::left_join(Hinflu_genome_counts, by = "Country") %>%
+  dplyr::mutate(Frequency = CDS_count / Genome_count)
+
 
 ```
 
