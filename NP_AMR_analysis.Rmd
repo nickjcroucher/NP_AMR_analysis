@@ -1424,6 +1424,16 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 
 ```{r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
 
+if (identical(Sys.getenv("CI"), "true")) {
+  
+  message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
+  Hinflu_version4_gene_sample %<>%
+    dplyr::group_by(Country, Gene) %>%
+    dplyr::slice_head(n = 50) %>%
+    dplyr::ungroup()
+  
+}
+
 # Count distinct genomes per country
 # Hinflu_version4_genefreq <-
 #   Hinflu_version4_gene_sample %>%
