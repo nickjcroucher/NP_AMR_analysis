@@ -1426,7 +1426,9 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 
 if (identical(Sys.getenv("CI"), "true")) {
   
-  message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
+  Hinflu_version4_gene_preabsence <- NULL
+  
+  message("CI environment detected: memory management commands")
   Hinflu_version4_gene_sample %<>%
   slice_sample(prop = 0.01)
   
@@ -1609,6 +1611,8 @@ UK_early_late_df <- Mcat_version4_gene_sample %>%
 ```{r Mcat downsampling for CI}
 
 if (identical(Sys.getenv("CI"), "true")) {
+  
+  Mcat_version4_gene_preabsence <- NULL
   
   message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
   Mcat_version4_gene_sample %<>%
