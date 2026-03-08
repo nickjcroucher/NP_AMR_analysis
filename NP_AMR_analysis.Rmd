@@ -1570,7 +1570,7 @@ archive::archive_extract(
 
 ```
 
-``` {r Process archive}
+``` {r Process archive, cache = FALSE}
 
 Mcat_version4_gene_preabsence <- read.csv(
   tmp_path,
@@ -1578,7 +1578,14 @@ Mcat_version4_gene_preabsence <- read.csv(
   comment.char = "",
   check.names = FALSE,
   sep = ","
-  ) %>%
+  )
+
+
+```
+
+``` {r Now pivot }
+
+Mcat_version4_gene_preabsence %<>%
   tidyr::pivot_longer(
     cols = -c(
       Gene,
