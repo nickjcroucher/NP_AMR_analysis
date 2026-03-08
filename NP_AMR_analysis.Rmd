@@ -1422,7 +1422,7 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 
 ```
 
-```{r Hflu downsampling for CI}
+```{r Hflu downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
   
@@ -1568,6 +1568,10 @@ archive::archive_extract(
   dir  = tmp_dir
 )
 
+```
+
+``` {r Process archive}
+
 Mcat_version4_gene_preabsence <- read.csv(
   tmp_path,
   header = TRUE,
@@ -1609,7 +1613,7 @@ UK_early_late_df <- Mcat_version4_gene_sample %>%
 
 ```
 
-```{r Mcat downsampling for CI}
+```{r Mcat downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
   
