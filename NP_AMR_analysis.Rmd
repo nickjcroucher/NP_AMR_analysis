@@ -1558,6 +1558,7 @@ Read in the gene presence/absence matrix:
 
 mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
 
+tmp_dir  <- tempdir()
 mcat_fn <- "Mcat_gene_presence_absence.csv"
 tmp_path <- file.path(tmp_dir, mcat_fn)
 
