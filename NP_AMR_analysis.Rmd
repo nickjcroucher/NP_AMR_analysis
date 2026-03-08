@@ -1445,11 +1445,12 @@ Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence,
 #   dplyr::mutate(Frequency = CDS_count/Genome_count)
 
 Hinflu_long_filtered <- Hinflu_version4_gene_sample %>%
+  dplyr::select(npg_run_id, Country, Gene, CDS) %>% 
   dplyr::filter(
     !is.na(npg_run_id),
     CDS != "",
     Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")
-  ) %>%
+  ) %>% 
   dplyr::select(npg_run_id, Country, Gene)
 
 ```
