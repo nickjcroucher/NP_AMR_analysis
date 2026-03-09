@@ -42,7 +42,9 @@ jobs:
             stringr
             GGally
             archive
+            tinytex
 
       - name: Render NP_AMR_analysis.Rmd
         run: |
+          Rscript -e 'tinytex::install_tinytex(force = TRUE)'
           Rscript -e 'rmarkdown::render("NP_AMR_analysis.Rmd", output_format = "all", envir = new.env())'
