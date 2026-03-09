@@ -8,7 +8,20 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+is_ci <- identical(Sys.getenv("CI"), "true")
+
+if (is_ci) {
+  message("CI environment detected: disabling knitr caching.")
+  knitr::opts_chunk$set(
+    echo  = TRUE,
+    cache = FALSE
+  )
+} else {
+  knitr::opts_chunk$set(
+    echo  = TRUE,
+    cache = TRUE  # or FALSE if you prefer
+  )
+}
 
 require(magrittr)
 require(tidyverse)
