@@ -1408,9 +1408,7 @@ Hinflu_version4_gene_preabsence <-
     ) %>%
     tidyr::pivot_longer(
       cols = -c(
-        Gene,
-        `Non-unique Gene name`, 
-        Annotation
+        Gene
         ),
       names_to = "npg_run_id",
       values_to = "CDS"
@@ -1420,9 +1418,33 @@ Hinflu_version4_gene_preabsence <-
 
 ```{r merge two data between Hinflu_version3_gene_preabsence and sample_df, cache = FALSE}
 
-Hinflu_version4_gene_sample <- left_join(Hinflu_version4_gene_preabsence, 
-                                         sample_df, 
-                                         by = "npg_run_id")
+sample_df_cols <-
+  c("npg_run_id",
+    "name",
+    "sample_accession_number",
+    "sample_id",
+    "manual_qc",
+    "annotation_file",
+    "assembly_file",
+    "qc_file",
+    "Isolate",
+    "Cohort",
+    "Country",
+    "Region",
+    "Year",
+    "Description",
+    "Species")
+
+Hinflu_version4_gene_sample <-
+  Hinflu_version4_gene_preabsence %>% 
+      dplyr::select(npg_run_id,
+         Gene,
+         CDS) %>%
+    dplyr::left_join(sample_df %>% 
+                       dplyr::select(
+                         dplyr::all_of(sample_df_cols)
+                       ),
+                     by = "npg_run_id")
 
 ```
 
@@ -1597,9 +1619,7 @@ Mcat_version4_gene_preabsence <- read.csv(
 Mcat_version4_gene_preabsence %<>%
   tidyr::pivot_longer(
     cols = -c(
-      Gene,
-      `Non-unique Gene name`, 
-      Annotation
+      Gene
       ),
     names_to = "npg_run_id",
     values_to = "CDS"
@@ -1609,9 +1629,16 @@ Mcat_version4_gene_preabsence %<>%
 
 ```{r merge data between Mcat version4 gene presence absence and sample_df by npg run id, cache = FALSE}
 
-Mcat_version4_gene_sample <- left_join(Mcat_version4_gene_preabsence, 
-                                       sample_df, 
-                                       by = "npg_run_id")
+Mcat_version4_gene_sample <-
+  Mcat_version4_gene_preabsence %>% 
+    dplyr::select(npg_run_id,
+         Gene,
+         CDS) %>%
+    dplyr::left_join(sample_df %>% 
+                       dplyr::select(
+                         dplyr::all_of(sample_df_cols)
+                       ),
+                     by = "npg_run_id")
 
 ```
 
@@ -1668,6 +1695,7 @@ Mcat_version4_genefreq <-
 ```
 
 ```{r reformat columns of Mcattarrhalis to wide columns}
+
 Mcat_version4_genefreq_wide <- Mcat_version4_genefreq %>%
   dplyr::select(Country, 
          Gene, 
@@ -2597,8 +2625,6 @@ mcat_serosen_serore_genes <-
   Mcat_version4_gene_sample %>%
   select(npg_run_id,
          Gene, 
-         `Non-unique Gene name`,
-         Annotation,
          CDS) %>%
   left_join(mcat_strains_sample,
             by = "npg_run_id")
