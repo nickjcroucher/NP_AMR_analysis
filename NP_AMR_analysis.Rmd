@@ -2644,4 +2644,30 @@ mcat_serosen_serore_genes <-
 
 ```
 
+## All plasmid microreact links of *M.cattarrhalis* and *H.influenzae* 
+Plasmid of *M.cattarrhalis*
+-<https://microreact.org/project/6dXeUstQx3WxRPNDgfYL3t-moraxella-population-plasmid-ae018>
+-<https://microreact.org/project/4D7xzXhw5V4N95ffR75MqU-moraxella-population-plasmid-ac411>
+-<https://microreact.org/project/wPkFU4AGB7TqN6tuQDrUm2-moraxella-population-plasmid-ab778>
+-<https://microreact.org/project/oiYRhnTzRsQnb17aas35Mv-moraxella-population-plasmid-ag261>
+
+Plasmid of *H.influenzae*
+
+-<https://microreact.org/project/jYaSJhLnw5eKNjE38rV23v-h-influenzae-plasmid-af100>
+-<https://microreact.org/project/7vhwRNj1BUmR9aycoxxxpP-h-influenzae-plasmid-ae025>
+-<https://microreact.org/project/fPBZNbs2Ap8uJR4iDN1g4C-h-influenzae-plasmid-ac497>
+-<https://microreact.org/project/bLcqpWEMmer44AnEJXKkyh-h-influenzae-plasmid-ab947>
+-<https://microreact.org/project/7Y77gxEyjWP46GtEmD7WUr-h-influenzae-plasmid-ab261>
+-<https://microreact.org/project/4Q9MF4sBFJSNFmhSEWX8Hr-h-influenzae-plasmid-ab946>
+-<https://microreact.org/project/1pNRDtKv8GRVcZ8BH9yBVr-h-influenzae-plasmid-af098>
+-<https://microreact.org/project/2xzdSLxUew1rWPPazcUVZH-h-influenzae-plasmid-ae169>
+
+## All summary of the resistance gene analysis of *M.cattarrhalis*
+we use Bakta to analise the plasmid to find resistance gene then we use Artemis software to those resistance genes.
+
+
+
+## Use gggene to plot annotations of plasmids
+
+
 ## Compare gene frequencies between samples
