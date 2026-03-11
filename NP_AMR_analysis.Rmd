@@ -2663,11 +2663,59 @@ Plasmid of *H.influenzae*
 -<https://microreact.org/project/2xzdSLxUew1rWPPazcUVZH-h-influenzae-plasmid-ae169>
 
 ## All summary of the resistance gene analysis of *M.cattarrhalis*
-we use Bakta to analise the plasmid to find resistance gene then we use Artemis software to those resistance genes.
 
+we use Bakta to analise the plasmid to find resistance gene then we use Artemis software to those resistance genes. How can I use file type from which analysis to finalize with gggene in Rstudio?
 
+```{r import tsv file from Bakta_analysis_plasmids folder}
+install.packages("gggenes")
+library(gggenes)
+library(readr)
+plasmid275_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46321_1#275_plasmid_AC411_clean.tsv', 
+                                  col_names = TRUE)
+plasmid275_tsv
+
+plasmid175_tsv <-readr::read_tsv('./Bakta_analysis_plasmids/46358_2#175_plasmid_AC411.tsv_clean.tsv', 
+                                 col_names = TRUE)
+plasmid360_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46358_2#360_plasmid_AC411.tsv_clean.tsv', 
+                                  col_names = TRUE)
+plasmid78_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46358_2#78_plasmid_AC411.tsv_clean.tsv', 
+                                 col_names = TRUE)
+
+```
 
 ## Use gggene to plot annotations of plasmids
 
+```{r plot}
+ggplot(plasmid78_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
+  geom_gene_arrow() +
+  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3")
+
+ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
+  geom_gene_arrow() +
+  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  theme_genes()
+
+dummies <- make_alignment_dummies(plasmid275_tsv,
+  aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, id = Gene),
+  on = "spoIVCA")
+ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
+  geom_gene_arrow() +
+  geom_blank(data = dummies) +
+  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  theme_genes()
+
+ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene, label = Gene)) +
+  geom_gene_arrow(arrowhead_height = unit(3, "mm"), arrowhead_width = unit(1, "mm")) +
+  geom_gene_label(align = "left") +
+  geom_blank(data = dummies) +
+  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  theme_genes()
+
+
+```
 
 ## Compare gene frequencies between samples
