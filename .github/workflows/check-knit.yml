@@ -43,6 +43,7 @@ jobs:
             GGally
             archive
             tinytex
+            kableExtra
 
       - name: Render NP_AMR_analysis.Rmd
         run: |

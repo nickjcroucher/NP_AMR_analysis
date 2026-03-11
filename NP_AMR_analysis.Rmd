@@ -28,6 +28,7 @@ require(tidyverse)
 require(stringr)
 require(GGally)
 require(archive)
+require(kableExtra)
 
 theme_set(theme_bw())
 
@@ -236,8 +237,12 @@ module load qc-short-read
 module load bsub.py
 
 bsub.py -q oversubscribed 4 DRAK_qc qc-short-read --manifest_ena DRAK.manifest --accession_type run --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
+# Re-run for 7 failed samples
+bsub.py -q oversubscribed 4 DRAK_qc_rerun qc-short-read -r 1.0.2 --manifest_ena DRAK_rerun.manifest --accession_type run --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
 
 ```
+
+This run failed for seven isolates, which were subsequently re-run.
 
 ### Assemble reads with SPAdes and unicycler
 
@@ -383,26 +388,7 @@ ggplot(data = sample_assemblies_df) +
 
 ### Identification of the species present in each sequence dataset
 
-Braken was used to identify the species present in each sample using the qc-short-read pipeline (v2.0.2)
-
-``` {bash Run braken to identify species present in samples, eval = FALSE}
-
-export LSB_DEFAULT_USERGROUP=team284
-module load PaM/environment
-module load shelf
-module load bsub.py
-module load qc-short-read
-cd /data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc
-
-bsub.py -q oversubscribed 4 6310_qc_rerun qc-short-read --manifest_of_reads 6310.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
- 
-bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
-
-bsub.py -q oversubscribed 4 DRAK qc-short-read --manifest_ena DRAK.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
-
-```
-
-To check for contamination, we identify the species present in each dataset, and compare these outputs with the expected composition of the samples.
+Braken was used to identify the species present in each sample using the qc-short-read pipeline (v2.0.2), as part of the analysis described above. To check for contamination, we identify the species present in each dataset, and compare these outputs with the expected composition of the samples.
 
 ```{r Parse bracken outputs}
 
@@ -576,7 +562,8 @@ filtering_summary_df <-
       `Passing all criteria`      = sum(all_ok,    na.rm = TRUE),.groups = "drop"
     )
 
-filtering_summary_df
+kable(filtering_summary_df) %>% 
+  kable_styling(latex_options = "striped")
 
 ```
 
@@ -995,6 +982,7 @@ write.table(hflu_filter_extract_sample,
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
+
 ```
 
 ```{r reformat columns of hflu_strains_freq to wide format columns}
@@ -1499,20 +1487,6 @@ Mcat_version4_gene_preabsence %<>%
     names_to = "npg_run_id",
     values_to = "CDS"
     )
-
-```
-
-``` {r Test if col present 1}
-
-Mcat_version4_gene_preabsence %>% 
-    dplyr::select(npg_run_id)
-
-```
-
-``` {r Test if col present 2}
-
-sample_df %>% 
-    dplyr::select(npg_run_id)
 
 ```
 
@@ -2516,6 +2490,50 @@ mcat_serosen_serore_genes <-
 
 # Analysis of long-read data
 
+## Accessing long-read data
+
+``` {bash Access base modification data, eval = FALSE}
+
+# Set up environment
+module load PaM/environment
+module load ISG/IRODS/1.0
+kinit
+iinit
+
+# Access data
+icd /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7738/20240219_1036_3A_PAU55810_bf5bbe22/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/default/
+
+# Move data to scratch
+cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1
+
+for DIR in $(ils); do
+  if [[ $DIR =~ chunk ]]; then
+    icd $DIR;
+    IPWD_NAME=`ipwd`;
+    CHUNK_NAME=`echo $IPWD_NAME | perl -lane 'my @d = split(/\//,$_); print $d[$#d];'`;
+    for BARCODE in $(ils); do
+      if [[ $BARCODE =~ barcode ]]; then
+        icd $BARCODE;
+        IPWD_NAME=`ipwd`;
+        BARCODE_NAME=`echo $IPWD_NAME | perl -lane 'my @d = split(/\//,$_); print $d[$#d];'`;
+        cd $BARCODE_NAME;
+        for FILE in $(ils); do
+          iget -N 1 $FILE;
+          mv $FILE ${CHUNK_NAME}_${FILE};
+        done;
+        cd ..;
+        icd ..;
+      fi;
+    done;
+    icd ..;
+  fi;
+done
+
+
+```
+
+## Assembling long-read data
+
 ## Long-read sequencing of representative isolates
 
 These were chosen as:
@@ -2533,6 +2551,8 @@ These were chosen as:
 ```
 
 ## Methylation analyses from long-read data
+
+
 
 ## Passage analysis from long-read data
 
