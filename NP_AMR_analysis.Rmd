@@ -1,6 +1,6 @@
 ---
 title: "NP AMR analyses"
-author: "Nicholas Croucher"
+author: "Sunheng Kaing & Nicholas Croucher"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
@@ -184,6 +184,15 @@ sample_df <-
     dplyr::select(-join_col) %>% 
     dplyr::filter(!is.na(Country))
 
+species_palette <- c(
+  "Haemophilus influenzae" = "#E6A0C4FF",
+  "Moraxella catarrhalis" = "#C6CDF7FF",
+  "Plate sweep" = "#7294D4FF",
+  "Mixed bacteria" = "#7294D4FF",
+  "Other" = "#D8A499FF",
+  "Unknown" = "#D8A499FF"
+)
+
 ```
 
 # Analysis of short-read data
@@ -319,30 +328,34 @@ We will use these two files to merge getting chronological data set.
 
 ```{r, merge data, echo=TRUE}
 
-assembly_join_sample <- 
+sample_assemblies_df <- 
   right_join(as_tibble(assembly_stats_df),
              as_tibble(sample_df),
              by = "npg_run_id")
 
-minimum_length <- 1750000
+minimum_length <- 1725000
 maximum_length <- 2250000
-n50_threshold <- 100000
+n50_threshold <- 80000
 
 ```
 
-We used total length and N50 of each genomes to find quality of genomes with baseline threshold of $N[50]$ (y-axis) is `r n50_threshold` bp and total length (x-axis) which is from `r minimum_length` Mbp to `r maximum_length` Mbp.
+We used total length and N50 of each genomes to find quality of genomes with baseline threshold of $N_{50}$ (y-axis) is `r n50_threshold` bp and total length (x-axis) which is from `r minimum_length` Mbp to `r maximum_length` Mbp.
 
 ```{r, plot-genome assembly, include=TRUE}
 
-ggplot(data = assembly_join_sample) + 
+ggplot(data = sample_assemblies_df) + 
   geom_point(aes
              (x = `Total length`, 
                y = N50, 
                colour = Species)) +
-  geom_hline(yintercept = n50_threshold) + 
-  scale_x_log10() + 
+  geom_hline(yintercept = n50_threshold, linetype = 2) + 
   geom_vline(xintercept = c(minimum_length, 
-                            maximum_length))
+                            maximum_length), linetype = 2) +
+  scale_colour_manual(values = species_palette) +
+  scale_x_log10() + 
+  ylab(expression(N[50]~"(bp)")) +
+  xlab("Total length (bp)") +
+  theme(legend.position = "bottom")
                                             
 ```
 
@@ -350,43 +363,44 @@ These thresholds were used to remove low-quality assemblies:
 
 ```{r, filter-data, include=TRUE}
 
-summary_df <- 
-  assembly_join_sample %>%
+high_quality_assemblies_df <- 
+  sample_assemblies_df %>%
   filter(N50 > n50_threshold & 
            (`Total length` > minimum_length & 
               `Total length` < maximum_length))
 
-ggplot(data = summary_df) + 
+ggplot(data = sample_assemblies_df) + 
   geom_point(aes
              (x = `Total length`, 
                y = N50, colour = Species)) + 
-  geom_hline(yintercept = n50_threshold) + 
-  geom_vline(xintercept = c(minimum_length, maximum_length))
-
-```
-
-### Plot number of samples with high-quality data by origin
-
-```{r, plot-graph, include=TRUE}
-
-ggplot(data = assembly_join_sample) + 
-  geom_bar(aes
-           (x = Year, 
-             fill = Country), 
-           position = "dodge", 
-           stat = "count") + 
-  facet_wrap(~ Species) + 
-  xlab("Year of investigation") + 
-  ylab("Number of enrollment\nIn local hospital") + 
-  labs(fill = "Study Enrollment\nIn Each Countries", 
-       shape = "Species", 
-       caption = "Antimicrobial Resistance Study") + 
-  scale_shape_manual(values = c(17,19,20), 
-                     labels = c("Haemophilus influenzae", "Moraxella catarrhalis", "Mixed bacteria")) + coord_cartesian(xlim = c(2005, 2021))
+  geom_vline(xintercept = c(minimum_length, 
+                            maximum_length), linetype = 2) +
+  geom_hline(yintercept = n50_threshold, linetype = 2) + 
+  scale_colour_manual(values = species_palette) +
+  xlim(0.9*minimum_length,1.1*maximum_length)
 
 ```
 
 ### Identification of the species present in each sequence dataset
+
+Braken was used to identify the species present in each sample using the qc-short-read pipeline (v2.0.2)
+
+``` {bash Run braken to identify species present in samples, eval = FALSE}
+
+export LSB_DEFAULT_USERGROUP=team284
+module load PaM/environment
+module load shelf
+module load bsub.py
+module load qc-short-read
+cd /data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc
+
+bsub.py -q oversubscribed 4 6310_qc_rerun qc-short-read --manifest_of_reads 6310.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
+ 
+bsub.py -q oversubscribed 4 6588_qc_rerun qc-short-read --manifest_of_reads 6588.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
+
+bsub.py -q oversubscribed 4 DRAK qc-short-read --manifest_ena DRAK.manifest --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false -resume
+
+```
 
 To check for contamination, we identify the species present in each dataset, and compare these outputs with the expected composition of the samples.
 
@@ -425,62 +439,49 @@ species_abundance_df <-
 # Join with sample information
 species_sample_df <-
   species_abundance_df %>% 
+    dplyr::rename(Detected_species = Species) %>% 
     dplyr::full_join(
-      sample_df,
+      sample_df %>% 
+        dplyr::rename(Expected_species = Species),
       by = "npg_run_id"
-    )
+    ) %>% 
+    dplyr::filter(!is.na(Country)) %>%  # Removing pre-filtered datasets, e.g. those dropped from HINTVAC
+    # Reformat taxonomic labels
+    dplyr::filter(!is.na(Detected_species)) %>% 
+    dplyr::mutate(Detected_species = gsub("_"," ",Detected_species)) %>% 
+    dplyr::mutate(Detected_genus = stringr::str_extract(Detected_species, '[A-Za-z]+'),
+                  Expected_genus = stringr::str_extract(Expected_species, '[A-Za-z]+')
+                  ) %>% 
+    # Calculate proportion of reads by species and genus
+    dplyr::group_by(npg_run_id) %>%
+    dplyr::mutate(species_read_count = matches,
+                  read_count = sum(matches)
+                  ) %>%
+    dplyr::ungroup() %>% 
+    dplyr::group_by(npg_run_id,Detected_genus) %>% 
+    dplyr::mutate(genus_read_count = sum(matches)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(npg_run_id) %>%
+    dplyr::mutate(Matching_species_proportion = dplyr::if_else(Detected_species == Expected_species,
+                                                       species_read_count / read_count,
+                                                       NA_real_),
+                  Matching_genus_proportion = dplyr::if_else(Detected_genus == Expected_genus,
+                                                       genus_read_count / read_count,
+                                                       NA_real_)
+                  ) %>%
+    tidyr::fill(Matching_species_proportion, .direction = "updown") %>%
+    tidyr::fill(Matching_genus_proportion, .direction = "updown") %>%
+    dplyr::ungroup()
 
 # Plot species matches
 ggplot(species_sample_df,
-       aes(x = Species.x,
+       aes(x = Detected_species,
            y = npg_run_id,
            fill = matches+0.5)) +
   geom_tile() +
-  facet_grid(Species.y ~., scales = "free_y") +
+  facet_grid(Expected_species ~., scales = "free_y") +
   scale_fill_continuous(trans = "log10") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-```
-
-```{r Merge expected and observed samples}
-
-assembly_species_merge <- 
-  left_join(assembly_stats_df, 
-            species_sample_df, 
-            by = "npg_run_id")
-
-clean_assembly_species <- assembly_species_merge %>%
-  filter(!is.na(Species.y),
-         !is.na(`Total length`),
-         !is.na(N50),
-         !is.na(Species.x))
-
-ggplot(data = clean_assembly_species) + 
-  geom_point(aes
-             (x = `Total length`, 
-               y = N50, 
-               colour = Species.y)) +
-  geom_hline(yintercept = 80000) + 
-  scale_x_log10() + 
-  geom_vline(xintercept = c(minimum_length, 
-                            maximum_length))
-
-```
-
-``` {r Filtering genomes for getting good genomic quality by N50 and Total length}
-
-assembly_species_filtering <- 
-  assembly_species_merge %>%
-  filter(N50 > n50_threshold & 
-           (`Total length` > minimum_length & 
-              `Total length` < maximum_length))
-
-ggplot(data = assembly_species_filtering) + 
-  geom_point(aes
-             (x = `Total length`, 
-               y = N50, colour = Species.y)) + 
-  geom_hline(yintercept = n50_threshold) + 
-  geom_vline(xintercept = c(minimum_length, maximum_length))
 
 ```
 
@@ -488,31 +489,109 @@ ggplot(data = assembly_species_filtering) +
 
 The single isolate sequences of *M. catarrhalis* and *H. influenzae* should contain relatively little sequence from other species - any such presence represents contamination.
 
-```{r filter two specific genomics of Mcat and Hinflu}
+```{r Plot matching proportions for Mcat and Hinflu}
 
-specific_filter <- assembly_species_filtering %>%
-  mutate(Species.x = recode(Species.x, "Moraxella_catarrhalis" = "Moraxella catarrhalis", "Haemophilus_influenzae" = "Haemophilus influenzae")) %>%
-  group_by(npg_run_id) %>%
-  mutate(proportion = matches / sum(matches)) %>%
-  mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-  fill(Matching_proportion, .direction = "updown") %>%
-  filter(!is.na(Species.x),
-         !is.na(Species.y),
-         Species.x %in% c("Moraxella catarrhalis", "Haemophilus influenzae"), 
-         Species.x == Species.y) %>%
-  select(npg_run_id, `Total length`, `GC (%)`, N50, Species.x, matches, Total, name, sample_common_name, total_reads, Isolate, Cohort, Country, Region, Year, Description, Species.y, Matching_proportion) %>% 
-  dplyr::filter(Matching_proportion > 0.66)
+species_proportion_threshold <- 0.66
+
+ggplot(species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_species_proportion) %>% 
+        dplyr::distinct() %>% 
+        dplyr::filter(Description == "Single isolate"),
+  aes(x = Expected_species,
+      y = Matching_species_proportion)
+  ) +
+  geom_violin()+
+  geom_hline(yintercept = species_proportion_threshold, linetype = "dashed", color = "red") +
+  labs(x = "Species", y = "Proportion of matches to the same species")
 
 ```
+
+Bracken only matched 60-75% of the reads from many *M. catarrhalis* datasets to the expected species. In some cases, this was because reads were instead assigned to *Moraxella* sp. ATCC 23246. In other cases, there appeared to be a high level of contamination with *Escherichia coli* or *H. influenzae*. Therefore filtering instead used the proportion of reads assigned to the expected genus:
+
+```{r Look at matches on a genus level}
+
+genus_proportion_threshold <- 0.95
+
+ggplot(species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_genus_proportion) %>% 
+        dplyr::distinct() %>% 
+        dplyr::filter(Description == "Single isolate"),
+  aes(x = Expected_species,
+      y = Matching_genus_proportion)
+  ) +
+  geom_violin()+
+  geom_hline(yintercept = genus_proportion_threshold, linetype = "dashed", color = "red") +
+  labs(x = "Species", y = "Proportion of matches to the same genus")
+
+```
+
+### Final filtering on sequence characteristics
+
+We want to keep samples meeting the criteria:
+
+- N50 above `r n50_threshold` bp
+
+- Total length between `r minimum_length` bp and `r maximum_length` bp
+
+- >95% of reads matching the expected genus
+
+```{r filter the proportion }
+
+filtering_criteria_df <-
+  sample_assemblies_df %>% 
+    dplyr::select(npg_run_id,Country,Year,`Total length`,N50) %>% 
+    dplyr::distinct() %>% 
+    dplyr::left_join(
+      species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_genus_proportion) %>% 
+        dplyr::distinct(),
+      by = "npg_run_id"
+    ) %>% 
+    dplyr::mutate(
+      length_ok = `Total length` >= minimum_length &
+                `Total length` <= maximum_length,
+      n50_ok    = N50 >= n50_threshold,
+      genus_ok  = Matching_genus_proportion >= genus_proportion_threshold,
+      all_ok    = length_ok & n50_ok & genus_ok
+    ) %>%
+  dplyr::filter(Expected_species %in% c("Moraxella catarrhalis","Haemophilus influenzae"))
+
+filtering_summary_df <-
+  filtering_criteria_df %>% 
+    dplyr::group_by(Expected_species) %>%
+    dplyr::summarise(
+      `Number of genomes`    = n(),
+      `Expected assembly length`   = sum(length_ok, na.rm = TRUE),
+      `N50 above threshold`      = sum(n50_ok,    na.rm = TRUE),
+      `Not contaminated`    = sum(genus_ok,  na.rm = TRUE),
+      `Passing all criteria`      = sum(all_ok,    na.rm = TRUE),.groups = "drop"
+    )
+
+filtering_summary_df
+
+```
+
+### Output lists of high-quality single isolate sequences
 
 Here we generate the final list of QC-passing *M. catarrhalis* isolates:
 
 ```{r Filter Moraxella cattarrhalis species by npg_run_id}
 
-Morax_filter <- specific_filter %>%
-  filter(Species.y == "Moraxella catarrhalis") %>%
-  select(npg_run_id) %>%
-  distinct()
+Morax_filter <-
+  filtering_criteria_df %>%
+    dplyr::filter(Expected_species == "Moraxella catarrhalis") %>%
+    dplyr::filter(all_ok) %>% 
+    dplyr::select(npg_run_id) %>%
+    dplyr::distinct()
 
 write.table(Morax_filter,
             file = "./sample_data/Mcat_QC_pass.csv",
@@ -526,10 +605,12 @@ Here we generate the final list of QC-passing *H. influenzae* isolates:
 
 ```{r filter npg_run_id of Haemophilus influenzae genomes}
 
-Hinflu_filter <- specific_filter %>% 
-  filter(Species.y == "Haemophilus influenzae") %>% 
-  select(npg_run_id) %>%
-  distinct()
+Hinflu_filter <-
+  filtering_criteria_df %>%
+    dplyr::filter(Expected_species == "Haemophilus influenzae") %>%
+    dplyr::filter(all_ok) %>% 
+    dplyr::select(npg_run_id) %>%
+    dplyr::distinct()
 
 write.table(Hinflu_filter,
             file = "./sample_data/Hflu_QC_pass.csv",
@@ -539,234 +620,24 @@ write.table(Hinflu_filter,
 
 ```
 
-### Filter dataset to samples where observed and expected species match
-
-TO DO: Explain why used above/not used above - all this and the genus information!
-
-```{r create a proportion}
-
-proportion_df <- species_sample_df %>%
-  filter(!is.na(Species.x), 
-         !is.na(Species.y), 
-         !is.na(matches)) %>%
-  dplyr::mutate(Species.x = gsub("_"," ", Species.x)) %>%
-  group_by(npg_run_id) %>%
-  mutate(proportion = matches / sum(matches)) %>%
-dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-tidyr::fill(Matching_proportion, .direction = "updown") %>%
-  ungroup()
-
-proportion_threshold <- 0.95
-
-```
-
-We will filter at a species matching proportion of `r proportion_threshold`.
-
-```{r plot proportion}
-
-filter_proportion_df <- proportion_df %>%
-  filter(!is.na(Species.y), 
-         Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x) %>%
-  group_by(Species.y, proportion) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
-  geom_violin()+
-  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion")
-
-```
-
-### Test filtering at the genus level for Moraxella
-
-TO DO: Explain this testing
-
-```{r Moraxella at genus level}
-
-genus_level_df <-
-  proportion_df %>% 
-    dplyr::mutate(Observed_genus = stringr::str_extract(Species.x, '[A-Za-z]+'),
-                  Expected_genus = stringr::str_extract(Species.y, '[A-Za-z]+'))
-
-filtered_genus_df <-
-  genus_level_df %>%
-    dplyr::filter(!is.na(Species.y), 
-                  Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
-    dplyr::group_by(npg_run_id) %>%
-    dplyr::mutate(Total = sum(matches, na.rm = TRUE)) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::group_by(npg_run_id, Observed_genus) %>%
-    dplyr::mutate(proportion = sum(matches, na.rm = TRUE)/Total) %>% 
-    dplyr::ungroup() %>%
-    dplyr::filter(Expected_genus == Observed_genus)
-
-ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
-  geom_violin() +
-  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion")
-
-```
-
-### Final filtering on sequence characteristics
-
-We want to keep samples with threshold:
-N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,000 bp, matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony.
-
-```{r filter the proportion }
-
-filtered_proportion <- proportion_df %>%
-  filter(!is.na(Species.y), 
-         Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x & proportion > proportion_threshold)
-
-concluded_proportion <- filtered_proportion %>%
-  group_by(Species.y) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-
-ggplot(filtered_proportion,
-       aes(x = Species.y, y = proportion)) +
-  geom_violin()+
-  geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion")
-
-```
-
-### Test filtering at the genus level
-
-TO DO: Look at graphs and explain
-
-```{r plot the filter dataset}
-
-plot_genus_df <-
-  filtered_genus_df %>%
-  dplyr::filter(!is.na(Species.y), 
-                Species.y %in%
-                  c("Moraxella catarrhalis", "Haemophilus influenzae") &
-                Species.y == Species.x &
-                proportion > proportion_threshold) %>%
-  dplyr::select(
-    npg_run_id,
-    Country,
-    Year,
-    Species.y,
-    proportion,
-    Matching_proportion,
-    Total,
-    matches) %>%
-  dplyr::distinct()
-
-ggplot(data = plot_genus_df) +
-  geom_bar(aes(x = Year, fill = Country)) +
-  facet_wrap(~ Species.y) +
-  labs(
-    title = "Total by Countries and Years",
-    x = "Years",
-    y = "Total",
-    fill = "Country"
-    ) +
-  theme(
-    axis.text.x =
-      element_text(
-        angle = 45,
-        hjust = 1)
-    )
-
-```
-
 ### Epidemiological characteristics of filtered single-isolate dataset
 
 ```{r Moraxella in each country and each year}
 
-moraxella_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis")
-
-table(moraxella_Country_Year$Country,
-      moraxella_Country_Year$Year)
-
-plot_moraxella <-
-  moraxella_Country_Year %>%
-  count(Country, Year)
-
-ggplot(plot_moraxella,
-       aes(x = Year, y = n, fill = Country)) +
+ggplot(filtering_criteria_df %>% 
+         dplyr::filter(all_ok) %>% 
+         dplyr::group_by(Expected_species,Country) %>% 
+         dplyr::summarise(n = n_distinct(npg_run_id)) %>% 
+         dplyr::ungroup(),
+       aes(x = Country,
+           y = n)) +
   geom_bar(stat = "identity") +
   geom_text(
     aes(label = n),
     position = position_dodge(width = 0.9),
     vjust = -0.3, size = 3
     ) +
-  ggtitle("Distribution of Moraxella catarrhalis\nacross countries by year")
-
-```
-
-```{r Haemophilus influenzae in each country and each year}
-
-Haemo_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae")
-
-table(Haemo_Country_Year$Country, 
-      Haemo_Country_Year$Year)
-plot_Haemo <- 
-  Haemo_Country_Year %>%
-  count(Country, Year)
-ggplot(
-  plot_Haemo, aes(x = Year, y = n, fill = Country)) +
-  geom_bar(stat = "identity") +
-  geom_bar(stat = "identity") +
-  geom_text(
-    aes(label = n),
-    position = position_dodge(width = 0.9),
-    vjust = -0.3, size = 3
-    ) +
-  ggtitle("Distribution of Haemophilus influenzae\nacross countries by year")
-
-```
-
-TO DO: Move up!
-
-```{r import Global Hinf metadata microreact}
-
-Global_Hinf_metadata_microreact <-
-  read.csv(file = "sample_data/Global-Hinf-metadata-microreact.csv",
-           header = TRUE,
-           sep = ",",
-           stringsAsFactors = FALSE)
-
-```
-
-TO DO: Move up!
-
-```{r rename Global_Hinf_metadata_microreact dataset}
-
-selected_Global_data <-
-  Global_Hinf_metadata_microreact[, grep("^(id|Year)$", 
-                                         names(Global_Hinf_metadata_microreact))]
-
-rename_Global_data <-
-  selected_Global_data %>%
-  select(id, Year) %>%
-  rename(
-    Isolate = id, new_Year = Year
-    )
-
-```
-
-```{r merge both datasets of Global and epi}
-
-join_epi_Global_data <-
-  left_join(epi_df, 
-            rename_Global_data,
-            by = "Isolate"
-    ) %>%
-  mutate(
-    Year = if_else(!is.na(new_Year),
-                   new_Year, Year)
-    ) %>%
-  select(-new_Year)
+  facet_wrap(~Expected_species)
 
 ```
 
@@ -986,7 +857,7 @@ hflu_strains_df <-
 
 ```
 
-## Compare strain frequncies across locations
+## Summarise sample sizes across locations
 
 ```{r reformat the columns of Taxon as the npg_run_id}
 
@@ -998,6 +869,7 @@ hflu_strains_extract1 <- hflu_strains_df %>%
          id_run = 
            if_else(str_detect(Taxon, "#"), 
                    str_extract(Taxon, "^[^#]+"), "NA"))
+
 ```
 
 ```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
@@ -1152,7 +1024,7 @@ ggpairs(hflu_strains_widefreq,
 
 ```
 
-### Compare strain frequncies between samples of *M. catarrhalis*
+### Compare strain frequencies between samples of *M. catarrhalis*
 
 ```{r format Taxon column and rename Taxon as npg_run_id}
 
@@ -1627,6 +1499,20 @@ Mcat_version4_gene_preabsence %<>%
     names_to = "npg_run_id",
     values_to = "CDS"
     )
+
+```
+
+``` {r Test if col present 1}
+
+Mcat_version4_gene_preabsence %>% 
+    dplyr::select(npg_run_id)
+
+```
+
+``` {r Test if col present 2}
+
+sample_df %>% 
+    dplyr::select(npg_run_id)
 
 ```
 
@@ -2622,7 +2508,7 @@ mcat_serosen_serore_genes <-
 
 ```
 
-## Phylogenetic analysis of strains
+## Co-colonisation analysis of strains
 
 # Analysis of deep sequencing data
 
@@ -2630,5 +2516,24 @@ mcat_serosen_serore_genes <-
 
 # Analysis of long-read data
 
+## Long-read sequencing of representative isolates
+
+These were chosen as:
+
+- Representing the clusters with >9 isolates
+
+- Plus representing any multidrug-resistance profiles not seen in the representatives of the most common clusters
+
+- Only a subset were available for reculturing
+
+``` {r Representative sequence information}
 
 
+
+```
+
+## Methylation analyses from long-read data
+
+## Passage analysis from long-read data
+
+Also a passage was run of four isolates. Each was started from a single colony on THY. Each was grown for 24 h in 10 mL Mix media. Successive inoculations used 100 uL. Four colonies were picked from each day from THY plates.
