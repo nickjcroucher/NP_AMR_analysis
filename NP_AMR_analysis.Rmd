@@ -573,14 +573,14 @@ Here we generate the final list of QC-passing *M. catarrhalis* isolates:
 
 ```{r Filter Moraxella cattarrhalis species by npg_run_id}
 
-Morax_filter <-
+Mcat_filter <-
   filtering_criteria_df %>%
     dplyr::filter(Expected_species == "Moraxella catarrhalis") %>%
     dplyr::filter(all_ok) %>% 
     dplyr::select(npg_run_id) %>%
     dplyr::distinct()
 
-write.table(Morax_filter,
+write.table(Mcat_filter,
             file = "./sample_data/Mcat_QC_pass.csv",
             col.names = FALSE,
             row.names = FALSE,
@@ -592,14 +592,14 @@ Here we generate the final list of QC-passing *H. influenzae* isolates:
 
 ```{r filter npg_run_id of Haemophilus influenzae genomes}
 
-Hinflu_filter <-
+Hflu_filter <-
   filtering_criteria_df %>%
     dplyr::filter(Expected_species == "Haemophilus influenzae") %>%
     dplyr::filter(all_ok) %>% 
     dplyr::select(npg_run_id) %>%
     dplyr::distinct()
 
-write.table(Hinflu_filter,
+write.table(Hflu_filter,
             file = "./sample_data/Hflu_QC_pass.csv",
             col.names = FALSE,
             row.names = FALSE,
@@ -964,48 +964,26 @@ Mcat_SA_amr_wide <-
 
 ```
 
-```{r merge Mcat_SA_amr_wide and mcat_strains_sample with "npg_run_id"}
-
-Mcat_SA_microreact <- 
-  left_join(mcat_strains_sample, 
-            Mcat_SA_amr_wide,
-            by = "npg_run_id") %>%
-  rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa")) %>% 
-  mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x)))
-
-```
-
 ```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
 
-Mcat_SA_microreact_2 <- 
-  left_join(mcat_strains_sample, 
-            Mcat_SA_amr_wide,
-            by = "npg_run_id") %>%
-  left_join(Mcat_Hflu_mobsuite_summary_df,
-            by = "npg_run_id") %>%
-  rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa")) %>% 
-  dplyr::mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x))) %>% 
-  dplyr::select(where(~!all(.x=="Absent")))
-
-```
-
-```{r Mcat export file microreact file}
-
-write.table(Mcat_SA_microreact,
-            file = "./microreact_analysis/Mcat_SA_microreact.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
+Mcat_microreact_df <- 
+  sample_df %>% 
+    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
+    dplyr::left_join(Mcat_SA_amr_wide,
+              by = "npg_run_id") %>%
+    dplyr::left_join(Mcat_Hflu_mobsuite_summary_df,
+              by = "npg_run_id") %>%
+    dplyr::rename(id = npg_run_id) %>% 
+    dplyr::mutate(id = paste0(id,"_fa")) %>% 
+    dplyr::mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x))) %>% 
+    dplyr::select(where(~!all(.x=="Absent")))
 
 ```
 
 ```{r export file for import to microreact after gettting plasmid from Mob suite file}
 
-write.table(Mcat_SA_microreact_2,
-            file = "./microreact_analysis/Mcat_mobsuite_microreact2.csv",
+write.table(Mcat_microreact_df,
+            file = "./microreact_analysis/Mcat_microreact.csv",
             sep = ",",
             col.names = TRUE,
             row.names = FALSE,
@@ -1018,7 +996,7 @@ write.table(Mcat_SA_microreact_2,
 ```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
 
 Mcat_SA_microreact_2_longer <-
-  Mcat_SA_microreact_2 %>% 
+  Mcat_microreact_df %>% 
   pivot_longer(
     cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
     names_to = "resistant_genes",
@@ -1057,7 +1035,7 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
 
 ```{r Calculate the proportion of Mcattarrhalis of resistance gene associated plasmid}
 
-Mcat_SA_microreact_2_longer_2 <- Mcat_SA_microreact_2 %>% 
+Mcat_SA_microreact_2_longer_2 <- Mcat_microreact_df %>% 
   pivot_longer(
     cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
     names_to = "resistant_genes",
@@ -1111,7 +1089,7 @@ ggplot(proportions, aes(x = plasmid,
 ```{r frequency of Mcat cluster in early and late 2012 of the UK distribution}
 
 Mcat_frequency_cluster <-
-  Mcat_SA_microreact_2 %>%
+  Mcat_microreact_df %>%
   filter(Country == "United Kingdom") %>% 
   mutate(Mcat_period = ifelse(Year < 2012, "early", "late")) %>% 
   group_by(Cluster, Mcat_period) %>%
@@ -1618,7 +1596,6 @@ mcat_serosen_serore_genes <-
             by = "npg_run_id")
 
 ```
-
 
 ## Summarise sample sizes across locations
 
