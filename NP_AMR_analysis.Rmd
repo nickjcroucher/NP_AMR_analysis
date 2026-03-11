@@ -338,7 +338,7 @@ ggplot(data = assembly_join_sample) +
   geom_point(aes
              (x = `Total length`, 
                y = N50, 
-               colour = Species.x)) +
+               colour = Species)) +
   geom_hline(yintercept = n50_threshold) + 
   scale_x_log10() + 
   geom_vline(xintercept = c(minimum_length, 
@@ -371,19 +371,18 @@ ggplot(data = summary_df) +
 
 ggplot(data = assembly_join_sample) + 
   geom_bar(aes
-           (x = Year.x, 
-             fill = Country.x), 
+           (x = Year, 
+             fill = Country), 
            position = "dodge", 
            stat = "count") + 
-  facet_wrap(~ Species.x) + 
+  facet_wrap(~ Species) + 
   xlab("Year of investigation") + 
   ylab("Number of enrollment\nIn local hospital") + 
   labs(fill = "Study Enrollment\nIn Each Countries", 
        shape = "Species", 
        caption = "Antimicrobial Resistance Study") + 
   scale_shape_manual(values = c(17,19,20), 
-                     labels = c("Haemophilus influenzae", "Moraxella catarrhalis", "Mixed bacteria")) + coord_cartesian(xlim = c(2005, 2021)) + 
-  theme_minimal()
+                     labels = c("Haemophilus influenzae", "Moraxella catarrhalis", "Mixed bacteria")) + coord_cartesian(xlim = c(2005, 2021))
 
 ```
 
@@ -439,7 +438,6 @@ ggplot(species_sample_df,
   geom_tile() +
   facet_grid(Species.y ~., scales = "free_y") +
   scale_fill_continuous(trans = "log10") +
-  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
@@ -576,8 +574,7 @@ filter_proportion_df <- proportion_df %>%
 ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
   geom_violin()+
   geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
+  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion")
 
 ```
 
@@ -607,8 +604,7 @@ filtered_genus_df <-
 ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
   geom_violin() +
   geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
+  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion")
 
 ```
 
@@ -633,8 +629,7 @@ ggplot(filtered_proportion,
        aes(x = Species.y, y = proportion)) +
   geom_violin()+
   geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
+  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion")
 
 ```
 
@@ -671,7 +666,6 @@ ggplot(data = plot_genus_df) +
     y = "Total",
     fill = "Country"
     ) +
-  theme_minimal() +
   theme(
     axis.text.x =
       element_text(
@@ -699,7 +693,6 @@ plot_moraxella <-
 ggplot(plot_moraxella,
        aes(x = Year, y = n, fill = Country)) +
   geom_bar(stat = "identity") +
-  theme_classic() +
   geom_text(
     aes(label = n),
     position = position_dodge(width = 0.9),
@@ -724,7 +717,6 @@ ggplot(
   plot_Haemo, aes(x = Year, y = n, fill = Country)) +
   geom_bar(stat = "identity") +
   geom_bar(stat = "identity") +
-  theme_classic() +
   geom_text(
     aes(label = n),
     position = position_dodge(width = 0.9),
@@ -851,8 +843,7 @@ write.table(mcat_non_seroSensitive_list,
 
 ggplot(mcat_categorisation,
        aes(x = Label)) +
-  geom_bar() +
-  theme_bw()
+  geom_bar()
 
 ```
 
@@ -1049,7 +1040,6 @@ ggplot(hflu_strains_freq,
            fill = Country)) + 
   geom_bar(stat = "identity", 
            position = "stack") + 
-  theme_minimal() + 
   labs(title = "H. influenzae strain frequencies\nby country and year", 
        x = "Cluster", 
        y = "Frequency", 
@@ -1081,7 +1071,6 @@ ggplot(Hinflu_strains_country,
        aes(x = Country, 
            y = n_strains)) + 
   geom_col() + 
-  theme_classic() + 
   geom_text(aes(label = n_strains), 
             vjust = -0.5, 
             size = 4)
@@ -1114,7 +1103,7 @@ hinflu_freq_before_after <- hflu_filter_extract_sample %>%
 
 ```{r Plot change in H. influenzae frequency in the UK}
 
-ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + scale_x_continuous(breaks = 2009:2020) + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme_minimal() + theme(
+ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + scale_x_continuous(breaks = 2009:2020) + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme(
     axis.title.x = element_text(face = "bold", size = 12),
     axis.title.y = element_text(face = "bold", size = 12),
     axis.text.x  = element_text(face = "bold", size = 10),
@@ -1205,8 +1194,7 @@ ggplot(mcat_freq_before_after,
     title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between timepoints",
     x = "Year",
     y = "Frequency (%)"
-  ) +
-  theme_minimal(base_size = 12) + theme(
+  ) + theme(
     axis.title.x = element_text(face = "bold", size = 12),
     axis.title.y = element_text(face = "bold", size = 12),
     axis.text.x  = element_text(face = "bold", size = 10),
@@ -1287,7 +1275,6 @@ ggplot(mcat_strains_country,
        aes(x = Country, 
            y = n_strains)) + 
   geom_col() + 
-  theme_classic() + 
   geom_text(aes(label = n_strains), 
             vjust = -0.5, 
             size = 4)
@@ -1321,7 +1308,6 @@ ggplot(mcat_count_freq,
            y = Frequency, 
            fill = Country)) + 
   geom_col(position = "dodge") + 
-  theme_minimal() + 
   labs(title = "M. cattarrhalis strain frequencies\nby country and year", 
        x = "Cluster", 
        y = "Frequency", 
@@ -1533,8 +1519,7 @@ ggplot(Hinflu_version4_genefreq_wide,
               color = "yellow")+ 
   labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
        x = "Cambodia", 
-       y = "United Kingdom") + 
-  theme_minimal()
+       y = "United Kingdom")
 
 ```
 
@@ -1551,8 +1536,7 @@ ggplot(Hinflu_version4_genefreq_wide,
               color = "yellow")+ 
   labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
        x = "Cambodia", 
-       y = "Thailand") + 
-  theme_minimal()
+       y = "Thailand")
 
 ```
 
@@ -1569,8 +1553,7 @@ ggplot(Hinflu_version4_genefreq_wide,
               color = "red")+ 
   labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
        x = "United Kingdom", 
-       y = "Thailand") + 
-  theme_minimal()
+       y = "Thailand")
 
 ```
 
@@ -1580,7 +1563,6 @@ ggplot(Hinflu_version4_genefreq,
        aes(x = Frequency)) + 
   geom_histogram(color = "blue") + 
   facet_wrap(~ Country) + 
-  theme_minimal(base_size = 14) + 
   labs(title = "Version4 Haemophilus influenzae\nGene Frequency Distribution", 
        x = "Frequency", 
        y = "Number of Observation") + 
@@ -1742,8 +1724,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "purple")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "Cambodia", 
-       y = "United Kingdom") + 
-  theme_minimal()
+       y = "United Kingdom")
 
 ```
 
@@ -1760,8 +1741,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "orange")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "Cambodia", 
-       y = "Thailand") + 
-  theme_minimal()
+       y = "Thailand")
 
 ```
 
@@ -1778,8 +1758,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "pink")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "Cambodia", 
-       y = "South Africa") + 
-  theme_minimal()
+       y = "South Africa")
 
 ```
 
@@ -1796,8 +1775,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "blue")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "United Kingdom", 
-       y = "Thailand") + 
-  theme_minimal()
+       y = "Thailand")
 
 ```
 
@@ -1814,8 +1792,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "black")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "United Kingdom", 
-       y = "South Africa") + 
-  theme_minimal()
+       y = "South Africa")
 
 ```
 
@@ -1832,8 +1809,7 @@ ggplot(Mcat_version4_genefreq_wide,
               color = "darkgreen")+ 
   labs(title = "Version4 Mcattarrhalis including SA\nFrequency genes by Country", 
        x = "Thailand", 
-       y = "South Africa") + 
-  theme_minimal()
+       y = "South Africa")
 
 ```
 
@@ -1843,7 +1819,6 @@ ggplot(Mcat_version4_genefreq,
        aes(x = Frequency)) + 
   geom_histogram(color = "red") + 
   facet_wrap(~ Country) + 
-  theme_minimal(base_size = 14) + 
   labs(title = "Version4 Moraxella cattarrhalis including SA\nGene Frequency Distribution", 
        x = "Frequency", 
        y = "Number of Observation") + 
@@ -2077,7 +2052,6 @@ ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill =
     x = "Plasmid",
     y = "Resistance Gene"
   ) +
-  theme_minimal(base_size = 14) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank()
@@ -2130,7 +2104,6 @@ ggplot(proportions, aes(x = plasmid,
     y = "Resistance Gene",
     title = "Proportion of M.cattarrhalis \nCarrying Each Resistance Gene per Plasmid"
   ) +
-  theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank()
@@ -2163,7 +2136,6 @@ ggplot(Mcat_frequency_cluster,
     x = "Early timepoint frequency (%)",
     y = "Late timepoint frequency (%)"
   ) +
-  theme_minimal(base_size = 12) + 
   scale_x_continuous(expand = expansion(mult = 0.05)) +
   scale_y_continuous(expand = expansion(mult = 0.05)) + 
   theme(
@@ -2447,8 +2419,8 @@ ggplot(Hflu_frequency_cluster, aes(x = early, y = late, colour = Cluster)) +
     title = "Frequency of H.influenzae Cluster in the UK\n at early and late year of 2012",
     x = "Frequency early 2012",
     y = "Frequency late 2012"
-  ) +
-  theme_minimal()
+  )
+
 ```
 
 ## Plasmid analysis
@@ -2485,7 +2457,6 @@ ggplot(Hinflu_microreact_2_longer,
     x = "Plasmid",
     y = "Resistance Gene"
   ) +
-  theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank()
@@ -2539,7 +2510,6 @@ ggplot(proportions_2, aes(x = Hinflu_plasmid_2,
     y = "Resistance Gene",
     title = "Proportion of H.influenzae \nCarrying Each Resistance Gene per Plasmid"
   ) +
-  theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank()
@@ -2585,7 +2555,6 @@ ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_
     y = "Country",
     fill = "% Present"
   ) +
-  theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 40, hjust = 1),
     panel.grid = element_blank()
@@ -2632,7 +2601,6 @@ ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = perc
     y = "Country",
     fill = "% Present"
   ) +
-  theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 40, hjust = 1),
     panel.grid = element_blank()
@@ -2653,6 +2621,8 @@ mcat_serosen_serore_genes <-
             by = "npg_run_id")
 
 ```
+
+## Phylogenetic analysis of strains
 
 # Analysis of deep sequencing data
 
