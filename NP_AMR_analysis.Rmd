@@ -19,7 +19,7 @@ if (is_ci) {
 } else {
   knitr::opts_chunk$set(
     echo  = TRUE,
-    cache = TRUE  # or FALSE if you prefer
+    cache = TRUE
   )
 }
 
@@ -29,9 +29,11 @@ require(stringr)
 require(GGally)
 require(archive)
 
+theme_set(theme_bw())
+
 ```
 
-## Load data from project
+# Load data from project
 
 Import sample data from project
 
@@ -184,7 +186,11 @@ sample_df <-
 
 ```
 
-## Identify species with Kraken and Bracken
+# Analysis of short-read data
+
+## Quality control of data and association with sample information
+
+### Identify species with Kraken and Bracken
 
 Analysis of the short reads used the `qc-short-read` pipeline (revision 103cba2a10; v1.0.2), which depends upon:
 
@@ -224,7 +230,7 @@ bsub.py -q oversubscribed 4 DRAK_qc qc-short-read --manifest_ena DRAK.manifest -
 
 ```
 
-## Assemble reads with SPAdes and unicycler
+### Assemble reads with SPAdes and unicycler
 
 Analysis of the short reads used the `assembly-unicycler-short-read` pipeline (v1.2.5; commit 92464961e453d624e88e69da06670638fb90ede0), developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
 
@@ -260,7 +266,7 @@ bsub -o drak_output.o -e drak_error.e -q oversubscribed -R "select[mem>4000] rus
 
 ```
 
-## Annotate assemblies with Bakta
+### Annotate assemblies with Bakta
 
 The assemblies were annotated using Bakta (version 1.11.0).
 
@@ -282,7 +288,7 @@ bsub -n 4 -M 12000 -R 'select[mem>12000] rusage[mem=12000] span[hosts=1]' -o bak
 
 ```
 
-## Evaluate assemblies with Quast
+### Evaluate assemblies with Quast
 
 Assembly statistics were calculated with Quast (version 5.0.2).
 
@@ -307,7 +313,7 @@ assembly_stats_df <-
 
 ```
 
-### Merge two datasets of sample_df and assembly_stats_df
+### Quality control parameters for genomic assemblies
 
 We will use these two files to merge getting chronological data set.
 
@@ -324,9 +330,7 @@ n50_threshold <- 100000
 
 ```
 
-### Quality control of genomic assemblies
-
-We used total length and N50 of each genomes to find quality of genomes with baseline threshold of N50 (y-axis) is `r n50_threshold`` bp and total length (x-axis) which is from `r minimum_length`` Mbp to `r maximum_length` Mbp.
+We used total length and N50 of each genomes to find quality of genomes with baseline threshold of $N[50]$ (y-axis) is `r n50_threshold` bp and total length (x-axis) which is from `r minimum_length` Mbp to `r maximum_length` Mbp.
 
 ```{r, plot-genome assembly, include=TRUE}
 
@@ -334,7 +338,7 @@ ggplot(data = assembly_join_sample) +
   geom_point(aes
              (x = `Total length`, 
                y = N50, 
-               colour = Species)) +
+               colour = Species.x)) +
   geom_hline(yintercept = n50_threshold) + 
   scale_x_log10() + 
   geom_vline(xintercept = c(minimum_length, 
@@ -361,29 +365,31 @@ ggplot(data = summary_df) +
 
 ```
 
-### Plot graph of identifing bacterial burden in each three countries including South Africa
+### Plot number of samples with high-quality data by origin
 
 ```{r, plot-graph, include=TRUE}
 
 ggplot(data = assembly_join_sample) + 
   geom_bar(aes
-           (x = Year, 
-             fill = Country), 
+           (x = Year.x, 
+             fill = Country.x), 
            position = "dodge", 
            stat = "count") + 
-  facet_wrap(~ Species) + 
+  facet_wrap(~ Species.x) + 
   xlab("Year of investigation") + 
   ylab("Number of enrollment\nIn local hospital") + 
   labs(fill = "Study Enrollment\nIn Each Countries", 
        shape = "Species", 
        caption = "Antimicrobial Resistance Study") + 
-  scale_shape_manual(values = c(17,19, 20), 
+  scale_shape_manual(values = c(17,19,20), 
                      labels = c("Haemophilus influenzae", "Moraxella catarrhalis", "Mixed bacteria")) + coord_cartesian(xlim = c(2005, 2021)) + 
   theme_minimal()
 
 ```
 
-## Identify species in datasets
+### Identification of the species present in each sequence dataset
+
+To check for contamination, we identify the species present in each dataset, and compare these outputs with the expected composition of the samples.
 
 ```{r Parse bracken outputs}
 
@@ -438,16 +444,12 @@ ggplot(species_sample_df,
 
 ```
 
-```{r merge two datasets between assembly_stats_df and species_sample_df}
+```{r Merge expected and observed samples}
 
 assembly_species_merge <- 
   left_join(assembly_stats_df, 
             species_sample_df, 
             by = "npg_run_id")
-
-```
-
-```{r filtering assembly_species_merge to get quality genomes using N50 and Total length}
 
 clean_assembly_species <- assembly_species_merge %>%
   filter(!is.na(Species.y),
@@ -467,7 +469,7 @@ ggplot(data = clean_assembly_species) +
 
 ```
 
-```{r filtering genomes for getting good genomic quality by N50 and Total length}
+``` {r Filtering genomes for getting good genomic quality by N50 and Total length}
 
 assembly_species_filtering <- 
   assembly_species_merge %>%
@@ -484,7 +486,9 @@ ggplot(data = assembly_species_filtering) +
 
 ```
 
-### Re-filter dataset to get specific matching genomes of Moraxella cattarrhalis and Haemophilus influenzae
+### Identification of high-quality single isolate datasets
+
+The single isolate sequences of *M. catarrhalis* and *H. influenzae* should contain relatively little sequence from other species - any such presence represents contamination.
 
 ```{r filter two specific genomics of Mcat and Hinflu}
 
@@ -503,17 +507,14 @@ specific_filter <- assembly_species_filtering %>%
 
 ```
 
+Here we generate the final list of QC-passing *M. catarrhalis* isolates:
 
-```{r filter Moraxella cattarrhalis specie by npg_run_id}
+```{r Filter Moraxella cattarrhalis species by npg_run_id}
 
 Morax_filter <- specific_filter %>%
   filter(Species.y == "Moraxella catarrhalis") %>%
   select(npg_run_id) %>%
   distinct()
-
-```
-
-```{r generate list of npg_run_id Moraxella cattarrhalis}
 
 write.table(Morax_filter,
             file = "./sample_data/Mcat_QC_pass.csv",
@@ -523,16 +524,14 @@ write.table(Morax_filter,
 
 ```
 
+Here we generate the final list of QC-passing *H. influenzae* isolates:
+
 ```{r filter npg_run_id of Haemophilus influenzae genomes}
 
 Hinflu_filter <- specific_filter %>% 
   filter(Species.y == "Haemophilus influenzae") %>% 
   select(npg_run_id) %>%
   distinct()
-
-```
-
-```{r generate npg_run_id list of Haemophilus influenzae}
 
 write.table(Hinflu_filter,
             file = "./sample_data/Hflu_QC_pass.csv",
@@ -543,6 +542,8 @@ write.table(Hinflu_filter,
 ```
 
 ### Filter dataset to samples where observed and expected species match
+
+TO DO: Explain why used above/not used above - all this and the genus information!
 
 ```{r create a proportion}
 
@@ -582,6 +583,8 @@ ggplot(filter_proportion_df, aes(x = Species.y, y = proportion)) +
 
 ### Test filtering at the genus level for Moraxella
 
+TO DO: Explain this testing
+
 ```{r Moraxella at genus level}
 
 genus_level_df <-
@@ -609,7 +612,7 @@ ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
 
 ```
 
-## Final filtering on sequence characteristics
+### Final filtering on sequence characteristics
 
 We want to keep samples with threshold:
 N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,000 bp, matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony.
@@ -632,9 +635,12 @@ ggplot(filtered_proportion,
   geom_hline(yintercept = proportion_threshold, linetype = "dashed", color = "red") +
   labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
   theme_minimal()
+
 ```
 
 ### Test filtering at the genus level
+
+TO DO: Look at graphs and explain
 
 ```{r plot the filter dataset}
 
@@ -675,7 +681,7 @@ ggplot(data = plot_genus_df) +
 
 ```
 
-## Epidemiological characteristics
+### Epidemiological characteristics of filtered single-isolate dataset
 
 ```{r Moraxella in each country and each year}
 
@@ -728,6 +734,8 @@ ggplot(
 
 ```
 
+TO DO: Move up!
+
 ```{r import Global Hinf metadata microreact}
 
 Global_Hinf_metadata_microreact <-
@@ -737,6 +745,8 @@ Global_Hinf_metadata_microreact <-
            stringsAsFactors = FALSE)
 
 ```
+
+TO DO: Move up!
 
 ```{r rename Global_Hinf_metadata_microreact dataset}
 
@@ -767,10 +777,6 @@ join_epi_Global_data <-
   select(-new_Year)
 
 ```
-
-## Use AMR finder to identify resistance genes
-
-## Use capsule typer to identify serotypes
 
 ## Use PopPUNK to categorise isolates
 
@@ -989,7 +995,7 @@ hflu_strains_df <-
 
 ```
 
-## Compare strain frequncies between samples of *M. catarrhalis*
+## Compare strain frequncies across locations
 
 ```{r reformat the columns of Taxon as the npg_run_id}
 
@@ -1051,7 +1057,7 @@ ggplot(hflu_strains_freq,
 
 ```
 
-## We will find How many strains are there of Hinfluenzae species? How many in each country (make some plots)
+### Compare *H. influenzae* strain frequencies between locations
 
 ```{r calculate the number of strain for Hinfluenzae species}
 
@@ -1092,6 +1098,8 @@ hflu_filter_extract_sample <- hflu_extract_sample_df %>%
 
 
 ```
+
+### Compare *H. influenzae* strain frequencies in the UK between timepoints
 
 ```{r calculate the frequnecies (%) of H.influenzae strain compared between timepoints in the UK}
 
@@ -1155,7 +1163,7 @@ ggpairs(hflu_strains_widefreq,
 
 ```
 
-## Compare strain frequncies between samples of *H.influenzae*
+### Compare strain frequncies between samples of *M. catarrhalis*
 
 ```{r format Taxon column and rename Taxon as npg_run_id}
 
@@ -1255,7 +1263,7 @@ mcat_count_freq <- mcat_strains_freq %>%
 
 ```
 
-## We will find How many strains are there of *M.cattarrhalis* species? How many in each country (make some plots)
+### Compare *M. catarrhalis* strain frequencies between locations
 
 ```{r calculate the number of Mcat strains}
 
@@ -1377,11 +1385,11 @@ ggpairs(mcat_count_widefreq,
 
 ```
 
-### Use Panaroo to identify genes
+## Compare gene frequencies across locations
 
 After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
-### We will analize Haemophilus influenzae after filtered by N50, Total length, and matching proportion threshold > 0.66 and as well after completed Panaroo script.
+### Parse Panaroo output
 
 ``` {bash Run panaroo on H. influenzae, eval = FALSE}
 
@@ -1864,7 +1872,9 @@ ggpairs(Hinflu_version4_genefreq_wide,
 
 ```
 
-## We use MOB Suite of bioinformatic tool to analysis plasmid for *M.cattarrhalis* and *H.influenzae*
+## Use AMR finder to identify resistance genes
+
+### We use MOB Suite of bioinformatic tool to analysis plasmid for *M.cattarrhalis* and *H.influenzae*
 
 ``` {bash Generate mobsuite job files, eval = FALSE}
 
@@ -1926,9 +1936,7 @@ Mcat_Hflu_mobsuite_summary_df <-
 
 ```
 
-
-
-## We will import the Mcat_SA_amr.tab file after ran the abritamr bioinformatics tool of antibiotic resistance analysis for *M. cattarrhalis* isolates from South Africa, United Kingdom, Cambodia, and Thailand. Then we will generate CSV file to be input in Microreact data show
+### Further runs of abritamr
 
 ``` {bash convert all *gff files from AMR_SAfrica to *fa format with SA_assemblies, eval = FALSE}
 
@@ -1942,7 +1950,7 @@ declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.
 
 ```
 
-```{bash bash generate a Mcat_SA_amr.tab file for extracting all abritamr.txt files, eval = FALSE}
+```{bash generate a Mcat_SA_amr.tab file for extracting all abritamr.txt files, eval = FALSE}
 
 echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > Mcat_SA_amr.tab
 
@@ -2033,7 +2041,7 @@ write.table(Mcat_SA_microreact_2,
 
 ```
 
-## Which resistance genes are associated with which plasmids?
+### Which resistance genes are associated with which plasmids?
 
 ```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
 
@@ -2165,7 +2173,7 @@ ggplot(Mcat_frequency_cluster,
 
 ```
 
-## Analyse the distribution of AMR genes
+### Analyse the distribution of AMR genes
 
 After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
@@ -2276,7 +2284,9 @@ write.table(result_Mcat_Hinflu_microreact2,
  
 ```
 
-## Analysis of *H. influenzae* capsules
+## Identify capsules in the single isolate datasets
+
+### Analysis of *H. influenzae* capsules
 
 We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
 
@@ -2415,7 +2425,7 @@ write.table(Hinflu_amr_mobsuite,
 
 ```
 
-# Frequencies over time
+### Frequencies over time
 
 ```{r frequency of H.influenzae cluster in early and late of 2012 in the UK distribution}
 Hflu_frequency_cluster <- Hflu_microreact_df_2 %>% 
@@ -2537,7 +2547,7 @@ ggplot(proportions_2, aes(x = Hinflu_plasmid_2,
 
 ```
 
-## Distribution of resistance by country for *M. cattarrhalis*
+### Distribution of resistance by country for *M. cattarrhalis*
 
 We try to find % of isolates carrying different resistance genes of *M. cattarrhalis* in different countries
 
@@ -2630,7 +2640,7 @@ ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = perc
 
 ```
 
-## We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistance populations
+### We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistance populations
 
 ```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
 
@@ -2644,4 +2654,11 @@ mcat_serosen_serore_genes <-
 
 ```
 
-## Compare gene frequencies between samples
+# Analysis of deep sequencing data
+
+- Removal of prophage sequences - does this improve assignment to strains?
+
+# Analysis of long-read data
+
+
+
