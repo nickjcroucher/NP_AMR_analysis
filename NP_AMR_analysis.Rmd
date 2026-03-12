@@ -939,6 +939,12 @@ TO DO
 microreact_epi_cols <-
   c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
 
+amr_wide_df <-
+  widen_amr_data(amr_df)
+
+amr_col_names <-
+  colnames(amr_wide_df)[colnames(amr_wide_df)!="npg_run_id"]
+
 Mcat_microreact_df <- 
   sample_df %>% 
     dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
@@ -948,7 +954,7 @@ Mcat_microreact_df <-
                         dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
                         dplyr::select(-Taxon),
                       absent_value = "Unclustered") %>% 
-    add_to_microreact(widen_amr_data(amr_df),
+    add_to_microreact(amr_wide_df,
                       absent_value = "Absent")
 
 Hflu_microreact_df <-
@@ -960,7 +966,7 @@ Hflu_microreact_df <-
                         dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
                         dplyr::select(-Taxon),
                       absent_value = "Unclustered") %>% 
-    add_to_microreact(widen_amr_data(amr_df),
+    add_to_microreact(amr_wide_df,
                       absent_value = "Absent")
       
 ```
@@ -1282,22 +1288,14 @@ ggplot(proportions, aes(x = plasmid,
 
 We try to find % of isolates carrying different resistance genes of *M. cattarrhalis* in different countries
 
-```{r merge data of Mcat_SA_amr_wide and mcat_strains_sample by "npg_run_id"}
-
-mcat_genes_amr <- 
-  left_join(mcat_strains_sample, 
-            Mcat_SA_amr_wide,
-            by = "npg_run_id")
-
-```
-
 ```{r convert gene columns to long format then count resistance genes per country not per isolate}
 
-Mcat_genes_amr_long <- mcat_genes_amr %>%
-  pivot_longer(cols = -c(npg_run_id, Country, Year, Species, Classification, Cluster),
+Mcat_genes_amr_long <-
+  Mcat_microreact_df %>%
+  pivot_longer(cols = dplyr::any_of(amr_col_names),
     names_to = "Resistant_Gene",
     values_to = "Status_Resistant_Genes") %>%
-  group_by(Country, Resistant_Gene) %>%
+  group_by(Cohort, Resistant_Gene) %>%
   summarise(Total = n(),
             Present = sum(Status_Resistant_Genes == "Present", na.rm = TRUE),
             Percent_present = (Present / Total) * 100, 
@@ -1307,7 +1305,7 @@ Mcat_genes_amr_long <- mcat_genes_amr %>%
 
 ```{r plot geom_tile show the distribution of resistance genes by country and by strain}
 
-ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_present)) +
+ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Cohort, fill = Percent_present)) +
   geom_tile(color = "blue") +
   scale_fill_gradient(low = "lightyellow", high = "red") +
   labs(
@@ -1322,27 +1320,15 @@ ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Country, fill = Percent_
   )
 
 ```
-
-```{r find the blaBRO-1, blaBRO-1*, blaBRO-2 gene in Mcat and filter the seroresistance and serosensitive}
-
-Mcat_serosen_seroresis <- Mcat_SA_microreact %>% 
-  select(id, Classification, 
-         `blaBRO-1`) %>% 
-  filter(`blaBRO-1` == "Present", Classification == "Seroresistant")
-
-table(Mcat_serosen_seroresis$`blaBRO-1`)
-
-```
-
 ### We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
 
 ```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
 
-Hinflu_genes_amr <- Hinflu_microreact_df %>% 
-  pivot_longer(cols = -c(id , Country, Year, Species, Cluster),
+Hinflu_genes_amr <- Hflu_microreact_df %>% 
+  pivot_longer(cols = dplyr::any_of(amr_col_names),
     names_to = "Hinflu_resistant_gene",
     values_to = "status_resistant_genes") %>% 
-  group_by(Country, Hinflu_resistant_gene) %>%
+  group_by(Cohort, Hinflu_resistant_gene) %>%
   summarise(Total = n(),
             present = sum(status_resistant_genes != "Absent"),
             percent_present = (present /Total) * 100, 
@@ -1353,7 +1339,7 @@ Hinflu_genes_amr <- Hinflu_microreact_df %>%
 
 ```{r plot geom_tile for Hflu and resistance}
 
-ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = percent_present)) +
+ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Cohort, fill = percent_present)) +
   geom_tile(color = "blue") +
   scale_fill_gradient(low = "lightyellow", high = "red") +
   labs(
@@ -1373,13 +1359,7 @@ ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Country, fill = perc
 
 ```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
 
-mcat_serosen_serore_genes <-
-  Mcat_version4_gene_sample %>%
-  select(npg_run_id,
-         Gene, 
-         CDS) %>%
-  left_join(mcat_strains_sample,
-            by = "npg_run_id")
+# Add some code in here - make function from above
 
 ```
 
