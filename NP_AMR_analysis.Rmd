@@ -34,6 +34,46 @@ theme_set(theme_bw())
 
 ```
 
+# Functions
+
+``` {r Functions}
+
+widen_amr_data <- function(amr_df) {
+  
+  amr_df %>%
+    # Split into list column
+    mutate(gene_list = str_split(AB_resistance, ",")) %>%
+    # Clean whitespace
+    mutate(gene_list = map(gene_list, str_trim)) %>%
+    # Unnest to long format
+    unnest(gene_list) %>%
+    # Remove original column
+    select(-AB_resistance) %>%
+    # Add presence indicator
+    mutate(present = "Present") %>%
+    distinct() %>% 
+    # Pivot to wide format
+    pivot_wider(
+      names_from = gene_list,
+      values_from = present,
+      values_fill = "Absent"
+    )
+  
+}
+
+add_to_microreact <- function(df1,df2,absent_value = "") {
+  
+  df1 %>%
+    dplyr::left_join(df2,
+                     by = c("id"="npg_run_id")) %>% 
+    dplyr::mutate(across(everything(), ~ ifelse(is.na(.x), absent_value, .x))) %>% 
+    dplyr::select(where(~!all(.x==absent_value)))
+  
+}
+
+
+```
+
 # Load data from project
 
 Import sample data from project
@@ -183,7 +223,17 @@ sample_df <-
     dplyr::left_join(epi_df, by = c("join_col")) %>% 
     dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
     dplyr::select(-join_col) %>% 
-    dplyr::filter(!is.na(Country))
+    dplyr::filter(!is.na(Country)) %>% 
+    dplyr::mutate(Cohort = dplyr::if_else(Cohort == "Thailand","Maela",Cohort)) %>% 
+    dplyr::mutate(Cohort =
+                    dplyr::case_when(
+                      Cohort == "Maela" ~ "Maela",
+                      Cohort == "Cambodia" ~ "Siem Reap",
+                      Cohort == "Drakenstein" ~ "Drakenstein",
+                      Cohort == "United Kingdom" & Year < 2014 ~ "Hampshire (early)",
+                      Cohort == "United Kingdom" & Year > 2014 ~ "Hampshire (late)"
+                    )
+                  )
 
 species_palette <- c(
   "Haemophilus influenzae" = "#E6A0C4FF",
@@ -844,9 +894,130 @@ hflu_strains_df <-
 
 ```
 
-## Use AMR finder to identify resistance genes
+## Analyse the distribution of AMR genes
 
-### We use MOB Suite of bioinformatic tool to analysis plasmid for *M.cattarrhalis* and *H.influenzae*
+After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
+
+### Analysis with abritamr
+
+```{bash Code used for identifying AMR genes with abritamr, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
+
+```
+
+```{bash command line for extracting AMR files, eval = FALSE}
+
+echo -en "Isolate\tAB_resistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > all_amr_summary.txt
+
+```
+
+``` {r import file of Mcat_SA_amr.tab to be ready generating CSV file}
+
+amr_df <- read.table("./amr_hicap_analysis/all_amr_summary.txt", 
+                            header = FALSE,
+                            comment.char = "",
+                            check.names = FALSE,
+                            quote = "",
+                            sep = "\t", 
+                            col.names = c("npg_run_id", "AB_resistance"))
+
+```
+
+### Phylogeny of *blaBRO* in *M. catarrhalis*
+
+TO DO
+
+### Phylogeny of *hmm* in *H. influenzae*
+
+TO DO
+
+## Initialise microreact epidemiological data frames
+
+```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
+
+microreact_epi_cols <-
+  c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
+
+Mcat_microreact_df <- 
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(mcat_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(widen_amr_data(amr_df),
+                      absent_value = "Absent")
+
+Hflu_microreact_df <-
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Hflu_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(hflu_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(widen_amr_data(amr_df),
+                      absent_value = "Absent")
+      
+```
+
+## Identify capsules in the single isolate datasets
+
+### Analysis of *H. influenzae* capsules
+
+We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
+
+```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
+
+for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
+
+```
+
+```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
+out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
+
+```
+
+```{bash command line for extracting all the file, eval = FALSE}
+
+echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap4_hflu.tab
+
+```
+
+```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
+
+Hicap_hflu <-
+  read.table("./amr_hicap_analysis/all_hicap_Hflu.tab",
+                         header = TRUE, 
+                         comment.char = "",
+                         check.names = FALSE,
+                         quote = "",
+                         sep = "\t") %>% 
+  dplyr::mutate(serotype = 
+                  dplyr::if_else(grepl("truncated_genes",status), 
+                                 paste0(serotype," (inactivated)"), 
+                                 serotype)
+                ) %>% 
+  dplyr::select(-status)
+
+```
+
+```{r merge Hicap_hflu with hflu_extract_sample_df by "npg_run_id"}
+
+Hflu_microreact_df %<>%
+  add_to_microreact(Hicap_hflu, absent_value = "NT")
+
+```
+
+## Plasmid analysis
+
+### Analysis of genomic data with MOB suite
 
 ``` {bash Generate mobsuite job files, eval = FALSE}
 
@@ -908,501 +1079,21 @@ Mcat_Hflu_mobsuite_summary_df <-
 
 ```
 
-### Further runs of abritamr
+Add the mobsuite information to the microreact epidemiology CSV files:
 
-``` {bash convert all *gff files from AMR_SAfrica to *fa format with SA_assemblies, eval = FALSE}
+``` {r Add mobsuite data to CSV files}
 
-for f in /rds/general/user/skaing/home/NP_AMR/AMR_SAfrica/*.gff; do g=`basename $f`; cp -s ../SA_assemblies/${g%gff}fa .; done
+Mcat_microreact_df %<>%
+  add_to_microreact(Mcat_Hflu_mobsuite_summary_df, absent_value = "Absent")
 
-```
-
-```{bash command line for analyize each isolates which will resistance specifically antibiotic, eval = FALSE}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/SA_assemblies\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
+Hflu_microreact_df %<>%
+  add_to_microreact(Mcat_Hflu_mobsuite_summary_df, absent_value = "Absent")
 
 ```
-
-```{bash generate a Mcat_SA_amr.tab file for extracting all abritamr.txt files, eval = FALSE}
-
-echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > Mcat_SA_amr.tab
-
-```
-
-```{r import file of Mcat_SA_amr.tab to be ready generating CSV file}
-
-amr_df <- read.table("./amr_hicap_analysis/all_amr_summary.txt", 
-                            header = FALSE,
-                            comment.char = "",
-                            check.names = FALSE,
-                            quote = "",
-                            sep = "\t", 
-                            col.names = c("npg_run_id", "AB_resistance"))
-
-```
-
-```{r Mcat get rid of the columns name}
-
-Mcat_SA_amr_wide <-
-  amr_df %>%
-  # Split into list column
-  mutate(gene_list = str_split(AB_resistance, ",")) %>%
-  # Clean whitespace
-  mutate(gene_list = map(gene_list, str_trim)) %>%
-  # Unnest to long format
-  unnest(gene_list) %>%
-  # Remove original column
-  select(-AB_resistance) %>%
-  # Add presence indicator
-  mutate(present = "Present") %>%
-  distinct() %>% 
-  # Pivot to wide format
-  pivot_wider(
-    names_from = gene_list,
-    values_from = present,
-    values_fill = "Absent"
-  )
-
-```
-
-```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
-
-Mcat_microreact_df <- 
-  sample_df %>% 
-    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
-    dplyr::left_join(Mcat_SA_amr_wide,
-              by = "npg_run_id") %>%
-    dplyr::left_join(Mcat_Hflu_mobsuite_summary_df,
-              by = "npg_run_id") %>%
-    dplyr::rename(id = npg_run_id) %>% 
-    dplyr::mutate(id = paste0(id,"_fa")) %>% 
-    dplyr::mutate(across(everything(), ~ ifelse(is.na(.x), "Absent", .x))) %>% 
-    dplyr::select(where(~!all(.x=="Absent")))
-
-```
-
-```{r export file for import to microreact after gettting plasmid from Mob suite file}
-
-write.table(Mcat_microreact_df,
-            file = "./microreact_analysis/Mcat_microreact.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-### Which resistance genes are associated with which plasmids?
-
-```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
-
-Mcat_SA_microreact_2_longer <-
-  Mcat_microreact_df %>% 
-  pivot_longer(
-    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
-    names_to = "resistant_genes",
-    values_to = "value_gene") %>% 
-  pivot_longer(
-    cols = c("AG261", "AB778", "AC411", "AE018"), 
-    names_to = "plasmid",
-    values_to = "value_plasmid"
-  ) %>%
-  filter(value_gene != "Absent", 
-         value_plasmid != "Absent") %>%
-  group_by(resistant_genes, plasmid) %>%
-  summarise(count = n(), .groups = "drop")
-
-```
-
-```{r plot geom_tile for Mcat resistance}
-
-ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill = count)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(
-    low = "lightyellow",
-    high = "red",
-    name = "Count"
-  ) +
-  labs(
-    title = "Plasmid–Resistance-Gene\nAssociation of M.cattarrhalis",
-    x = "Plasmid",
-    y = "Resistance Gene"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank()
-  )
-```
-
-```{r Calculate the proportion of Mcattarrhalis of resistance gene associated plasmid}
-
-Mcat_SA_microreact_2_longer_2 <- Mcat_microreact_df %>% 
-  pivot_longer(
-    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
-    names_to = "resistant_genes",
-    values_to = "value_gene") %>% 
-  pivot_longer(
-    cols = c("AG261", "AB778", "AC411", "AE018"), 
-    names_to = "plasmid",
-    values_to = "value_plasmid")
-    
-# Step 2: Count bacteria with each plasmid (denominator)
-plasmid_totals <- Mcat_SA_microreact_2_longer_2 %>%
-  filter(value_plasmid != "Absent") %>%
-  distinct(id, plasmid) %>%
-  count(plasmid, name = "total_bacteria_with_plasmid")
-
-# Step 3: Count bacteria with gene and plasmid (numerator)
-gene_plasmid_counts <- Mcat_SA_microreact_2_longer_2 %>%
-  filter(value_gene != "Absent",
-         value_plasmid != "Absent") %>%
-  distinct(id, resistant_genes, plasmid) %>% 
-  count(resistant_genes, plasmid, name = "count_gene_and_plasmid")
-
-# Step 4: Join and compute proportion
-proportions <-
-  gene_plasmid_counts %>%
-  left_join(plasmid_totals, by = "plasmid") %>%
-  mutate(proportion = count_gene_and_plasmid / total_bacteria_with_plasmid)
-
-```
-
-```{r plot geom_tile of plasmid and resistance genes association for Mcat}
-
-ggplot(proportions, aes(x = plasmid, 
-                        y = resistant_genes, 
-                        fill = proportion)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red",
-                      name = "Proportion") +
-  labs(
-    x = "Plasmid",
-    y = "Resistance Gene",
-    title = "Proportion of M.cattarrhalis \nCarrying Each Resistance Gene per Plasmid"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank()
-  )
-
-```
-
-```{r frequency of Mcat cluster in early and late 2012 of the UK distribution}
-
-Mcat_frequency_cluster <-
-  Mcat_microreact_df %>%
-  filter(Country == "United Kingdom") %>% 
-  mutate(Mcat_period = ifelse(Year < 2012, "early", "late")) %>% 
-  group_by(Cluster, Mcat_period) %>%
-  summarise(Mcat_number_strains = n(), .groups = "drop") %>%
-  group_by(Mcat_period) %>%
-  mutate(Mcat_freq = Mcat_number_strains / sum(Mcat_number_strains) *100) %>% 
-  ungroup() %>%
-  select(Mcat_period, Mcat_freq, Cluster) %>% 
-  tidyr::pivot_wider(names_from = Mcat_period, 
-                     values_from = Mcat_freq, 
-                     values_fill = 0)
-
-ggplot(Mcat_frequency_cluster,
-       aes(x = early, y = late, colour = Cluster)) + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
-  geom_point(size = 3, alpha = 0.8, colour = "steelblue") + 
-  labs(
-    title = "Early vs Late Frequency of Moraxella catarrhalis Clusters (UK)",
-    x = "Early timepoint frequency (%)",
-    y = "Late timepoint frequency (%)"
-  ) +
-  scale_x_continuous(expand = expansion(mult = 0.05)) +
-  scale_y_continuous(expand = expansion(mult = 0.05)) + 
-  theme(
-    plot.title = element_text(face = "bold"),
-    legend.position = "right"
-  )
-
-```
-
-### Analyse the distribution of AMR genes
-
-After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
-
-```{bash command line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains only in South Africa, eval = FALSE}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr_SAfrica_fastas\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
-
-```
-
-```{bash command line for extracting South African AMR files, eval = FALSE}
-
-echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > SAfrica_amr_summary.txt
-
-```
-
-```{bash line for bioinformatics analysis of Abritamr with each M.cattarrhalis strains in UK, Cambodia and Thailand, eval = FALSE}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
-
-```
-
-```{bash command line for extracting AMR files, eval = FALSE}
-
-echo -en "Isolate\tResistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > amr_summary.txt
-
-```
-
-```{r Hflu get rid of the columns name}
-
-Hinflu_SA_amr_wide_df <-
-  amr_df %>%
-  # Split into list column
-  mutate(gene_list = str_split(AB_resistance, ",")) %>%
-  # Clean whitespace
-  mutate(gene_list = map(gene_list, str_trim)) %>%
-  # Unnest to long format
-  unnest(gene_list) %>%
-  # Remove original column
-  select(-AB_resistance) %>%
-  # Add presence indicator
-  mutate(present = "Present") %>%
-  distinct() %>% 
-  # Pivot to wide format
-  pivot_wider(
-    names_from = gene_list,
-    values_from = present,
-    values_fill = "Absent"
-  )
-
-```
-
-```{r merge Hinflu_SA_amr_wide_df and hflu_extract_sample_df with npg_run_id}
-
-Hinflu_microreact_df <-  
-  left_join(hflu_extract_sample_df, 
-            Hinflu_SA_amr_wide_df,
-            by = "npg_run_id") %>%
-  dplyr::rename(id = npg_run_id) %>% 
-  dplyr::mutate(id = paste0(id,"_fa"))
-
-```
-
-```{r the other merge dataframe with sample_df and Mcat_Hflu_SA_amr_wide_df}
-
-left_join_amr_sample_df <- 
-  function(sample_df,
-           Hinflu_SA_amr_wide_df,
-           by_cols = "npg_run_id",
-           fill_value = "Absence") {
-# Columns that exist only in the AMR wide dataset in right table
-    right_only_cols <- 
-      setdiff(names(Hinflu_SA_amr_wide_df),
-              names(sample_df))
-
-# Perform left join and fill only right table columns
-sample_df %>%
-  dplyr::left_join(Hinflu_SA_amr_wide_df, 
-                   by = by_cols) %>%
-  dplyr::select(where(~ !all(.x == "Absence", 
-                             na.rm = TRUE))) %>%
-  dplyr::mutate(
-    across(.cols = all_of(right_only_cols),.fns = 
-                         ~ tidyr::replace_na(.x, fill_value)))
-  }
-
-```
-
-```{r re-try other codes to filter amr strains}
-
-result_Mcat_Hinflu_microreact2 <-
-  left_join_amr_sample_df(hflu_extract_sample_df,
-                          Hinflu_SA_amr_wide_df,
-                          by_cols = "npg_run_id",
-                          fill_value = "Absent") %>%
-  dplyr::select(where(~ !all(.x == "Absence", 
-                             na.rm = TRUE)))
-
-```
-
-```{r Mcat2 export file microreact file}
-
-write.table(result_Mcat_Hinflu_microreact2,
-            file = "./microreact_analysis/Mcat_microreact2.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
- 
-```
-
-## Identify capsules in the single isolate datasets
-
-### Analysis of *H. influenzae* capsules
-
-We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
-
-```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
-
-for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
-
-```
-
-```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule, eval = FALSE}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
-out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
-
-```
-
-```{bash command line for extracting all the file, eval = FALSE}
-
-echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap4_hflu.tab
-
-```
-
-```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
-
-Hicap_hflu <-
-  read.table("./amr_hicap_analysis/all_hicap_Hflu.tab",
-                         header = TRUE, 
-                         comment.char = "",
-                         check.names = FALSE,
-                         quote = "",
-                         sep = "\t") %>% 
-  dplyr::mutate(serotype = 
-                  dplyr::if_else(grepl("truncated_genes",status), 
-                                 paste0(serotype," (inactivated)"), 
-                                 serotype)
-                ) %>% 
-  dplyr::select(-status)
-
-```
-
-```{r merge Hicap_hflu with hflu_extract_sample_df by "npg_run_id"}
-
-Hflu_microreact_df <-
-  left_join(hflu_extract_sample_df,
-            Hicap_hflu,
-            by = "npg_run_id") %>% 
-  dplyr::mutate(serotype = 
-                  dplyr::if_else(is.na(serotype),
-                                 "NT",serotype)
-                )
-
-```
-
-```{r merge Hflu_microreact_df with result_Mcat_Hinflu_microreact2 and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
-
-Hflu_microreact_df_2 <- Hflu_microreact_df %>% 
-  select(npg_run_id, serotype) %>% 
-  left_join(result_Mcat_Hinflu_microreact2, 
-            by = "npg_run_id") %>%
-  left_join(Mcat_Hflu_mobsuite_summary_df, 
-            by = "npg_run_id") %>%
-  dplyr::mutate(across(everything(), 
-                       ~ ifelse(is.na(.x), 
-                                "Absent", .x))) %>% 
-  dplyr::select(where(~ !all(.x=="Absent"))) %>% 
-  dplyr::mutate(serotype = 
-                  dplyr::if_else(is.na(serotype),
-                                 "NT",serotype)) %>% 
-  rename(id = npg_run_id)
-
-```
-
-```{r export the file from after running Mob Suite to find plasmid then import file into microreact}
-
-write.table(Hflu_microreact_df_2,
-            file = "./microreact_analysis/Hinflu_mobsuite_microreact2.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r Hflu export the file from microreact}
-
-write.table(Hflu_microreact_df,
-            file = "./microreact_analysis/Hinflu_microreact.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r merge Mcat_Hflu_SA_amr and Hflu_microreact_df by npg_run_id for finding the AB resistance}
- 
-Hflu_microreact_resistance <- 
-  left_join(Hflu_microreact_df, 
-            Hinflu_SA_amr_wide_df, 
-            by = "npg_run_id") %>%
-  rename(id = npg_run_id)
-
-```
-
-```{r Hflu resistance export the file from microreact}
-
-write.table(Hflu_microreact_resistance,
-            file = "./microreact_analysis/Hflu_microreact_resistant.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r merge two file of Mcat_Hflu_mobsuite_summary_df and Hflu_microreact_resistance for H.influenzae isolates}
-
-Hinflu_amr_mobsuite <- 
-  Mcat_Hflu_mobsuite_summary_df %>%
-  dplyr::rename(id = npg_run_id) %>% 
-  right_join(Hflu_microreact_resistance, 
-            by = "id") %>% 
-  dplyr::mutate(id = paste0(id,"_fa")) %>% 
-  select(where(~ !all(.x == "Absent", na.rm = TRUE)))
-
-```
-
-```{r extract csv file of Hinflu_amr_mobsuite}
-
-write.table(Hinflu_amr_mobsuite,
-            file = "./microreact_analysis/Hinflu_amr_mobsuite.csv",
-            sep = ",",
-            col.names = TRUE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-### Frequencies over time
-
-```{r frequency of H.influenzae cluster in early and late of 2012 in the UK distribution}
-Hflu_frequency_cluster <- Hflu_microreact_df_2 %>% 
-  filter(Country == "United Kingdom") %>% 
-  mutate(During = ifelse(Year < 2012, "early", "late")) %>% 
-  group_by(Cluster, During) %>% 
-  summarise(Hflu_number = n(), .groups = "drop") %>% 
-  group_by(During) %>% 
-  mutate(Hflu_freq_cluster = Hflu_number / sum(Hflu_number) *100) %>%  
-  select(Cluster, During, Hflu_freq_cluster) %>% 
-  tidyr::pivot_wider(names_from = During, 
-                     values_from = Hflu_freq_cluster, 
-                     values_fill = 0)
-
-ggplot(Hflu_frequency_cluster, aes(x = early, y = late, colour = Cluster)) +
-  geom_point(size = 3, colour = "steelblue") + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
-  labs(
-    title = "Frequency of H.influenzae Cluster in the UK\n at early and late year of 2012",
-    x = "Frequency early 2012",
-    y = "Frequency late 2012"
-  )
-
-```
-
-## Plasmid analysis
 
 ```{r convert Hflu_microreact_df_2}
 
-Hinflu_microreact_2_longer <- Hflu_microreact_df_2 %>% 
+Hinflu_microreact_2_longer <- Hflu_microreact_df %>% 
   pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
                names_to = "Hinflu_resistant_gene", 
                values_to = "value_resistant_gene") %>% 
@@ -1441,7 +1132,7 @@ ggplot(Hinflu_microreact_2_longer,
 
 ```{r calculate the proportion of H.influenzae}
 
-Hinflu_microreact_2_longer_2 <- Hflu_microreact_df_2 %>% 
+Hinflu_microreact_2_longer_2 <- Hflu_microreact_df %>% 
   pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
                names_to = "Hinflu_resistant_gene_2", 
                values_to = "value_resistant_gene_2") %>% 
@@ -1484,6 +1175,101 @@ ggplot(proportions_2, aes(x = Hinflu_plasmid_2,
     x = "Plasmid",
     y = "Resistance Gene",
     title = "Proportion of H.influenzae \nCarrying Each Resistance Gene per Plasmid"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Which resistance genes are associated with which plasmids?
+
+```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
+
+Mcat_SA_microreact_2_longer <-
+  Mcat_microreact_df %>% 
+  pivot_longer(
+    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
+    names_to = "resistant_genes",
+    values_to = "value_gene") %>% 
+  pivot_longer(
+    cols = c("AG261", "AB778", "AC411"), 
+    names_to = "plasmid",
+    values_to = "value_plasmid"
+  ) %>%
+  filter(value_gene != "Absent", 
+         value_plasmid != "Absent") %>%
+  group_by(resistant_genes, plasmid) %>%
+  summarise(count = n(), .groups = "drop")
+
+```
+
+```{r plot geom_tile for Mcat resistance}
+
+ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill = count)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(
+    low = "lightyellow",
+    high = "red",
+    name = "Count"
+  ) +
+  labs(
+    title = "Plasmid–Resistance-Gene\nAssociation of M.cattarrhalis",
+    x = "Plasmid",
+    y = "Resistance Gene"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
+
+```{r Calculate the proportion of Mcattarrhalis of resistance gene associated plasmid}
+
+Mcat_SA_microreact_2_longer_2 <- Mcat_microreact_df %>% 
+  pivot_longer(
+    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
+    names_to = "resistant_genes",
+    values_to = "value_gene") %>% 
+  pivot_longer(
+    cols = c("AG261", "AB778", "AC411"), 
+    names_to = "plasmid",
+    values_to = "value_plasmid")
+    
+# Step 2: Count bacteria with each plasmid (denominator)
+plasmid_totals <- Mcat_SA_microreact_2_longer_2 %>%
+  filter(value_plasmid != "Absent") %>%
+  distinct(id, plasmid) %>%
+  count(plasmid, name = "total_bacteria_with_plasmid")
+
+# Step 3: Count bacteria with gene and plasmid (numerator)
+gene_plasmid_counts <- Mcat_SA_microreact_2_longer_2 %>%
+  filter(value_gene != "Absent",
+         value_plasmid != "Absent") %>%
+  distinct(id, resistant_genes, plasmid) %>% 
+  count(resistant_genes, plasmid, name = "count_gene_and_plasmid")
+
+# Step 4: Join and compute proportion
+proportions <-
+  gene_plasmid_counts %>%
+  left_join(plasmid_totals, by = "plasmid") %>%
+  mutate(proportion = count_gene_and_plasmid / total_bacteria_with_plasmid)
+
+```
+
+```{r plot geom_tile of plasmid and resistance genes association for Mcat}
+
+ggplot(proportions, aes(x = plasmid, 
+                        y = resistant_genes, 
+                        fill = proportion)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
+  labs(
+    x = "Plasmid",
+    y = "Resistance Gene",
+    title = "Proportion of M.cattarrhalis \nCarrying Each Resistance Gene per Plasmid"
   ) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -1597,7 +1383,29 @@ mcat_serosen_serore_genes <-
 
 ```
 
-## Summarise sample sizes across locations
+## Summarise single isolate epidemiology
+
+### Generate microreact output files
+
+```{r export file for import to microreact after gettting plasmid from Mob suite file}
+
+write.table(Mcat_microreact_df %>%
+              dplyr::mutate(id = paste0(id,"_fa")),
+            file = "./microreact_analysis/Mcat_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+
+write.table(Hflu_microreact_df %>%
+              dplyr::mutate(id = paste0(id,"_fa")),
+            file = "./microreact_analysis/Hflu_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+
+```
 
 ```{r reformat the columns of Taxon as the npg_run_id}
 
@@ -1659,6 +1467,8 @@ ggplot(hflu_strains_freq,
 
 ```
 
+## Compare strain frequencies between locations
+
 ### Compare *H. influenzae* strain frequencies between locations
 
 ```{r calculate the number of strain for Hinfluenzae species}
@@ -1710,6 +1520,33 @@ hinflu_freq_before_after <- hflu_filter_extract_sample %>%
   summarise(year_hinflu = n(),
             .groups = "drop") %>% 
   mutate(frequency_all_hflu = (year_hinflu / sum(year_hinflu)) * 100)
+
+```
+
+### Frequencies over time
+
+```{r frequency of H.influenzae cluster in early and late of 2012 in the UK distribution}
+
+Hflu_frequency_cluster <- Hflu_microreact_df %>% 
+  filter(Country == "United Kingdom") %>% 
+  mutate(During = ifelse(Year < 2012, "early", "late")) %>% 
+  group_by(Cluster, During) %>% 
+  summarise(Hflu_number = n(), .groups = "drop") %>% 
+  group_by(During) %>% 
+  mutate(Hflu_freq_cluster = Hflu_number / sum(Hflu_number) *100) %>%  
+  select(Cluster, During, Hflu_freq_cluster) %>% 
+  tidyr::pivot_wider(names_from = During, 
+                     values_from = Hflu_freq_cluster, 
+                     values_fill = 0)
+
+ggplot(Hflu_frequency_cluster, aes(x = early, y = late, colour = Cluster)) +
+  geom_point(size = 3, colour = "steelblue") + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
+  labs(
+    title = "Frequency of H.influenzae Cluster in the UK\n at early and late year of 2012",
+    x = "Frequency early 2012",
+    y = "Frequency late 2012"
+  )
 
 ```
 
@@ -1786,6 +1623,40 @@ mcat_strains_sample <- sample_df %>%
          Species, 
          Classification, 
          Cluster)
+
+```
+
+```{r frequency of Mcat cluster in early and late 2012 of the UK distribution}
+
+Mcat_frequency_cluster <-
+  Mcat_microreact_df %>%
+  filter(Country == "United Kingdom") %>% 
+  mutate(Mcat_period = ifelse(Year < 2012, "early", "late")) %>% 
+  group_by(Cluster, Mcat_period) %>%
+  summarise(Mcat_number_strains = n(), .groups = "drop") %>%
+  group_by(Mcat_period) %>%
+  mutate(Mcat_freq = Mcat_number_strains / sum(Mcat_number_strains) *100) %>% 
+  ungroup() %>%
+  select(Mcat_period, Mcat_freq, Cluster) %>% 
+  tidyr::pivot_wider(names_from = Mcat_period, 
+                     values_from = Mcat_freq, 
+                     values_fill = 0)
+
+ggplot(Mcat_frequency_cluster,
+       aes(x = early, y = late, colour = Cluster)) + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
+  geom_point(size = 3, alpha = 0.8, colour = "steelblue") + 
+  labs(
+    title = "Early vs Late Frequency of Moraxella catarrhalis Clusters (UK)",
+    x = "Early timepoint frequency (%)",
+    y = "Late timepoint frequency (%)"
+  ) +
+  scale_x_continuous(expand = expansion(mult = 0.05)) +
+  scale_y_continuous(expand = expansion(mult = 0.05)) + 
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right"
+  )
 
 ```
 
@@ -1989,6 +1860,8 @@ ggpairs(mcat_count_widefreq,
 After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
 
 ### Parse Panaroo output
+
+This analysis used Panaroo version 1.5.2.
 
 ``` {bash Run panaroo on H. influenzae, eval = FALSE}
 
@@ -2460,13 +2333,6 @@ ggpairs(Hinflu_version4_genefreq_wide,
 
 ```
 
-
-# Analysis of deep sequencing data
-
-- Removal of prophage sequences - does this improve assignment to strains?
-
-## Co-colonisation analysis of strains
-
 # Analysis of long-read data
 
 ## Accessing long-read data
@@ -2484,30 +2350,7 @@ icd /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7738/2024021
 
 # Move data to scratch
 cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1
-
-for DIR in $(ils); do
-  if [[ $DIR =~ chunk ]]; then
-    icd $DIR;
-    IPWD_NAME=`ipwd`;
-    CHUNK_NAME=`echo $IPWD_NAME | perl -lane 'my @d = split(/\//,$_); print $d[$#d];'`;
-    for BARCODE in $(ils); do
-      if [[ $BARCODE =~ barcode ]]; then
-        icd $BARCODE;
-        IPWD_NAME=`ipwd`;
-        BARCODE_NAME=`echo $IPWD_NAME | perl -lane 'my @d = split(/\//,$_); print $d[$#d];'`;
-        cd $BARCODE_NAME;
-        for FILE in $(ils); do
-          iget -N 1 $FILE;
-          mv $FILE ${CHUNK_NAME}_${FILE};
-        done;
-        cd ..;
-        icd ..;
-      fi;
-    done;
-    icd ..;
-  fi;
-done
-
+./move_nanopore_data.sh
 
 ```
 
@@ -2531,8 +2374,20 @@ These were chosen as:
 
 ## Methylation analyses from long-read data
 
-
+Is the sharing of plasmids between species limited by RMS?
 
 ## Passage analysis from long-read data
 
 Also a passage was run of four isolates. Each was started from a single colony on THY. Each was grown for 24 h in 10 mL Mix media. Successive inoculations used 100 uL. Four colonies were picked from each day from THY plates.
+
+# Analysis of deep sequencing data
+
+- Removal of prophage sequences - does this improve assignment to strains?
+
+## Co-colonisation analysis of strains
+
+### Analysis of species present in deep sequencing samples across countries
+
+### Identification of samples containing *H. influenzae* and *M. catarrhalis*
+
+
