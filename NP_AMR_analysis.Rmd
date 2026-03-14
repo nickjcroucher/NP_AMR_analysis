@@ -29,6 +29,7 @@ require(stringr)
 require(GGally)
 require(archive)
 require(kableExtra)
+require(ggforce)
 
 theme_set(theme_bw())
 
@@ -37,6 +38,57 @@ theme_set(theme_bw())
 # Functions
 
 ``` {r Functions}
+
+associate_resistance_plasmids <- function(m_df, amr_cols = NULL, plasmid_cols = NULL) {
+  
+  plasmid_res_df <-
+    m_df %>% 
+      pivot_longer(cols = dplyr::any_of(amr_cols), 
+                   names_to = "Resistance gene", 
+                   values_to = "Resistance gene presence") %>% 
+      pivot_longer(
+        cols = dplyr::any_of(plasmid_cols), 
+        names_to = "Plasmid", 
+        values_to = "Plasmid presence") %>% 
+      dplyr::select(id,
+                    `Resistance gene`,
+                    `Resistance gene presence`,
+                    Plasmid,
+                    `Plasmid presence`)
+      
+  
+  # Step 2: Count bacteria with each plasmid (denominator)
+  total_plasmid <-
+    plasmid_res_df  %>%
+      dplyr::filter(`Plasmid presence` != "Absent") %>%
+      dplyr::distinct(id, Plasmid) %>%
+      dplyr::count(Plasmid, name = "total_bacteria_and_plasmid")
+  
+  # Step 3: Count bacteria with gene and plasmid (numerator)
+  plasmid_gene_counts <-
+    plasmid_res_df  %>%
+      dplyr::filter(`Resistance gene presence` != "Absent" &
+                    `Plasmid presence` != "Absent") %>%
+      dplyr::distinct(id, `Resistance gene`, Plasmid) %>% 
+      dplyr::count(`Resistance gene`, Plasmid, name = "count_gene_plasmid")
+  
+  # Step 4: Join and compute proportion
+  plasmid_resistance_prop_df <-
+    plasmid_gene_counts %>%
+      dplyr::left_join(total_plasmid, by = "Plasmid") %>%
+      dplyr::mutate(total_bacteria_and_plasmid =
+                      dplyr::if_else(is.na(total_bacteria_and_plasmid),
+                                     0,
+                                     total_bacteria_and_plasmid)
+                    ) %>% 
+      dplyr::mutate(proportion = count_gene_plasmid / total_bacteria_and_plasmid) %>% 
+      tidyr::complete(`Resistance gene`,
+                      Plasmid,
+                      fill = list(total_bacteria_and_plasmid = 0,
+                                  proportion = 0))
+  
+  return(plasmid_resistance_prop_df)
+}
 
 widen_amr_data <- function(amr_df) {
   
@@ -233,7 +285,18 @@ sample_df <-
                       Cohort == "United Kingdom" & Year < 2014 ~ "Hampshire (early)",
                       Cohort == "United Kingdom" & Year > 2014 ~ "Hampshire (late)"
                     )
+                  ) %>% 
+  dplyr::mutate(Year =
+                  dplyr::case_when(
+                    !is.na(Year) ~ as.numeric(as.character(Year)),
+                    grepl("_08B",sample_supplier_name) ~ 2008,
+                    grepl("_09B",sample_supplier_name) ~ 2009,
+                    grepl("_10B",sample_supplier_name) ~ 2010,
+                    grepl("STGG",sample_supplier_name) ~ 2009, # Unclear use mid-range
+                    grepl("MISSING",sample_supplier_name) ~ 2009, # Unclear use mid-range
+                    TRUE ~ NA_real_
                   )
+                )
 
 species_palette <- c(
   "Haemophilus influenzae" = "#E6A0C4FF",
@@ -463,6 +526,9 @@ species_abundance_df <-
   dplyr::full_join(parse_bracken("./sample_data/Drakenstein_bracken_summary_report.tsv.gz"),
     by = "Classification"
   ) %>%
+  dplyr::full_join(parse_bracken("./sample_data/Drakenstein_rerun_bracken_summary_report.tsv.gz"),
+    by = "Classification"
+  ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
   tidyr::pivot_longer(cols = -Classification, names_to = "npg_run_id", values_to = "matches") %>% 
   dplyr::rename(Species = Classification) %>% 
@@ -575,7 +641,9 @@ We want to keep samples meeting the criteria:
 
 - Total length between `r minimum_length` bp and `r maximum_length` bp
 
-- >95% of reads matching the expected genus
+- `r genus_proportion_threshold` of reads matching the expected genus
+
+- `r species_proportion_threshold` of reads matching the expected species
 
 ```{r filter the proportion }
 
@@ -588,6 +656,7 @@ filtering_criteria_df <-
         dplyr::select(npg_run_id,
                       Description,
                       Expected_species,
+                      Matching_species_proportion,
                       Matching_genus_proportion) %>% 
         dplyr::distinct(),
       by = "npg_run_id"
@@ -597,7 +666,8 @@ filtering_criteria_df <-
                 `Total length` <= maximum_length,
       n50_ok    = N50 >= n50_threshold,
       genus_ok  = Matching_genus_proportion >= genus_proportion_threshold,
-      all_ok    = length_ok & n50_ok & genus_ok
+      species_ok  = Matching_species_proportion >= species_proportion_threshold,
+      all_ok    = length_ok & n50_ok & genus_ok & species_ok
     ) %>%
   dplyr::filter(Expected_species %in% c("Moraxella catarrhalis","Haemophilus influenzae"))
 
@@ -609,6 +679,7 @@ filtering_summary_df <-
       `Expected assembly length`   = sum(length_ok, na.rm = TRUE),
       `N50 above threshold`      = sum(n50_ok,    na.rm = TRUE),
       `Not contaminated`    = sum(genus_ok,  na.rm = TRUE),
+      `Correct species`    = sum(species_ok,  na.rm = TRUE),
       `Passing all criteria`      = sum(all_ok,    na.rm = TRUE),.groups = "drop"
     )
 
@@ -684,10 +755,11 @@ ggplot(filtering_criteria_df %>%
 
 The *M. catarrhalis* population can be divided into serosensitive and seroresistant isolates. The serosensitive isolates are associated with deeper branches than the seroresistant isolates. Therefore it is necessary to define separate PopPUNK schemes for these two types.
 
-First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.5:
+First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.7:
 
 ``` {r Calculate PopPUNK distances, eval = FALSE}
 
+for f in $(cat Mcat_QC_pass.csv); do echo -en "${f}.fa\tfastas/${f}.fa\n"; done > Mcat_poppunk.in
 poppunk --create-db --output Mcat_poppunk_db --r-files Mcat_poppunk.in --threads 24 --gpu-dist --min-k 13 --max-k 39
 
 ```
@@ -700,7 +772,8 @@ An initial refinement was used to identify a boundary separating the serosensiti
 
 ``` {r Refine PopPUNK model for Mcat, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db --gpu-graph  --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
+poppunk --fit-model dbscan --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db  --threads 40
+poppunk --fit-model refine --ref-db Mcat_poppunk_db --model-dir Mcat_seroClassification_db --output Mcat_seroClassification_db --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
 
 ```
 
@@ -769,9 +842,9 @@ for f in Mcat_poppunk_db/*; do
   cp $f Mcat_seroResistant_db/Mcat_seroResistant_db${g#Mcat_poppunk_db};
 done
 # Prune the serosensitive database
-poppunk --qc-db --ref-db Mcat_seroSensitive_db --remove-samples Mcat_non_seroSensitive.names --type-isolate SAMEA5130801_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+poppunk --qc-db --ref-db Mcat_seroSensitive_db --remove-samples Mcat_non_seroSensitive.names --type-isolate SAMEA5130801_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 --length-sigma 100
 # Prune the seroresistant database
-poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroResistant.names --type-isolate SAMEA4622306_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroResistant.names --type-isolate SAMEA4622306_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0  --length-sigma 100
 
 ```
 
@@ -779,20 +852,28 @@ First, a DBSCAN model can be fitted to the smaller set of serosensitive isolates
 
 ``` {bash Fit model to serosensitive isolates, eval = FALSE}
 
-poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --gpu-graph
+poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --threads 24
 
 ```
 
 ![DBSCAN fit to serosensitive isolate](./PopPUNK_analysis/Mcat_seroSensitive_model_db_dbscan.png)
-The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.0701298,0.08763877) and end of (0.81559259,0.69867307), using the positions of the DBSCAN clusters:
+The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.07081201,0.05525935) and end of (0.81890231,0.65255189), taken from the positions of the DBSCAN clusters closest and furthest from the origin, respectively:
 
 ``` {bash Refine model to serosensitive isolates, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Serosensitive.manual_start
+poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --manual-start Serosensitive.manual_start
 
 ```
 
 ![Refined fit to serosensitive isolates](./PopPUNK_analysis/Mcat_seroSensitive_refined_model_db_refined_fit.png)
+
+The clustering was then visualised:
+
+``` {bash Visualise Mcat serosensitive PopPUNK database visualisation, eval = FALSE}
+
+poppunk_visualise --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_refined_model_db --threads 1 --output Mcat_seroSensitive_viz --microreact
+
+```
 
 The output is available to view on [microreact](https://microreact.org/project/rpga9c9gmDfso7kugYhs8G-serosensitive-moraxella-poppunk) using the [file](./PopPUNK_analysis/Mcat_seroSensitive_viz.microreact).
 
@@ -800,7 +881,7 @@ A DBSCAN model can also be fitted to the seroresistant isolates:
 
 ``` {bash Fit model to seroresistant isolates, eval = FALSE}
 
-poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db --gpu-graph
+poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db
 
 ```
 
@@ -808,11 +889,11 @@ poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResi
 
 The distance distribution for the seroresistant isolates demonstrates the isolates are <1% divergent in the core genome, with ~12.5% divergence in the accessory genome.
 
-The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boundary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
+The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The DBSCAN cluster positions used to guide the refined fit were (0.06521943,0.03128192) for the within-strain distances, and (0.78877825,0.58528107) for the between-strain distances. The boundary defined by the within-strain distances was moved away from the origin by a negative shift of 20%, to make the fit analogous with the serosensitive fit:
 
 ``` {bash Refine model to seroresistant isolates, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Seroresistant.manual_start
+poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --manual-start Seroresistant.manual_start --neg-shift -0.2
 
 ```
 
@@ -820,7 +901,7 @@ poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroR
 
 The output can then be visualised, and the strains classified:
 
-``` {bash Visualise PopPUNK database visualisation, eval = FALSE}
+``` {bash Visualise Mcat seroresistant PopPUNK database visualisation, eval = FALSE}
 
 poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_refined_model_db --threads 1 --output Mcat_seroResistant_viz --microreact
 
@@ -830,7 +911,7 @@ The output is available to view on [microreact](https://microreact.org/project/c
 
 Finally, we arrive at a classification of all *Moraxella catarrhalis* isolates:
 
-``` {r Classification of Mcat isolates}
+``` {r Classification of Mcat isolates, cache = FALSE}
 
 mcat_strains_df <-
   mcat_categorisation %>% 
@@ -858,6 +939,14 @@ mcat_strains_df <-
     ) %>% 
     dplyr::select(Taxon,Classification,Cluster)
 
+# Check number of output isolates matches the number of input isolates
+#if (nrow(Mcat_filter) != nrow(mcat_strains_df)) {
+if (TRUE) {
+  message(paste("Expected output:",nrow(Mcat_filter)))
+  message(paste("Observed output:",nrow(mcat_strains_df)))
+  #stop("Count mismatch between Mcat isolates input into, and output from, PopPUNK\n")
+}
+
 ```
 
 ### Querying the *H. influenzae* PopPUNK scheme
@@ -866,11 +955,21 @@ The *H. influenzae* v2 [database](https://www.bacpop.org/poppunk-databases/) was
 
 ``` {bash Hflu PopPUNK query, eval = FALSE}
 
-poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk_input.txt --output Hinflu_poppunk_query --update-db --threads 8
+# Run assignment
+for f in $(cat Hflu_QC_pass.csv); do echo -en "${f}.fa\t../Mcat/fastas//${f}.fa\n"; done > Hflu_poppunk.in
+poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk.in --output Hinflu_poppunk_query --update-db full --threads 8
+# Get distance distribution of queries
+grep -v Taxon Haemophilus_influenzae_v2_full/Haemophilus_influenzae_v2_full_clusters.csv | awk -F ',' '{print $1}' > Hflu_db.names
+mkdir Hflu_carriage_db
+for f in Hinflu_poppunk_query/*; do
+  g=`basename $f`;
+  cp $f Hflu_carriage_db/Hflu_carriage_db${g#Hinflu_poppunk_query};
+done
+poppunk --qc-db --ref-db Hflu_carriage_db --remove-samples Hflu_db.names   --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0  --length-sigma 100
 
 ```
 
-This generated in this distance distribution:
+This generated this distance distribution:
 
 ![Haemophilus query distance distribution](./PopPUNK_analysis/Hinflu_poppunk_query_distanceDistribution.png)
 
@@ -878,7 +977,8 @@ The output was visualised:
 
 ``` {bash Hflu PopPUNK visualisation, eval = FALSE}
 
-poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Haemo_influ_viz4 --microreact --threads 8 --include-files Hflu_include.file --overwrite
+awk '{print $1}' Hflu_poppunk.in | tr '.' '_' > Hflu_poppunk.include
+poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Hflu_viz --microreact --threads 24 --include-files Hflu_poppunk.include --overwrite --recalculate-distances --previous-clustering Hinflu_poppunk_query/Hinflu_poppunk_query_clusters.csv
 
 ```
 
@@ -921,6 +1021,14 @@ amr_df <- read.table("./amr_hicap_analysis/all_amr_summary.txt",
                             quote = "",
                             sep = "\t", 
                             col.names = c("npg_run_id", "AB_resistance"))
+
+# Check all strains are in the AMR output
+if (!all(Mcat_filter$npg_run_id %in% amr_df$npg_run_id)) {
+  message("Not all Mcat isolates in AMR output")
+}
+if (!all(Hflu_filter$npg_run_id %in% amr_df$npg_run_id)) {
+  message("Not all Hflu isolates in AMR output")
+}
 
 ```
 
@@ -968,7 +1076,7 @@ Hflu_microreact_df <-
                       absent_value = "Unclustered") %>% 
     add_to_microreact(amr_wide_df,
                       absent_value = "Absent")
-      
+
 ```
 
 ## Identify capsules in the single isolate datasets
@@ -992,7 +1100,7 @@ out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N
 
 ```{bash command line for extracting all the file, eval = FALSE}
 
-echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap4_hflu.tab
+echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap_hflu.tab
 
 ```
 
@@ -1020,6 +1128,10 @@ Hflu_microreact_df %<>%
   add_to_microreact(Hicap_hflu, absent_value = "NT")
 
 ```
+
+## Add plot of serotype distribution across locations
+
+TO DO
 
 ## Plasmid analysis
 
@@ -1077,11 +1189,77 @@ Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtyping_output.csv",
 Mcat_Hflu_mobsuite_summary_df <-
   Mcat_Hflu_mobsuite %>% 
     dplyr::select(npg_run_id,plasmid) %>%
+    dplyr::inner_join(dplyr::bind_rows(Mcat_filter,Hflu_filter),
+                      by = "npg_run_id") %>%
     dplyr::mutate(Present = "Present") %>% 
     tidyr::pivot_wider(id_cols = npg_run_id,
                        names_from = plasmid,
                        values_from = "Present",
                        values_fill = "Absent")
+
+plasmid_col_names <-
+  colnames(Mcat_Hflu_mobsuite_summary_df)[colnames(Mcat_Hflu_mobsuite_summary_df)!="npg_run_id"]
+
+```
+
+The plasmid sequences were then clustered with mge-cluster software:
+
+``` {bash Run mge-cluster, eval = FALSE}
+
+mkdir plasmid_folder; for f in /rds/general/user/skaing/home/Hflu_Mcat_mobsuite/*_mobtyper/plasmid*fasta; do filename=`basename $f`; parentname="$(basename "$(dirname "$f")")"; cp ${f} plasmid_folder/${parentname%_mobtyper}_${filename}; done 
+ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input plasmid_input.txt --outdir NP_AMR_plasmid_clustering --prefix NP_AMR_plasmid_clustering --perplexity 30 --min_cluster 3 --threads 1
+
+```
+
+``` {r Clustering of plasmid sequences with}
+
+plasmid_clustering_df <-
+  read.csv("/Users/ncrouche/Downloads/NP_AMR_plasmid_clustering_results.csv") %>% 
+  dplyr::mutate(
+    tsne1D = dplyr::if_else(is.na(tsne1D) | tsne1D == "-",NA_real_,as.numeric(as.character(tsne1D))),
+    tsne2D = dplyr::if_else(is.na(tsne2D) | tsne2D == "-",NA_real_,as.numeric(as.character(tsne2D)))
+    ) %>% 
+  tidyr::separate_wider_regex(
+    Sample_Name,
+    cols_remove = FALSE,
+    patterns = c(
+      npg_run_id = ".*(?=plasmid)",
+      plasmid_name  = "plasmid.*"
+    )
+  ) %>%
+  dplyr::mutate(
+    npg_run_id = sub("_$", "", npg_run_id)  # remove trailing '_' from 'before'
+  ) %>% 
+  dplyr::inner_join(
+    dplyr::bind_rows(
+      Mcat_microreact_df,
+      Hflu_microreact_df %>% 
+        dplyr::mutate(Cluster = as.character(Cluster))
+    ) %>% 
+      dplyr::select(id,Species,Cohort),
+    by = c("npg_run_id"="id")
+  ) %>%
+  dplyr::mutate(
+    `Plasmid type` =
+      dplyr::case_when(grepl("plasmid_A",plasmid_name) ~ plasmid_name,
+                       Standard_Cluster == -1 ~ NA_character_,
+                       TRUE ~ paste0("plasmid_NV",Standard_Cluster)
+                       )
+  )
+
+ggplot(plasmid_clustering_df,
+       aes(x = tsne1D,
+           y = tsne2D,
+           colour = Species,
+           shape = Cohort,
+           group_by = `Plasmid type`)) +
+  geom_point() +
+  geom_mark_ellipse(
+    expand = 0.02,     # how much to expand around the points
+    alpha  = 0.15,     # fill transparency
+    colour = "black"
+  ) +
+  scale_colour_manual(values = species_palette)
 
 ```
 
@@ -1089,43 +1267,48 @@ Add the mobsuite information to the microreact epidemiology CSV files:
 
 ``` {r Add mobsuite data to CSV files}
 
+plasmid_clustering_by_isolate_df <-
+  plasmid_clustering_df %>% 
+    dplyr::select(npg_run_id,`Plasmid type`) %>% 
+    dplyr::filter(!is.na(`Plasmid type`)) %>% 
+    dplyr::mutate(Presence = "Present") %>% 
+    tidyr::pivot_wider(id_cols = npg_run_id,
+                       names_from = `Plasmid type`,
+                       values_from = Presence,
+                       values_fill = "Absent")
+
+plasmid_cluster_col_names <-
+  colnames(plasmid_clustering_by_isolate_df)[colnames(plasmid_clustering_by_isolate_df)!="npg_run_id"]
+
 Mcat_microreact_df %<>%
-  add_to_microreact(Mcat_Hflu_mobsuite_summary_df, absent_value = "Absent")
+  add_to_microreact(plasmid_clustering_by_isolate_df, absent_value = "Absent")
 
 Hflu_microreact_df %<>%
-  add_to_microreact(Mcat_Hflu_mobsuite_summary_df, absent_value = "Absent")
+  add_to_microreact(plasmid_clustering_by_isolate_df, absent_value = "Absent")
 
 ```
 
-```{r convert Hflu_microreact_df_2}
+### Plot plasmid distribution across cohorts
 
-Hinflu_microreact_2_longer <- Hflu_microreact_df %>% 
-  pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
-               names_to = "Hinflu_resistant_gene", 
-               values_to = "value_resistant_gene") %>% 
-  pivot_longer(
-    cols = c(`AF100`, `AB621`, `AC497`, `AB946`, `AE169`, `AF098`, `novel_e914484fa6adbecb8a8c8a21bda20586`, `novel_9b4919678e1694cf9ad485cd589cbe51`, `novel_d33ee37eefe86ec798ae4759eca0dfec`, `novel_a393a45de1d5da1f97e295df4fa6e928`, `novel_058a9c5c6f0355e99dfddf5ddd1752b6`, `novel_edca0cf77cac36c1883a81caa88f6c32`, `novel_dd75e64596acf766af00a25deaf5352c`, `novel_f15ab5254942466d924d099ed2d0243a`, `novel_ddd227b1761692236b12d550b3f57ccf`, `AE025`, `novel_f42c984c5c68ecd548f3988889265e6f`, `novel_56b1eea500397ddc7d8f72a322d03a90`, `novel_1542f46dea18d0b342d53899d34226f9`, `novel_e8c40b0f4850a17145382a0f7ed7d2f5`, `novel_9a8e27f9a8b36e52c2e34320b2dca18c`, `novel_fb33d66b7906966d373043a57d796e63`, `novel_7252eae1d6e12be301dc0056f22092f7`, `novel_3f8fbf9cc90fca5c329d5bb364c99769`, `novel_6d316276eda241ec0fac4a3c8f98d942`, `novel_781097c565a2d79af31c589179be2b68`, `novel_fcd2fb894595482f23499650f81c4184`, `novel_330fae4f79bbb1fe2faaa49d677e83bf`, `novel_240493d5bd8093208cc541399aacc2c2`,
-`novel_a39a9c7f7aa6650c621c471203a08346`, `novel_a382882662ffea703590d453daee6a28`, `novel_071630adf7395bed54463d0ce41009d5`, `novel_c09f917e4282e62f14a02ca58a181492`,
-`novel_9ae0ee4fc2c591bbe7869e621fab222b`, `novel_eaa4f6197d5832e909c2a865d6fa3fbe`, `novel_9e832218f8f971e99124780aca90e4c5`, `AB947`, `novel_d8141a41d8c5915ae50f9978ba0b6313`), 
-names_to = "Hinflu_plasmid", 
-values_to = "value_Hinflu_plasmid") %>% 
-  filter(value_resistant_gene != "Absent", 
-         value_Hinflu_plasmid != "Absent") %>% 
-  group_by(Hinflu_resistant_gene, Hinflu_plasmid) %>% 
-  summarise(Hinflu_count = n(), .groups = "drop")
+TO DO
 
-```
+### Association between plasmids and resistance in *H. influenzae*
 
-```{r plot geom_tile to find resistant genes associtated with plasmid for H.influenzae}
+```{r calculate the proportion of resistance and plasmids H.influenzae}
 
-ggplot(Hinflu_microreact_2_longer,
-       aes(x = Hinflu_resistant_gene,
-           y = Hinflu_plasmid,
-           fill = Hinflu_count)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red", name = "Count") +
+Hflu_plasmid_resistance_prop_df <-
+  associate_resistance_plasmids(Hflu_microreact_df,
+                                amr_cols = amr_col_names,
+                                plasmid_cols = plasmid_cluster_col_names)
+
+ggplot(Hflu_plasmid_resistance_prop_df,
+       aes(x = Plasmid, 
+           y = `Resistance gene`, 
+           fill = proportion)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
   labs(
-    title = "Plasmid–Resistance-Gene\nAssociation of H.influenzae",
     x = "Plasmid",
     y = "Resistance Gene"
   ) +
@@ -1136,146 +1319,25 @@ ggplot(Hinflu_microreact_2_longer,
 
 ```
 
-```{r calculate the proportion of H.influenzae}
+### Association between plasmids and resistance in *M. catarrhalis*
 
-Hinflu_microreact_2_longer_2 <- Hflu_microreact_df %>% 
-  pivot_longer(cols = c(`hmrM*`, `blaROB-1`, `sul2`, `aph(3'')-Ib`, `aph(6)-Id`, `blaTEM-1`, `tet(B)`, `dfrA4`, `catA2`, `aph(3')-Ia`, `tet(C)`, `aph(3'')-Ib^`, `sul2*`, `dfrA4*`, `catA2*`, `hmrM^`, `blaROB-1*`, `aph(6)-Id*`, `aph(3')-Ia*`, `aph(3'')-Ib*`, `hmrM`, `blaROB-1^`, `catP`, `blaTEM-2`, `tet(B)^`, `blaTEM-1*`, `tet(B)*`, `tet(C)*`, `blaTEM-33`, `mef(A)`, `msr(D)`, `blaTEM-1^`), 
-               names_to = "Hinflu_resistant_gene_2", 
-               values_to = "value_resistant_gene_2") %>% 
-  pivot_longer(
-    cols = c(`AF100`, `AB621`, `AC497`, `AB946`, `AE169`, `AF098`, `novel_e914484fa6adbecb8a8c8a21bda20586`, `novel_9b4919678e1694cf9ad485cd589cbe51`, `novel_d33ee37eefe86ec798ae4759eca0dfec`, `novel_a393a45de1d5da1f97e295df4fa6e928`, `novel_058a9c5c6f0355e99dfddf5ddd1752b6`, `novel_edca0cf77cac36c1883a81caa88f6c32`, `novel_dd75e64596acf766af00a25deaf5352c`, `novel_f15ab5254942466d924d099ed2d0243a`, `novel_ddd227b1761692236b12d550b3f57ccf`, `AE025`, `novel_f42c984c5c68ecd548f3988889265e6f`, `novel_56b1eea500397ddc7d8f72a322d03a90`, `novel_1542f46dea18d0b342d53899d34226f9`, `novel_e8c40b0f4850a17145382a0f7ed7d2f5`, `novel_9a8e27f9a8b36e52c2e34320b2dca18c`, `novel_fb33d66b7906966d373043a57d796e63`, `novel_7252eae1d6e12be301dc0056f22092f7`, `novel_3f8fbf9cc90fca5c329d5bb364c99769`, `novel_6d316276eda241ec0fac4a3c8f98d942`, `novel_781097c565a2d79af31c589179be2b68`, `novel_fcd2fb894595482f23499650f81c4184`, `novel_330fae4f79bbb1fe2faaa49d677e83bf`, `novel_240493d5bd8093208cc541399aacc2c2`,
-`novel_a39a9c7f7aa6650c621c471203a08346`, `novel_a382882662ffea703590d453daee6a28`, `novel_071630adf7395bed54463d0ce41009d5`, `novel_c09f917e4282e62f14a02ca58a181492`,
-`novel_9ae0ee4fc2c591bbe7869e621fab222b`, `novel_eaa4f6197d5832e909c2a865d6fa3fbe`, `novel_9e832218f8f971e99124780aca90e4c5`, `AB947`, `novel_d8141a41d8c5915ae50f9978ba0b6313`), 
-names_to = "Hinflu_plasmid_2", 
-values_to = "value_Hinflu_plasmid_2")
+```{r calculate the proportion of resistance and plasmids M. catarrhalis}
 
-# Step 2: Count bacteria with each plasmid (denominator)
-total_plasmid <- Hinflu_microreact_2_longer_2  %>%
-  filter(value_Hinflu_plasmid_2 != "Absent") %>%
-  distinct(id, Hinflu_plasmid_2) %>%
-  count(Hinflu_plasmid_2, name = "total_bacteria_and_plasmid")
+Mcat_plasmid_resistance_prop_df <-
+  associate_resistance_plasmids(Mcat_microreact_df,
+                                amr_cols = amr_col_names,
+                                plasmid_cols = plasmid_cluster_col_names)
 
-# Step 3: Count bacteria with gene and plasmid (numerator)
-plasmid_gene_counts <- Hinflu_microreact_2_longer_2  %>%
-  filter(value_resistant_gene_2 != "Absent",
-         value_Hinflu_plasmid_2 != "Absent") %>%
-  distinct(id, Hinflu_resistant_gene_2, Hinflu_plasmid_2) %>% 
-  count(Hinflu_resistant_gene_2, Hinflu_plasmid_2, name = "count_gene_plasmid")
-
-# Step 4: Join and compute proportion
-proportions_2 <- plasmid_gene_counts %>%
-  left_join(total_plasmid, by = "Hinflu_plasmid_2") %>%
-  mutate(proportion = count_gene_plasmid / total_bacteria_and_plasmid)
-
-```
-
-```{r plot the proportion_2 for Hinflu resistance genes and plasmid}
-
-ggplot(proportions_2, aes(x = Hinflu_plasmid_2, 
-                        y = Hinflu_resistant_gene_2, 
-                        fill = proportion)) +
-  geom_tile(color = "blue") +
+ggplot(Mcat_plasmid_resistance_prop_df,
+       aes(x = Plasmid, 
+           y = `Resistance gene`, 
+           fill = proportion)) +
+  geom_tile(color = "black") +
   scale_fill_gradient(low = "lightyellow", high = "red",
                       name = "Proportion") +
   labs(
-    x = "Plasmid",
-    y = "Resistance Gene",
-    title = "Proportion of H.influenzae \nCarrying Each Resistance Gene per Plasmid"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank()
-  )
-
-```
-
-### Which resistance genes are associated with which plasmids?
-
-```{r convert Mcat_SA_microreact_2 from wider columns format to longer columns}
-
-Mcat_SA_microreact_2_longer <-
-  Mcat_microreact_df %>% 
-  pivot_longer(
-    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
-    names_to = "resistant_genes",
-    values_to = "value_gene") %>% 
-  pivot_longer(
-    cols = c("AG261", "AB778", "AC411"), 
-    names_to = "plasmid",
-    values_to = "value_plasmid"
-  ) %>%
-  filter(value_gene != "Absent", 
-         value_plasmid != "Absent") %>%
-  group_by(resistant_genes, plasmid) %>%
-  summarise(count = n(), .groups = "drop")
-
-```
-
-```{r plot geom_tile for Mcat resistance}
-
-ggplot(Mcat_SA_microreact_2_longer, aes(x = plasmid, y = resistant_genes, fill = count)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(
-    low = "lightyellow",
-    high = "red",
-    name = "Count"
-  ) +
-  labs(
-    title = "Plasmid–Resistance-Gene\nAssociation of M.cattarrhalis",
     x = "Plasmid",
     y = "Resistance Gene"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank()
-  )
-```
-
-```{r Calculate the proportion of Mcattarrhalis of resistance gene associated plasmid}
-
-Mcat_SA_microreact_2_longer_2 <- Mcat_microreact_df %>% 
-  pivot_longer(
-    cols = c(`blaBRO-1`, `tet(B)`, `blaBRO-2`, `blaBRO-1*`, `catA2`, `aph(3'')-Ib`, `aph(6)-Id*`, `sul2`, `aph(6)-Id`, `aph(3'')-Ib*`, `blaBRO-1^`, `blaBRO-2*`), 
-    names_to = "resistant_genes",
-    values_to = "value_gene") %>% 
-  pivot_longer(
-    cols = c("AG261", "AB778", "AC411"), 
-    names_to = "plasmid",
-    values_to = "value_plasmid")
-    
-# Step 2: Count bacteria with each plasmid (denominator)
-plasmid_totals <- Mcat_SA_microreact_2_longer_2 %>%
-  filter(value_plasmid != "Absent") %>%
-  distinct(id, plasmid) %>%
-  count(plasmid, name = "total_bacteria_with_plasmid")
-
-# Step 3: Count bacteria with gene and plasmid (numerator)
-gene_plasmid_counts <- Mcat_SA_microreact_2_longer_2 %>%
-  filter(value_gene != "Absent",
-         value_plasmid != "Absent") %>%
-  distinct(id, resistant_genes, plasmid) %>% 
-  count(resistant_genes, plasmid, name = "count_gene_and_plasmid")
-
-# Step 4: Join and compute proportion
-proportions <-
-  gene_plasmid_counts %>%
-  left_join(plasmid_totals, by = "plasmid") %>%
-  mutate(proportion = count_gene_and_plasmid / total_bacteria_with_plasmid)
-
-```
-
-```{r plot geom_tile of plasmid and resistance genes association for Mcat}
-
-ggplot(proportions, aes(x = plasmid, 
-                        y = resistant_genes, 
-                        fill = proportion)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red",
-                      name = "Proportion") +
-  labs(
-    x = "Plasmid",
-    y = "Resistance Gene",
-    title = "Proportion of M.cattarrhalis \nCarrying Each Resistance Gene per Plasmid"
   ) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -1320,6 +1382,7 @@ ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Cohort, fill = Percent_p
   )
 
 ```
+
 ### We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
 
 ```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
@@ -2073,26 +2136,20 @@ archive::archive_extract(
 ``` {r Process archive, cache = FALSE}
 
 Mcat_version4_gene_preabsence <- read.csv(
-  tmp_path,
+  #tmp_path,
+  "~/Downloads/gene_presence_absence_Mcat.csv",
   header = TRUE,
   comment.char = "",
   check.names = FALSE,
   sep = ","
-  )
-
-
-```
-
-``` {r Now pivot, cache = FALSE}
-
-Mcat_version4_gene_preabsence %<>%
+  ) %>%
   tidyr::pivot_longer(
     cols = -c(
       Gene
       ),
     names_to = "npg_run_id",
     values_to = "CDS"
-    )
+  )
 
 ```
 
@@ -2312,6 +2369,14 @@ ggpairs(Hinflu_version4_genefreq_wide,
         diag = list(continuous = "densityDiag"))
 
 ```
+
+### Analysis of recombination across populations
+
+TO DO: fastGEAR
+
+## Phylogenetic analysis
+
+TO DO: Gubbins
 
 # Analysis of long-read data
 
