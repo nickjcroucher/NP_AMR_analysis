@@ -1572,11 +1572,11 @@ ggplot(plasmid_clustering_df,
            shape = Cohort,
            group_by = `Plasmid type`)) +
   geom_point() +
-  geom_mark_ellipse(
-    expand = 0.02,     # how much to expand around the points
-    alpha  = 0.15,     # fill transparency
-    colour = "black"
-  ) +
+  # geom_mark_ellipse(
+  #   expand = 0.02,     # how much to expand around the points
+  #   alpha  = 0.15,     # fill transparency
+  #   colour = "black"
+  # ) +
   scale_colour_manual(values = species_palette)
 
 ```
@@ -2306,6 +2306,8 @@ Also a passage was run of four isolates. Each was started from a single colony o
 - Removal of prophage sequences - does this improve assignment to strains?
 
 ## Co-colonisation analysis of species
+
+- Seroresistant and serosensitive co-colonisation?
 
 ## Co-colonisation analysis of strains
 
