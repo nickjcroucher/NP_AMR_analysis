@@ -1474,6 +1474,16 @@ write.table(Hflu_microreact_df %>%
 
 ```
 
+Microreact visualisations are available from:
+
+- *M. catarrhalis*: https://microreact.org/project/hQ9WcBim9Yspg9vEvVPWqr-moraxella-population-structure
+
+- Serosensitive *M. catarrhalis*: https://microreact.org/project/gdU9T8EZNCXgQttppvuCVw-serosensitive-moraxella-poppunk
+
+- Seroresistance *M. catarrhalis*: https://microreact.org/project/cYSZ1g2Scstfbg1hVpoe7r-seroresistant-moraxella-poppunk
+
+- *H. influenzae*: https://microreact.org/project/qCSg4Ut9QYfAXo3tK3gTDu-h-influenzae-poppunk
+
 ## Compare strain frequencies between locations
 
 ### Plot distributions of strain frequencies across locations
