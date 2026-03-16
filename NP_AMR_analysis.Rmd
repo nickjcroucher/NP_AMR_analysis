@@ -13,12 +13,12 @@ is_ci <- identical(Sys.getenv("CI"), "true")
 if (is_ci) {
   message("CI environment detected: disabling knitr caching.")
   knitr::opts_chunk$set(
-    echo  = TRUE,
+    echo  = FALSE,
     cache = FALSE
   )
 } else {
   knitr::opts_chunk$set(
-    echo  = TRUE,
+    echo  = FALSE,
     cache = TRUE
   )
 }
@@ -30,8 +30,9 @@ require(GGally)
 require(archive)
 require(kableExtra)
 require(ggforce)
+require(ggrepel)
 
-theme_set(theme_bw())
+theme_set(theme_bw() + theme(strip.background = element_blank()))
 
 ```
 
@@ -1032,6 +1033,115 @@ if (!all(Hflu_filter$npg_run_id %in% amr_df$npg_run_id)) {
 
 ```
 
+### Distribution of resistance by country for *H.influenzae*
+
+We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
+
+```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
+
+Hflu_genes_amr <-
+  Hflu_microreact_df %>% 
+    pivot_longer(cols = dplyr::any_of(amr_col_names),
+      names_to = "Resistant_gene",
+      values_to = "status_resistant_genes") %>% 
+    group_by(Cohort, Resistant_gene) %>%
+    summarise(Total = n(),
+              Present = sum(status_resistant_genes != "Absent"),
+              percent_present = (Present /Total) * 100, 
+              .groups = "drop")
+
+
+ggplot(Hflu_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
+  labs(
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Present"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Distribution of resistance by country for *M. cattarrhalis*
+
+We try to find % of isolates carrying different resistance genes of *M. cattarrhalis* in different countries
+
+```{r convert gene columns to long format then count resistance genes per country not per isolate}
+
+Mcat_genes_amr <-
+  Mcat_microreact_df %>%
+  pivot_longer(cols = dplyr::any_of(amr_col_names),
+    names_to = "Resistant_gene",
+    values_to = "Status_Resistant_Genes") %>%
+  group_by(Cohort, Resistant_gene) %>%
+  summarise(Total = n(),
+            Present = sum(Status_Resistant_Genes == "Present", na.rm = TRUE),
+            percent_present = (Present / Total) * 100, 
+            .groups = "drop")
+
+
+ggplot(Mcat_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
+  labs(
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Present"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Compare the resistance between *M. cattarrhalis* types
+
+We try to find resistance genes of *M. cattarrhalis* in the serosensitive and seroresistant populations
+
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+# Add some code in here - make function from above
+
+```
+
+### Compare resistance between *H. influenzae* and *M. catarrhalis*
+
+``` {r Compare resistance across species}
+
+amr_comparison_df <-
+  Mcat_genes_amr %>% 
+    dplyr::filter(Cohort != "Drakenstein") %>% 
+    dplyr::select(Cohort,Resistant_gene,percent_present) %>% 
+    dplyr::rename(Mcat_percent = percent_present) %>% 
+    dplyr::full_join(
+      Hflu_genes_amr %>%
+        dplyr::select(Cohort,Resistant_gene,percent_present) %>% 
+        dplyr::rename(Hflu_percent = percent_present),
+    by = c("Cohort","Resistant_gene")
+    ) %>% 
+    dplyr::mutate(dplyr::across(c(Mcat_percent,Hflu_percent),~dplyr::if_else(is.na(.x),0,.x))) %>% 
+    dplyr::filter(Mcat_percent > 0.0 | Hflu_percent > 0.0)
+
+ggplot(amr_comparison_df,
+       aes(x = Mcat_percent,
+           y = Hflu_percent)
+) +
+  geom_point() +
+  ggrepel::geom_text_repel(data = amr_comparison_df %>% 
+                              dplyr::filter(Mcat_percent > 10 | Hflu_percent > 10),
+                            aes(label = Resistant_gene),
+                            force_pull = 0.1,
+                            size = 3,
+                            max.overlaps = 20) +
+  facet_wrap(~Cohort)
+
+```
+
 ### Phylogeny of *blaBRO* in *M. catarrhalis*
 
 TO DO
@@ -1083,7 +1193,7 @@ Hflu_microreact_df <-
 
 ### Analysis of *H. influenzae* capsules
 
-We will find the capsule of each isolated *H.influenzae* strains with bioinformatic Hicap software 
+We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
 
 ```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
 
@@ -1346,86 +1456,6 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 
 ```
 
-### Distribution of resistance by country for *M. cattarrhalis*
-
-We try to find % of isolates carrying different resistance genes of *M. cattarrhalis* in different countries
-
-```{r convert gene columns to long format then count resistance genes per country not per isolate}
-
-Mcat_genes_amr_long <-
-  Mcat_microreact_df %>%
-  pivot_longer(cols = dplyr::any_of(amr_col_names),
-    names_to = "Resistant_Gene",
-    values_to = "Status_Resistant_Genes") %>%
-  group_by(Cohort, Resistant_Gene) %>%
-  summarise(Total = n(),
-            Present = sum(Status_Resistant_Genes == "Present", na.rm = TRUE),
-            Percent_present = (Present / Total) * 100, 
-            .groups = "drop")
-
-```
-
-```{r plot geom_tile show the distribution of resistance genes by country and by strain}
-
-ggplot(Mcat_genes_amr_long, aes(x = Resistant_Gene, y = Cohort, fill = Percent_present)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red") +
-  labs(
-    title = "Percentage of M. catarrhalis Isolates Carrying Resistance Genes",
-    x = "Resistance Gene",
-    y = "Country",
-    fill = "% Present"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 40, hjust = 1),
-    panel.grid = element_blank()
-  )
-
-```
-
-### We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
-
-```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
-
-Hinflu_genes_amr <- Hflu_microreact_df %>% 
-  pivot_longer(cols = dplyr::any_of(amr_col_names),
-    names_to = "Hinflu_resistant_gene",
-    values_to = "status_resistant_genes") %>% 
-  group_by(Cohort, Hinflu_resistant_gene) %>%
-  summarise(Total = n(),
-            present = sum(status_resistant_genes != "Absent"),
-            percent_present = (present /Total) * 100, 
-            .groups = "drop") %>%
-  filter(present > 0)
-
-```
-
-```{r plot geom_tile for Hflu and resistance}
-
-ggplot(Hinflu_genes_amr, aes(x = Hinflu_resistant_gene, y = Cohort, fill = percent_present)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red") +
-  labs(
-    title = "Percentage of H.influenzae Isolates Carrying Resistance Genes",
-    x = "Resistance Gene",
-    y = "Country",
-    fill = "% Present"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 40, hjust = 1),
-    panel.grid = element_blank()
-  )
-
-```
-
-### We try to find resistance genes of *M.cattarrhalis* in the serosensitive and seroresistance populations
-
-```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
-
-# Add some code in here - make function from above
-
-```
-
 ## Summarise single isolate epidemiology
 
 ### Generate microreact output files
@@ -1447,66 +1477,6 @@ write.table(Hflu_microreact_df %>%
             col.names = TRUE,
             row.names = FALSE,
             quote = FALSE)
-
-```
-
-```{r reformat the columns of Taxon as the npg_run_id}
-
-hflu_strains_extract1 <- hflu_strains_df %>%
-  
-  mutate(npg_run_id = 
-           if_else(str_detect(Taxon, "_|#"), 
-                   Taxon, "NA"), 
-         id_run = 
-           if_else(str_detect(Taxon, "#"), 
-                   str_extract(Taxon, "^[^#]+"), "NA"))
-
-```
-
-```{r merge npg_run_id of 4thHinflu_gene_preabsence with sample_df}
-
-hflu_extract_sample_df <- sample_df %>%
-  inner_join(hflu_strains_extract1, 
-             by = "npg_run_id") %>% 
-  select(npg_run_id, 
-         Country, 
-         Year, 
-         Species, 
-         Cluster)
-
-```
-
-```{r Hflu calculate frequencies}
-
-hflu_freq <- hflu_extract_sample_df %>%
-  filter(!is.na(npg_run_id),
-         !is.na(Species),
-         !is.na(Country),
-         Country %in% c("United Kingdom", "Cambodia", "Thailand")) %>%
-  group_by(Country, 
-           Cluster) %>%
-  summarise(strains_count = n_distinct(npg_run_id), 
-            .groups = "drop") %>%
-  arrange(Country)
-
-hflu_strains_freq <- hflu_freq %>%
-  group_by(Country) %>% 
-  mutate(Frequency = strains_count / sum(strains_count))
-
-```
-
-```{r Hflu plot strain frequencies per country and year}
-
-ggplot(hflu_strains_freq, 
-       aes(x = Cluster, 
-           y = Frequency, 
-           fill = Country)) + 
-  geom_bar(stat = "identity", 
-           position = "stack") + 
-  labs(title = "H. influenzae strain frequencies\nby country and year", 
-       x = "Cluster", 
-       y = "Frequency", 
-       fill = "Country")
 
 ```
 
@@ -1635,13 +1605,33 @@ pivot_wider(id_cols = Cluster,
 
 ```{r plot ggpair for Hflu}
 
-ggpairs(hflu_strains_widefreq, 
-        columns = c("Cambodia", 
-                    "Thailand", 
-                    "United Kingdom"), 
+compare_strain_frequencies <- function(df) {
+  
+  freq_wide <- df %>%
+      count(Cohort, Cluster, name = "n") %>%
+      group_by(Cohort) %>%
+      mutate(prop = n / sum(n)) %>%
+      ungroup() %>%
+      tidyr::pivot_wider(
+        names_from  = Cluster,
+        values_from = prop,
+        values_fill = 0
+      )
+  
+  cohorts <-
+    df %>% 
+      dplyr::select(Cohort) %>% 
+      dplyr::distinct() %>% 
+      dplyr::pull(Cohort)
+  
+  ggpairs(freq_wide, 
         upper = list(continuous = "cor"), 
         lower = list(continuous = "smooth"), 
         diag = list(continuous = "densityDiag"))
+
+}
+
+compare_strain_frequencies(Hflu_microreact_df)
 
 ```
 
@@ -2390,16 +2380,25 @@ module load ISG/IRODS/1.0
 kinit
 iinit
 
-# Access data
-icd /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7738/20240219_1036_3A_PAU55810_bf5bbe22/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/default/
+iget -r /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7738/20240219_1036_3A_PAU55810_bf5bbe22/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/
+iget -r /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7739/20240219_1036_3C_PAU55034_a15a64d8/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/
 
-# Move data to scratch
-cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1
-./move_nanopore_data.sh
+for INDEX in {01..96}; do mkdir -p barcode${INDEX}; for C in $(ls -d ./5hmc_5mc_cg/default/chunka[abcdefghi]); do CHUNK=`basename $C`; for FILE in  ./5hmc_5mc_cg/default/$CHUNK/barcode${INDEX}/*; do BASENAME=`basename ${FILE}`; mv ${FILE} ./barcode${INDEX}/${CHUNK}_${BASENAME}; done; done; done
 
 ```
 
 ## Assembling long-read data
+
+``` {bash Assembling long-read data}
+
+
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_1_flye.%I.rerun.o -e run_1_flye.%I.rerun.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}
+
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_2/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_2_flye.%I.rerun.o -e run_2_flye.%I.rerun.e -J flye_job_2[1-96] ./flye_job.\${LSB_JOBINDEX}
+
+```
 
 ## Long-read sequencing of representative isolates
 
@@ -2413,7 +2412,8 @@ These were chosen as:
 
 ``` {r Representative sequence information}
 
-
+long_read_sample_df <-
+  read.csv("sample_data/long_read_sequence_data.csv")
 
 ```
 
@@ -2429,7 +2429,13 @@ Also a passage was run of four isolates. Each was started from a single colony o
 
 - Removal of prophage sequences - does this improve assignment to strains?
 
+## Co-colonisation analysis of species
+
 ## Co-colonisation analysis of strains
+
+## Co-colonisation analysis across countries
+
+## Resistance relative to drug administration
 
 ### Analysis of species present in deep sequencing samples across countries
 

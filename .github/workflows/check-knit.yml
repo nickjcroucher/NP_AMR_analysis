@@ -45,6 +45,7 @@ jobs:
             tinytex
             kableExtra
             ggforce
+            ggrepel
 
       - name: Render NP_AMR_analysis.Rmd
         run: |
