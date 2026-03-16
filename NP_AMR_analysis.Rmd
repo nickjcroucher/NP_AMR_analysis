@@ -30,7 +30,8 @@ require(GGally)
 require(archive)
 require(kableExtra)
 require(ggforce)
-require(ggrepel)
+#require(ggrepel)
+library(patchwork)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -123,6 +124,219 @@ add_to_microreact <- function(df1,df2,absent_value = "") {
     dplyr::select(where(~!all(.x==absent_value)))
   
 }
+
+make_cluster_freq_wide_species <- function(mcat_strains_freq,
+                                           species_col  = "Species",
+                                           clusters_col = "Cluster",
+                                           cohort_col   = "Cohort") {
+  # Aggregate to one frequency per (Species, Cohort, Cluster)
+  mcat_cluster_freq <- mcat_strains_freq %>%
+    group_by(.data[[species_col]],.data[[cohort_col]],.data[[clusters_col]]) %>%
+    summarise(
+      Strains_count = sum(Strains_count, na.rm = TRUE),.groups = "drop"
+    ) %>%
+    group_by(.data[[species_col]],.data[[cohort_col]]) %>%
+    mutate(
+      Frequency = Strains_count / sum(Strains_count)
+    ) %>%
+    ungroup()
+
+  # Wide: rows = Cluster, columns = Cohort; one table per Species
+  # We'll keep long by species + cluster, wide by cohort.
+  mcat_cluster_freq_wide <- mcat_cluster_freq %>%
+    select(
+      !!sym(species_col),
+      !!sym(clusters_col),
+      !!sym(cohort_col),
+      Frequency
+    ) %>%
+    pivot_wider(
+      id_cols    = c(!!sym(species_col), !!sym(clusters_col)),
+      names_from = !!sym(cohort_col),
+      values_from = Frequency
+    )
+
+  mcat_cluster_freq_wide
+}
+
+make_pair_panel_species <- function(wide_df,
+                                    species_name,
+                                    cohort_x,   # x-axis cohort
+                                    cohort_y,   # y-axis cohort
+                                    point_colour) {
+  df_pair <- wide_df %>%
+    dplyr::filter(Species == species_name) %>%
+    dplyr::select(Species, Cluster, dplyr::all_of(c(cohort_x, cohort_y))) %>%
+    # keep clusters present in at least one of the two cohorts
+    dplyr::filter(
+      !(is.na(.data[[cohort_x]]) & is.na(.data[[cohort_y]]))
+    ) %>%
+    dplyr::mutate(
+      !!cohort_x := tidyr::replace_na(.data[[cohort_x]], 0),
+      !!cohort_y := tidyr::replace_na(.data[[cohort_y]], 0)
+    )
+
+  if (nrow(df_pair) >= 2) {
+    fit   <- lm(df_pair[[cohort_y]] ~ df_pair[[cohort_x]])
+    p_val <- summary(fit)$coefficients[2, 4]
+    p_lab <- paste0("p = ", formatC(p_val, format = "e", digits = 2))
+  } else {
+    p_lab <- "p = NA"
+  }
+
+  ggplot(df_pair, aes(x =.data[[cohort_x]], y =.data[[cohort_y]])) +
+    geom_point(alpha = 0.6, size = 0.7, colour = point_colour) +
+    geom_smooth(method = "lm", se = FALSE, colour = "red", linewidth = 0.5) +
+    annotate("text",
+             x = Inf, y = Inf,
+             label = p_lab,
+             hjust = 1.1, vjust = 1.5,
+             size = 3) +
+    labs(x = NULL, y = NULL) +
+    theme_minimal(base_size = 9) +
+    theme(
+      axis.text.x  = element_blank(),
+      axis.text.y  = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid   = element_line(colour = "grey90", linewidth = 0.2)
+    )
+}
+
+make_diag_rank_panel <- function(wide_df,
+                                 cohort,
+                                 species1,
+                                 species2,
+                                 species_palette = c(species1 = "steelblue", species2 = "darkorange")) {
+  # Gather for both species
+  df_long <- wide_df %>%
+    filter(Species %in% c(species1, species2)) %>%
+    select(Species, Cluster, all_of(cohort)) %>%
+    rename(Frequency = all_of(cohort)) %>%
+    mutate(Frequency = replace_na(Frequency, 0))
+
+  # Compute rank per species (descending frequency)
+  df_ranked <- df_long %>%
+    group_by(Species) %>%
+    arrange(desc(Frequency),.by_group = TRUE) %>%
+    mutate(
+      Rank = row_number()
+    ) %>%
+    ungroup()
+
+  ggplot(df_ranked, aes(x = Rank, y = Frequency, colour = Species)) +
+    geom_point(alpha = 0.7, size = 0.7) +
+    geom_line(alpha = 0.6, linewidth = 0.4) +
+    scale_colour_manual(values = species_palette) +
+    labs(x = NULL, y = NULL) +
+    theme_minimal(base_size = 9) +
+    theme(
+      legend.position = "none",
+      axis.text.x  = element_blank(),
+      axis.text.y  = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid   = element_line(colour = "grey90", linewidth = 0.2)
+    )
+}
+
+plot_mcat_cluster_pairs_two_species <- function(mcat_strains_freq,
+                                                species1,
+                                                species2,
+                                                species_palette = c(species1 = "steelblue",
+                                                                    species2 = "darkorange"),
+                                                row_exclude = "Drakenstein") {
+  # 1. Build wide table with Species + Cluster + cohorts
+  wide_df <- make_cluster_freq_wide_species(mcat_strains_freq)
+
+  all_cohorts <- setdiff(names(wide_df), c("Species", "Cluster"))
+
+  # Columns: all cohorts (including Drakenstein)
+  col_cohorts <- all_cohorts
+
+  # Rows: all cohorts except row_exclude (e.g. "Drakenstein")
+  row_cohorts <- setdiff(all_cohorts, row_exclude)
+
+  n_rows <- length(row_cohorts)
+  n_cols <- length(col_cohorts)
+
+  panels <- list()
+
+  blank_panel <- ggplot() + theme_void()
+
+  for (row_idx in seq_len(n_rows)) {
+    for (col_idx in seq_len(n_cols)) {
+      cx <- col_cohorts[col_idx]  # column cohort
+      cy <- row_cohorts[row_idx]  # row cohort
+
+      if (cx == cy) {
+        # Diagonal: rank-frequency plots for both species in this cohort
+        p <- make_diag_rank_panel(
+          wide_df,
+          cohort          = cx,
+          species1        = species1,
+          species2        = species2,
+          species_palette = species_palette
+        )
+      } else if (match(cx, all_cohorts) > match(cy, all_cohorts)) {
+        # Upper-right triangle: species1
+        p <- make_pair_panel_species(
+          wide_df      = wide_df,
+          species_name = species1,
+          cohort_x     = cx,
+          cohort_y     = cy,
+          point_colour = species_palette[species1]
+        )
+      } else {
+        # Lower-left triangle: species2
+        p <- make_pair_panel_species(
+          wide_df      = wide_df,
+          species_name = species2,
+          cohort_x     = cx,
+          cohort_y     = cy,
+          point_colour = species_palette[species2]
+        )
+      }
+
+      # Column labels on top row only
+      if (row_idx == 1) {
+        p <- p + ggtitle(cx) +
+          theme(
+            plot.title = element_text(hjust = 0.5, size = 10)
+          )
+      } else {
+        p <- p + ggtitle(NULL)
+      }
+
+      # Y-axis cohort labels on first column only
+      if (col_idx == 1) {
+        p <- p +
+          labs(y = cy) +
+          theme(
+            axis.title.y = element_text(angle = 90, size = 9, vjust = 0.5)
+          )
+      } else {
+        p <- p + labs(y = NULL)
+      }
+
+      # X-axis cohort labels on bottom row only
+      if (row_idx == n_rows) {
+        p <- p +
+          labs(x = cx) +
+          theme(
+            axis.title.x = element_text(size = 9, vjust = 1)
+          )
+      } else {
+        p <- p + labs(x = NULL)
+      }
+
+      panels[[length(panels) + 1]] <- p
+    }
+  }
+
+  patchwork::wrap_plots(panels, nrow = n_rows, ncol = n_cols)
+}
+
 
 ```
 
@@ -1223,12 +1437,12 @@ ggplot(amr_comparison_df,
            y = Hflu_percent)
 ) +
   geom_point() +
-  ggrepel::geom_text_repel(data = amr_comparison_df %>% 
-                              dplyr::filter(Mcat_percent > 10 | Hflu_percent > 10),
-                            aes(label = Resistant_gene),
-                            force_pull = 0.1,
-                            size = 3,
-                            max.overlaps = 20) +
+  # ggrepel::geom_text_repel(data = amr_comparison_df %>% 
+  #                             dplyr::filter(Mcat_percent > 10 | Hflu_percent > 10),
+  #                           aes(label = Resistant_gene),
+  #                           force_pull = 0.1,
+  #                           size = 3,
+  #                           max.overlaps = 20) +
   facet_wrap(~Cohort)
 
 ```
@@ -1492,23 +1706,48 @@ Microreact visualisations are available from:
 
 TO DO
 
-### Compare *M. catarrhalis* strain frequencies between locations
+### Compare strain frequencies between locations
 
-```{r Mcat calculate frequencies}
+``` {r Compare strain frequencies across locations}
 
-mcat_strains_freq <- 
-  Mcat_microreact_df %>%
-  group_by(id, 
-           Cohort, 
-           Cluster) %>%
-  summarise(Strains_count = n_distinct(id), 
-            .groups = "drop") %>%
-  dplyr::ungroup() %>%
-  group_by(Cohort) %>%
-  mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
-  dplyr::ungroup()
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    
+    Mcat_microreact_df %>%
+    group_by(Cohort, 
+             Cluster) %>%
+    summarise(Strains_count = n_distinct(id), 
+              .groups = "drop") %>%
+    dplyr::ungroup() %>%
+    group_by(Cohort) %>%
+    mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(Species = "Moraxella catarrhalis"),
+    
+    Hflu_microreact_df %>%
+      dplyr::mutate(Cluster = as.character(Cluster)) %>% 
+    group_by(Cohort, 
+             Cluster) %>%
+    summarise(Strains_count = n_distinct(id), 
+              .groups = "drop") %>%
+    dplyr::ungroup() %>%
+    group_by(Cohort) %>%
+    mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(Species = "Haemophilus influenzae")
+    
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = c("Moraxella catarrhalis" = "steelblue",
+                      "Haemophilus influenzae"  = "darkorange"),
+  row_exclude = "Drakenstein"
+)
+
+p
 
 ```
+
 
 ## Compare gene frequencies across locations
 
@@ -2028,7 +2267,6 @@ for INDEX in {01..96}; do mkdir -p barcode${INDEX}; for C in $(ls -d ./5hmc_5mc_
 ## Assembling long-read data
 
 ``` {bash Assembling long-read data, eval = FALSE}
-
 
 declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
 bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_1_flye.%I.rerun.o -e run_1_flye.%I.rerun.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}
