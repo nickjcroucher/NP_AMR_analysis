@@ -3,7 +3,6 @@ title: "NP AMR analyses"
 author: "Sunheng Kaing & Nicholas Croucher"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -19,7 +18,8 @@ if (is_ci) {
 } else {
   knitr::opts_chunk$set(
     echo  = FALSE,
-    cache = TRUE
+    cache = TRUE,
+    fig.width = 8
   )
 }
 
@@ -123,7 +123,6 @@ add_to_microreact <- function(df1,df2,absent_value = "") {
     dplyr::select(where(~!all(.x==absent_value)))
   
 }
-
 
 ```
 
@@ -756,7 +755,7 @@ ggplot(filtering_criteria_df %>%
 
 The *M. catarrhalis* population can be divided into serosensitive and seroresistant isolates. The serosensitive isolates are associated with deeper branches than the seroresistant isolates. Therefore it is necessary to define separate PopPUNK schemes for these two types.
 
-First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.7:
+First, the distances were calculated for all the *M. catarrhalis* genomes using PopPUNK version 2.7.7:
 
 ``` {r Calculate PopPUNK distances, eval = FALSE}
 
@@ -1033,7 +1032,109 @@ if (!all(Hflu_filter$npg_run_id %in% amr_df$npg_run_id)) {
 
 ```
 
-### Distribution of resistance by country for *H.influenzae*
+
+### Compare the resistance between *M. cattarrhalis* types
+
+We try to find resistance genes of *M. cattarrhalis* in the serosensitive and seroresistant populations
+
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+# Add some code in here - make function from above
+
+```
+
+### Phylogeny of *blaBRO* in *M. catarrhalis*
+
+TO DO
+
+### Phylogeny of *hmm* in *H. influenzae*
+
+TO DO
+
+## Identify capsules in the single isolate datasets
+
+### Analysis of *H. influenzae* capsules
+
+We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
+
+```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
+
+for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
+
+```
+
+```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
+out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
+
+```
+
+```{bash command line for extracting all the file, eval = FALSE}
+
+echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap_hflu.tab
+
+```
+
+```{r import file of all_hicap_hflu.tab after ran command with Hicap software}
+
+Hicap_hflu <-
+  read.table("./amr_hicap_analysis/all_hicap_Hflu.tab",
+                         header = TRUE, 
+                         comment.char = "",
+                         check.names = FALSE,
+                         quote = "",
+                         sep = "\t") %>% 
+  dplyr::mutate(serotype = 
+                  dplyr::if_else(grepl("truncated_genes",status), 
+                                 paste0(serotype," (inactivated)"), 
+                                 serotype)
+                ) %>% 
+  dplyr::select(-status)
+
+```
+
+## Initialise microreact epidemiological data frames
+
+```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
+
+microreact_epi_cols <-
+  c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
+
+amr_wide_df <-
+  widen_amr_data(amr_df)
+
+amr_col_names <-
+  colnames(amr_wide_df)[colnames(amr_wide_df)!="npg_run_id"]
+
+Mcat_microreact_df <- 
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(mcat_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(amr_wide_df,
+                      absent_value = "Absent")
+
+Hflu_microreact_df <-
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Hflu_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(hflu_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(amr_wide_df,
+                      absent_value = "Absent") %>% 
+    add_to_microreact(Hicap_hflu, absent_value = "NT")
+
+```
+
+### Distribution of resistance by country for *H. influenzae*
 
 We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
 
@@ -1099,17 +1200,7 @@ ggplot(Mcat_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_presen
 
 ```
 
-### Compare the resistance between *M. cattarrhalis* types
-
-We try to find resistance genes of *M. cattarrhalis* in the serosensitive and seroresistant populations
-
-```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
-
-# Add some code in here - make function from above
-
-```
-
-### Compare resistance between *H. influenzae* and *M. catarrhalis*
+### Compare resistance between *H. influenzae* and *M. catarrhalis* across locations
 
 ``` {r Compare resistance across species}
 
@@ -1139,103 +1230,6 @@ ggplot(amr_comparison_df,
                             size = 3,
                             max.overlaps = 20) +
   facet_wrap(~Cohort)
-
-```
-
-### Phylogeny of *blaBRO* in *M. catarrhalis*
-
-TO DO
-
-### Phylogeny of *hmm* in *H. influenzae*
-
-TO DO
-
-## Initialise microreact epidemiological data frames
-
-```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
-
-microreact_epi_cols <-
-  c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
-
-amr_wide_df <-
-  widen_amr_data(amr_df)
-
-amr_col_names <-
-  colnames(amr_wide_df)[colnames(amr_wide_df)!="npg_run_id"]
-
-Mcat_microreact_df <- 
-  sample_df %>% 
-    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
-    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
-    dplyr::rename(id = npg_run_id) %>% 
-    add_to_microreact(mcat_strains_df %>%
-                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
-                        dplyr::select(-Taxon),
-                      absent_value = "Unclustered") %>% 
-    add_to_microreact(amr_wide_df,
-                      absent_value = "Absent")
-
-Hflu_microreact_df <-
-  sample_df %>% 
-    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
-    dplyr::right_join(Hflu_filter, by = "npg_run_id") %>% 
-    dplyr::rename(id = npg_run_id) %>% 
-    add_to_microreact(hflu_strains_df %>%
-                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
-                        dplyr::select(-Taxon),
-                      absent_value = "Unclustered") %>% 
-    add_to_microreact(amr_wide_df,
-                      absent_value = "Absent")
-
-```
-
-## Identify capsules in the single isolate datasets
-
-### Analysis of *H. influenzae* capsules
-
-We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
-
-```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
-
-for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
-
-```
-
-```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule, eval = FALSE}
-
-declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
-out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
-
-```
-
-```{bash command line for extracting all the file, eval = FALSE}
-
-echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap_hflu.tab
-
-```
-
-```{r import file of all_hicap3_hflu.tab after ran command with Hicap software}
-
-Hicap_hflu <-
-  read.table("./amr_hicap_analysis/all_hicap_Hflu.tab",
-                         header = TRUE, 
-                         comment.char = "",
-                         check.names = FALSE,
-                         quote = "",
-                         sep = "\t") %>% 
-  dplyr::mutate(serotype = 
-                  dplyr::if_else(grepl("truncated_genes",status), 
-                                 paste0(serotype," (inactivated)"), 
-                                 serotype)
-                ) %>% 
-  dplyr::select(-status)
-
-```
-
-```{r merge Hicap_hflu with hflu_extract_sample_df by "npg_run_id"}
-
-Hflu_microreact_df %<>%
-  add_to_microreact(Hicap_hflu, absent_value = "NT")
 
 ```
 
@@ -1324,7 +1318,7 @@ ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input
 ``` {r Clustering of plasmid sequences with}
 
 plasmid_clustering_df <-
-  read.csv("/Users/ncrouche/Downloads/NP_AMR_plasmid_clustering_results.csv") %>% 
+  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv") %>% 
   dplyr::mutate(
     tsne1D = dplyr::if_else(is.na(tsne1D) | tsne1D == "-",NA_real_,as.numeric(as.character(tsne1D))),
     tsne2D = dplyr::if_else(is.na(tsne2D) | tsne2D == "-",NA_real_,as.numeric(as.character(tsne2D)))
@@ -1482,409 +1476,27 @@ write.table(Hflu_microreact_df %>%
 
 ## Compare strain frequencies between locations
 
+### Plot distributions of strain frequencies across locations
+
 ### Compare *H. influenzae* strain frequencies between locations
 
-```{r calculate the number of strain for Hinfluenzae species}
-
-Hinflu_species_counts <- hflu_extract_sample_df %>%
-  count(Species, 
-        name = "n_strains")
-
-```
-
-```{r count strains per country}
-
-Hinflu_strains_country <- hflu_extract_sample_df %>%
-  count(Country, 
-        name = "n_strains")
-
-```
-
-```{r plot the number of strains per country}
-
-ggplot(Hinflu_strains_country, 
-       aes(x = Country, 
-           y = n_strains)) + 
-  geom_col() + 
-  geom_text(aes(label = n_strains), 
-            vjust = -0.5, 
-            size = 4)
-
-```
-
-```{r filter npg, country, and year from hflu_extract_sample_df}
-
-hflu_filter_extract_sample <- hflu_extract_sample_df %>% 
-  select(npg_run_id, 
-         Country, 
-         Year,
-         Species)
-
-
-```
-
-### Compare *H. influenzae* strain frequencies in the UK between timepoints
-
-```{r calculate the frequnecies (%) of H.influenzae strain compared between timepoints in the UK}
-
-hinflu_freq_before_after <- hflu_filter_extract_sample %>% 
-  filter(Country == "United Kingdom") %>%
-  group_by(Year) %>%
-  summarise(year_hinflu = n(),
-            .groups = "drop") %>% 
-  mutate(frequency_all_hflu = (year_hinflu / sum(year_hinflu)) * 100)
-
-```
-
-### Frequencies over time
-
-```{r frequency of H.influenzae cluster in early and late of 2012 in the UK distribution}
-
-Hflu_frequency_cluster <- Hflu_microreact_df %>% 
-  filter(Country == "United Kingdom") %>% 
-  mutate(During = ifelse(Year < 2012, "early", "late")) %>% 
-  group_by(Cluster, During) %>% 
-  summarise(Hflu_number = n(), .groups = "drop") %>% 
-  group_by(During) %>% 
-  mutate(Hflu_freq_cluster = Hflu_number / sum(Hflu_number) *100) %>%  
-  select(Cluster, During, Hflu_freq_cluster) %>% 
-  tidyr::pivot_wider(names_from = During, 
-                     values_from = Hflu_freq_cluster, 
-                     values_fill = 0)
-
-ggplot(Hflu_frequency_cluster, aes(x = early, y = late, colour = Cluster)) +
-  geom_point(size = 3, colour = "steelblue") + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
-  labs(
-    title = "Frequency of H.influenzae Cluster in the UK\n at early and late year of 2012",
-    x = "Frequency early 2012",
-    y = "Frequency late 2012"
-  )
-
-```
-
-```{r Plot change in H. influenzae frequency in the UK}
-
-ggplot(hinflu_freq_before_after, aes(x = Year, y = frequency_all_hflu)) + geom_line(size = 1.2, colour = "blue") + geom_point(size = 3, colour = "blue") + scale_x_continuous(breaks = 2009:2020) + labs(title = "Frequency of H.influenzae Strains in the UK\ncompare between timepoints", x = "Year", y = "Frequency (%)") + theme(
-    axis.title.x = element_text(face = "bold", size = 12),
-    axis.title.y = element_text(face = "bold", size = 12),
-    axis.text.x  = element_text(face = "bold", size = 10),
-    axis.text.y  = element_text(face = "bold", size = 10), 
-    axis.line.x = element_line(colour = "black", linewidth = 1.2),
-    axis.line.y = element_line(colour = "black", linewidth = 1.2), 
-    panel.border = element_blank()
-    )
-
-```
-
-```{r export hflu filter extract data as csv format}
-
-write.table(hflu_filter_extract_sample,
-            file = "./PopPUNK_analysis/hflu_strains.csv",
-            sep = "\t",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r reformat columns of hflu_strains_freq to wide format columns}
-
-hflu_strains_widefreq <- hflu_strains_freq %>%
-  filter(!is.na(Country),
-         Country %in% c("Cambodia", "Thailand", "United Kingdom")) %>%
-  select(Country, 
-         Cluster, 
-         strains_count, 
-         Frequency) %>%
-pivot_wider(id_cols = Cluster, 
-            names_from = Country, 
-            values_from = Frequency)
-
-```
-
-```{r plot ggpair for Hflu}
-
-compare_strain_frequencies <- function(df) {
-  
-  freq_wide <- df %>%
-      count(Cohort, Cluster, name = "n") %>%
-      group_by(Cohort) %>%
-      mutate(prop = n / sum(n)) %>%
-      ungroup() %>%
-      tidyr::pivot_wider(
-        names_from  = Cluster,
-        values_from = prop,
-        values_fill = 0
-      )
-  
-  cohorts <-
-    df %>% 
-      dplyr::select(Cohort) %>% 
-      dplyr::distinct() %>% 
-      dplyr::pull(Cohort)
-  
-  ggpairs(freq_wide, 
-        upper = list(continuous = "cor"), 
-        lower = list(continuous = "smooth"), 
-        diag = list(continuous = "densityDiag"))
-
-}
-
-compare_strain_frequencies(Hflu_microreact_df)
-
-```
-
-### Compare strain frequencies between samples of *M. catarrhalis*
-
-```{r format Taxon column and rename Taxon as npg_run_id}
-
-mcat_strains_rename <- mcat_strains_df %>%
-  mutate(Taxon = gsub("_fa$", "", Taxon)) %>% 
-  rename(npg_run_id = Taxon)
-
-```
-
-```{r merge sample_df with mcat_strains_rename}
-
-mcat_strains_sample <- sample_df %>% 
-  right_join(mcat_strains_rename, 
-             by = "npg_run_id") %>%
-  select(npg_run_id, 
-         Country, 
-         Year, 
-         Species, 
-         Classification, 
-         Cluster)
-
-```
-
-```{r frequency of Mcat cluster in early and late 2012 of the UK distribution}
-
-Mcat_frequency_cluster <-
-  Mcat_microreact_df %>%
-  filter(Country == "United Kingdom") %>% 
-  mutate(Mcat_period = ifelse(Year < 2012, "early", "late")) %>% 
-  group_by(Cluster, Mcat_period) %>%
-  summarise(Mcat_number_strains = n(), .groups = "drop") %>%
-  group_by(Mcat_period) %>%
-  mutate(Mcat_freq = Mcat_number_strains / sum(Mcat_number_strains) *100) %>% 
-  ungroup() %>%
-  select(Mcat_period, Mcat_freq, Cluster) %>% 
-  tidyr::pivot_wider(names_from = Mcat_period, 
-                     values_from = Mcat_freq, 
-                     values_fill = 0)
-
-ggplot(Mcat_frequency_cluster,
-       aes(x = early, y = late, colour = Cluster)) + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") + 
-  geom_point(size = 3, alpha = 0.8, colour = "steelblue") + 
-  labs(
-    title = "Early vs Late Frequency of Moraxella catarrhalis Clusters (UK)",
-    x = "Early timepoint frequency (%)",
-    y = "Late timepoint frequency (%)"
-  ) +
-  scale_x_continuous(expand = expansion(mult = 0.05)) +
-  scale_y_continuous(expand = expansion(mult = 0.05)) + 
-  theme(
-    plot.title = element_text(face = "bold"),
-    legend.position = "right"
-  )
-
-```
-
-```{r find the frequency of M.cattarrhalis strain compared between each timepoints in the UK}
-
-mcat_freq_before_after <- mcat_strains_sample %>% 
-  filter(Country == "United Kingdom") %>%
-  group_by(Year) %>%
-  summarise(year_mcat = n(),
-            .groups = "drop") %>% 
-  mutate(frequency_all_mcat = (year_mcat / sum(year_mcat)) * 100)
-
-ggplot(mcat_freq_before_after, 
-       aes(x = Year, y = frequency_all_mcat)) +
-  geom_line(size = 1.2, colour = "steelblue") + 
-  scale_x_continuous(breaks = 2009:2020) + 
-  geom_point(size = 3, colour = "steelblue") +
-  labs(
-    title = "Frequency of M.cattarrhalis Strains in the UK \nCompare between timepoints",
-    x = "Year",
-    y = "Frequency (%)"
-  ) + theme(
-    axis.title.x = element_text(face = "bold", size = 12),
-    axis.title.y = element_text(face = "bold", size = 12),
-    axis.text.x  = element_text(face = "bold", size = 10),
-    axis.text.y  = element_text(face = "bold", size = 10), 
-    axis.line.x = element_line(colour = "black", linewidth = 1.2),
-    axis.line.y = element_line(colour = "black", linewidth = 1.2), 
-    panel.border = element_blank()
-    )
-
-```
-
-```{r find seroresistant and serosensitive in each countries}
-
-mcat_summary <- mcat_strains_sample %>%
-  filter(Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  group_by(Country, Classification) %>%
-  summarise(
-    total = n(),
-    .groups = "drop"
-  ) %>%
-  tidyr::pivot_wider(
-    names_from = Classification,
-    values_from = total,
-    values_fill = 0
-  )
-
-```
-
-```{r Mcat calculate frequencies}
-
-mcat_strains_freq <- mcat_strains_sample %>%
-  filter(!is.na(npg_run_id),
-         !is.na(Classification),
-         !is.na(Cluster),
-         !is.na(Species), 
-         Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  select(npg_run_id, 
-         Country, 
-         Year, 
-         Species, 
-         Classification, 
-         Cluster) %>%
-  group_by(npg_run_id, 
-           Country, 
-           Cluster, 
-           Year) %>%
-  summarise(Strains_count = n_distinct(npg_run_id), 
-            .groups = "drop") %>%
-  arrange(Country)
-
-mcat_count_freq <- mcat_strains_freq %>%
-  group_by(Country) %>%
-  mutate(Frequency = Strains_count / sum(Strains_count))
-
-```
+TO DO
 
 ### Compare *M. catarrhalis* strain frequencies between locations
 
-```{r calculate the number of Mcat strains}
+```{r Mcat calculate frequencies}
 
-mcat_species_counts <- mcat_strains_sample %>%
-  count(Species, 
-        name = "n_strains")
-
-```
-
-```{r calculate the species in each country}
-
-mcat_strains_country <- mcat_strains_sample %>%
-  count(Country, 
-        name = "n_strains")
-
-```
-
-```{r plot the graph}
-
-ggplot(mcat_strains_country, 
-       aes(x = Country, 
-           y = n_strains)) + 
-  geom_col() + 
-  geom_text(aes(label = n_strains), 
-            vjust = -0.5, 
-            size = 4)
-
-```
-
-```{r filter npg, country and year from mcat strains sample data}
-
-mcat_filter_strains_sample <- mcat_strains_sample %>%
-  select(npg_run_id, 
-         Country, 
-         Year)
-
-```
-
-```{r export mcat filter strains sample to be csv file}
-
-write.table(mcat_filter_strains_sample,
-            file = "./PopPUNK_analysis/mcat_strains.csv",
-            sep = "\t",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-
-```
-
-```{r Mcat plot strain frequencies per country and year}
-
-ggplot(mcat_count_freq, 
-       aes(x = Cluster, 
-           y = Frequency, 
-           fill = Country)) + 
-  geom_col(position = "dodge") + 
-  labs(title = "M. cattarrhalis strain frequencies\nby country and year", 
-       x = "Cluster", 
-       y = "Frequency", 
-       fill = "Country")
-
-```
-
-```{r format columns to wide columns}
-
-mcat_count_widefreq <- mcat_count_freq %>% 
-  filter(!is.na(Country),
-         Frequency != 0) %>%
-  select(Country, 
-         Cluster, 
-         Frequency) %>% 
-  pivot_wider(id_cols = Cluster, 
-              names_from = Country, 
-              values_from = Frequency, 
-              values_fn = list(Frequency = sum), 
-              values_fill = 0)
-
-```
-
-```{r calculate the number of seroresistant and serosensitive in each countries}
-
-mcat_strains_serotype <- mcat_count_freq  %>%
-  filter(!is.na(npg_run_id),
-         !is.na(Cluster),
-         Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa")) %>%
-  group_by(Country, 
+mcat_strains_freq <- 
+  Mcat_microreact_df %>%
+  group_by(id, 
+           Cohort, 
            Cluster) %>%
-  summarise(Total_strains = sum(Strains_count, 
-                                na.rm = TRUE), 
-            Total_frequency = sum(Frequency,
-                                  na.rm = TRUE), 
-            .groups = "drop")
-
-```
-
-```{r plot the seroresistant and serosensitive comparing the countries}
-
-ggplot(mcat_strains_serotype, 
-       aes(x = Cluster, 
-           y = Total_strains, 
-           fill = Country)) + 
-  geom_col(position = "dodge") + 
-  labs(title = "Seroresistant vs Serosensitive\nof M. catarrhalis by Country", 
-       x = "Country", y = "Total Strains") + 
-  theme(axis.title.x = element_text(face = "bold"),
-    axis.title.y = element_text(face = "bold"))
-
-```
-
-```{r plot ggpairs of Moraxella}
-
-ggpairs(mcat_count_widefreq, 
-        columns = c("Cambodia", "Thailand", "United Kingdom", "South Africa"), 
-        upper = list(continuous = "cor"), 
-        lower = list(continuous = "smooth"), 
-        diag = list(continuous = "densityDiag"))
+  summarise(Strains_count = n_distinct(id), 
+            .groups = "drop") %>%
+  dplyr::ungroup() %>%
+  group_by(Cohort) %>%
+  mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
+  dplyr::ungroup()
 
 ```
 
@@ -1939,6 +1551,14 @@ Hinflu_version4_gene_preabsence <-
       names_to = "npg_run_id",
       values_to = "CDS"
     )
+
+expected_hflu <- Hflu_filter$npg_run_id
+included_hflu <- unique(Hflu_version4_gene_preabsence$npg_run_id)
+
+# if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+#   stop("Hflu Panaroo not run on correct isolate set")
+# }
+
 
 ```
 
@@ -2013,6 +1633,7 @@ Hinflu_version4_genefreq <-
 ```
 
 ```{r reformat columns to wide format columns}
+
 Hinflu_version4_genefreq_wide <- Hinflu_version4_genefreq %>%
   select(Country, 
          Gene, 
@@ -2104,11 +1725,10 @@ Read in the gene presence/absence matrix:
 
 ```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
 
-
 mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
 
 if (identical(Sys.getenv("CI"), "true")) {
-  hflu_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
+  mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
 }
 
 tmp_dir  <- tempdir()
@@ -2126,8 +1746,7 @@ archive::archive_extract(
 ``` {r Process archive, cache = FALSE}
 
 Mcat_version4_gene_preabsence <- read.csv(
-  #tmp_path,
-  "~/Downloads/gene_presence_absence_Mcat.csv",
+  tmp_path,
   header = TRUE,
   comment.char = "",
   check.names = FALSE,
@@ -2135,11 +1754,20 @@ Mcat_version4_gene_preabsence <- read.csv(
   ) %>%
   tidyr::pivot_longer(
     cols = -c(
-      Gene
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
       ),
     names_to = "npg_run_id",
     values_to = "CDS"
   )
+
+expected_mcat <- Mcat_filter$npg_run_id
+included_mcat <- unique(Mcat_version4_gene_preabsence$npg_run_id)
+
+# if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
+#   stop("Mcat Panaroo not run on correct isolate set")
+# }
 
 ```
 
@@ -2389,7 +2017,7 @@ for INDEX in {01..96}; do mkdir -p barcode${INDEX}; for C in $(ls -d ./5hmc_5mc_
 
 ## Assembling long-read data
 
-``` {bash Assembling long-read data}
+``` {bash Assembling long-read data, eval = FALSE}
 
 
 declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
