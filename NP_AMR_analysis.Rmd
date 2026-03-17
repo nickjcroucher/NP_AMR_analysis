@@ -1956,28 +1956,6 @@ if (identical(Sys.getenv("CI"), "true")) {
 
 ```
 
-``` {r Compare gene frequencies across locations}
-
-p <- plot_mcat_cluster_pairs_two_species(
-  dplyr::bind_rows(
-    Mcat_version4_gene_preabsence %>% 
-      process_gene_frequencies(Mcat_microreact_df)  %>% 
-      dplyr::mutate(Species = "Moraxella catarrhalis"),
-    Hinflu_version4_gene_preabsence %>% 
-      process_gene_frequencies(Hflu_microreact_df)  %>% 
-      dplyr::mutate(Species = "Haemophilus influenzae")
-  ),
-  species1 = "Moraxella catarrhalis",
-  species2 = "Haemophilus influenzae",
-  species_palette = species_palette,
-  drakenstein_name = "Drakenstein",
-  hist_on_diagonal = TRUE
-)
-
-p
-
-```
-
 
 ``` {r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
 
@@ -2139,6 +2117,30 @@ included_mcat <- unique(Mcat_version4_gene_preabsence$npg_run_id)
 # if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
 #   stop("Mcat Panaroo not run on correct isolate set")
 # }
+
+```
+
+### Geographic analysis of gene frequencies
+
+``` {r Compare gene frequencies across locations}
+
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    Mcat_version4_gene_preabsence %>% 
+      process_gene_frequencies(Mcat_microreact_df)  %>% 
+      dplyr::mutate(Species = "Moraxella catarrhalis"),
+    Hinflu_version4_gene_preabsence %>% 
+      process_gene_frequencies(Hflu_microreact_df)  %>% 
+      dplyr::mutate(Species = "Haemophilus influenzae")
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = species_palette,
+  drakenstein_name = "Drakenstein",
+  hist_on_diagonal = TRUE
+)
+
+p
 
 ```
 
