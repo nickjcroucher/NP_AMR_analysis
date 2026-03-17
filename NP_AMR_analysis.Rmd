@@ -155,6 +155,7 @@ make_cluster_freq_wide_species <- function(mcat_cluster_freq,
                            )
                     )
                   ) %>% 
+    dplyr::arrange(rev(Cohort)) %>% 
     select(
       !!sym(species_col),
       !!sym(clusters_col),
@@ -438,6 +439,21 @@ process_gene_frequencies <- function(df,m_df) {
     dplyr::distinct() %>% 
     dplyr::filter(!is.na(Cohort)) %>% 
     dplyr::rename(Cluster = Gene)
+  
+}
+
+process_strain_frequencies <- function(df) {
+  
+   df %>%
+    dplyr::mutate(Cluster = as.character(Cluster)) %>% 
+    group_by(Cohort, 
+             Cluster) %>%
+    summarise(Strains_count = n_distinct(id), 
+              .groups = "drop") %>%
+    dplyr::ungroup() %>%
+    group_by(Cohort) %>%
+    mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
+    dplyr::ungroup()
   
 }
 
@@ -1813,21 +1829,6 @@ TO DO
 
 ``` {r Compare strain frequencies across locations}
 
-process_strain_frequencies <- function(df) {
-  
-   df %>%
-    dplyr::mutate(Cluster = as.character(Cluster)) %>% 
-    group_by(Cohort, 
-             Cluster) %>%
-    summarise(Strains_count = n_distinct(id), 
-              .groups = "drop") %>%
-    dplyr::ungroup() %>%
-    group_by(Cohort) %>%
-    mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
-    dplyr::ungroup()
-  
-}
-
 p <- plot_mcat_cluster_pairs_two_species(
   dplyr::bind_rows(
     process_strain_frequencies(Mcat_microreact_df) %>% 
@@ -1942,6 +1943,10 @@ Hinflu_version4_gene_sample <-
 
 ```
 
+### Pangenome curve for *H. influenzae*
+
+TO DO
+
 ```{r Hflu downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
@@ -2016,15 +2021,16 @@ included_mcat <- unique(Mcat_version4_gene_preabsence$npg_run_id)
 
 ```
 
+### Pangenome curve for *M. catarrhalis*
+
+TO DO
 
 ```{r Mcat downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
-  
-  Mcat_version4_gene_preabsence <- NULL
-  
+
   message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
-  Mcat_version4_gene_sample %<>%
+  Mcat_version4_gene_preabsence %<>%
   slice_sample(prop = 0.01)
   
 }
@@ -2127,21 +2133,27 @@ Also a passage was run of four isolates. Each was started from a single colony o
 
 ```
 
-
-- Removal of prophage sequences - does this improve assignment to strains?
-
 ## Co-colonisation analysis of species
 
-- Seroresistant and serosensitive co-colonisation?
+- Which species co-exist, and which compete, based on the observed deep sequencing data?
+
+- Do seroresistant and serosensitive Moraxellae appear to compete?
+
+- Are these patterns consistent across countries?
 
 ## Co-colonisation analysis of strains
 
-## Co-colonisation analysis across countries
+- Is the same pattern of co-colonisation observed across species (including serosensitive/seroresistant Moraxellae)?
 
-## Resistance relative to drug administration
+- Is the same level of co-colonisation observed across countries?
 
-### Analysis of species present in deep sequencing samples across countries
+- Removal of prophage sequences - does this improve assignment to strains?
 
-### Identification of samples containing *H. influenzae* and *M. catarrhalis*
+- Are long-read references better than short-read references?
 
+## Timing of antibiotic administration and species presence
+
+- Are different species enriched after antibiotic administration in Maela?
+
+- Is there less co-colonisation between strains after antibiotic administration?
 
