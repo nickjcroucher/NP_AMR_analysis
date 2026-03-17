@@ -1,20 +1,465 @@
 ---
 title: "NP AMR analyses"
-author: "Nicholas Croucher"
+author: "Sunheng Kaing & Nicholas Croucher"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+is_ci <- identical(Sys.getenv("CI"), "true")
+
+if (is_ci) {
+  message("CI environment detected: disabling knitr caching.")
+  knitr::opts_chunk$set(
+    echo  = FALSE,
+    cache = FALSE
+  )
+} else {
+  knitr::opts_chunk$set(
+    echo  = FALSE,
+    cache = TRUE,
+    fig.width = 8
+  )
+}
 
 require(magrittr)
 require(tidyverse)
 require(stringr)
+require(GGally)
+require(archive)
+require(kableExtra)
+require(ggforce)
+#require(ggrepel)
+require(patchwork)
+
+theme_set(theme_bw() + theme(strip.background = element_blank()))
 
 ```
 
-## Load data from project
+# Functions
+
+``` {r Functions}
+
+associate_resistance_plasmids <- function(m_df, amr_cols = NULL, plasmid_cols = NULL) {
+  
+  plasmid_res_df <-
+    m_df %>% 
+      pivot_longer(cols = dplyr::any_of(amr_cols), 
+                   names_to = "Resistance gene", 
+                   values_to = "Resistance gene presence") %>% 
+      pivot_longer(
+        cols = dplyr::any_of(plasmid_cols), 
+        names_to = "Plasmid", 
+        values_to = "Plasmid presence") %>% 
+      dplyr::select(id,
+                    `Resistance gene`,
+                    `Resistance gene presence`,
+                    Plasmid,
+                    `Plasmid presence`)
+      
+  
+  # Step 2: Count bacteria with each plasmid (denominator)
+  total_plasmid <-
+    plasmid_res_df  %>%
+      dplyr::filter(`Plasmid presence` != "Absent") %>%
+      dplyr::distinct(id, Plasmid) %>%
+      dplyr::count(Plasmid, name = "total_bacteria_and_plasmid")
+  
+  # Step 3: Count bacteria with gene and plasmid (numerator)
+  plasmid_gene_counts <-
+    plasmid_res_df  %>%
+      dplyr::filter(`Resistance gene presence` != "Absent" &
+                    `Plasmid presence` != "Absent") %>%
+      dplyr::distinct(id, `Resistance gene`, Plasmid) %>% 
+      dplyr::count(`Resistance gene`, Plasmid, name = "count_gene_plasmid")
+  
+  # Step 4: Join and compute proportion
+  plasmid_resistance_prop_df <-
+    plasmid_gene_counts %>%
+      dplyr::left_join(total_plasmid, by = "Plasmid") %>%
+      dplyr::mutate(total_bacteria_and_plasmid =
+                      dplyr::if_else(is.na(total_bacteria_and_plasmid),
+                                     0,
+                                     total_bacteria_and_plasmid)
+                    ) %>% 
+      dplyr::mutate(proportion = count_gene_plasmid / total_bacteria_and_plasmid) %>% 
+      tidyr::complete(`Resistance gene`,
+                      Plasmid,
+                      fill = list(total_bacteria_and_plasmid = 0,
+                                  proportion = 0))
+  
+  return(plasmid_resistance_prop_df)
+}
+
+widen_amr_data <- function(amr_df) {
+  
+  amr_df %>%
+    # Split into list column
+    mutate(gene_list = str_split(AB_resistance, ",")) %>%
+    # Clean whitespace
+    mutate(gene_list = map(gene_list, str_trim)) %>%
+    # Unnest to long format
+    unnest(gene_list) %>%
+    # Remove original column
+    select(-AB_resistance) %>%
+    # Add presence indicator
+    mutate(present = "Present") %>%
+    distinct() %>% 
+    # Pivot to wide format
+    pivot_wider(
+      names_from = gene_list,
+      values_from = present,
+      values_fill = "Absent"
+    )
+  
+}
+
+add_to_microreact <- function(df1,df2,absent_value = "") {
+  
+  df1 %>%
+    dplyr::left_join(df2,
+                     by = c("id"="npg_run_id")) %>% 
+    dplyr::mutate(across(everything(), ~ ifelse(is.na(.x), absent_value, .x))) %>% 
+    dplyr::select(where(~!all(.x==absent_value)))
+  
+}
+
+make_cluster_freq_wide_species <- function(mcat_cluster_freq,
+                                           species_col  = "Species",
+                                           clusters_col = "Cluster",
+                                           cohort_col   = "Cohort") {
+  # Aggregate to one frequency per (Species, Cohort, Cluster)
+  # mcat_cluster_freq <- mcat_strains_freq %>%
+  #   group_by(.data[[species_col]],.data[[cohort_col]],.data[[clusters_col]]) %>%
+  #   summarise(
+  #     Strains_count = sum(Strains_count, na.rm = TRUE),.groups = "drop"
+  #   ) %>%
+  #   group_by(.data[[species_col]],.data[[cohort_col]]) %>%
+  #   mutate(
+  #     Frequency = Strains_count / sum(Strains_count)
+  #   ) %>%
+  #   ungroup()
+
+  # Wide: rows = Cluster, columns = Cohort; one table per Species
+  # We'll keep long by species + cluster, wide by cohort.
+  mcat_cluster_freq_wide <- mcat_cluster_freq %>%
+    dplyr::mutate(Cohort =
+                    factor(Cohort,
+                           levels = c(
+                             "Drakenstein",
+                             "Hampshire (early)",
+                             "Hampshire (late)",
+                             "Maela",
+                             "Siem Reap"
+                           )
+                    )
+                  ) %>% 
+    dplyr::arrange(rev(Cohort)) %>% 
+    select(
+      !!sym(species_col),
+      !!sym(clusters_col),
+      !!sym(cohort_col),
+      Frequency
+    ) %>%
+    pivot_wider(
+      id_cols    = c(!!sym(species_col), !!sym(clusters_col)),
+      names_from = !!sym(cohort_col),
+      values_from = Frequency
+    )
+
+  mcat_cluster_freq_wide
+}
+
+make_pair_panel_species <- function(wide_df,
+                                    species_name,
+                                    cohort_x,   # x-axis cohort
+                                    cohort_y,   # y-axis cohort
+                                    point_colour) {
+  df_pair <- wide_df %>%
+    dplyr::filter(Species == species_name) %>%
+    dplyr::select(Species, Cluster, dplyr::all_of(c(cohort_x, cohort_y))) %>%
+    # keep clusters present in at least one of the two cohorts
+    dplyr::filter(
+      !(is.na(.data[[cohort_x]]) & is.na(.data[[cohort_y]]))
+    ) %>%
+    dplyr::mutate(
+      !!cohort_x := tidyr::replace_na(.data[[cohort_x]], 0),
+      !!cohort_y := tidyr::replace_na(.data[[cohort_y]], 0)
+    )
+
+  n_pts <- nrow(df_pair)
+
+  if (n_pts >= 2) {
+    ct <- suppressWarnings(
+      cor.test(df_pair[[cohort_x]],
+               df_pair[[cohort_y]],
+               method = "spearman",
+               exact  = FALSE)
+    )
+    p_val <- ct$p.value
+    p_lab <- paste0("p = ", formatC(p_val, format = "e", digits = 2))
+  } else {
+    p_lab <- "p = NA"
+  }
+
+  ggplot(df_pair, aes(x =.data[[cohort_x]], y =.data[[cohort_y]])) +
+    geom_point(alpha = 0.6, size = 0.7, colour = point_colour) +
+    geom_smooth(formula = y ~ x,
+                method = "lm",
+                se = FALSE,
+                colour = "#FD6467",
+                linewidth = 0.5) +
+    # numeric labels: N and p
+    annotate("text",
+             x = -Inf, y = Inf,
+             label = paste0("N = ", n_pts),
+             hjust = -0.1, vjust = 1.5,
+             size = 3) +
+    annotate("text",
+             x = Inf, y = Inf,
+             label = p_lab,
+             hjust = 1.1, vjust = 1.5,
+             size = 3) +
+    labs(x = NULL, y = NULL) +
+    theme_minimal(base_size = 9) +
+    theme(
+      #axis.text.x  = element_blank(),
+      #axis.text.y  = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid   = element_line(colour = "grey90", linewidth = 0.2)
+    )
+}
+
+make_diag_hist_panel <- function(wide_df,
+                                 cohort,
+                                 species1,
+                                 species2,
+                                 species_palette) {
+  df_long <- wide_df %>%
+    dplyr::filter(Species %in% c(species1, species2)) %>%
+    dplyr::select(Species, Cluster, dplyr::all_of(cohort)) %>%
+    dplyr::rename(Frequency = dplyr::all_of(cohort)) %>%
+    dplyr::mutate(Frequency = tidyr::replace_na(Frequency, 0)) %>%
+    dplyr::filter(Frequency > 0)   # remove 0-frequency strains
+
+  ggplot(df_long, aes(x = Frequency, fill = Species)) +
+    geom_histogram(position = "identity",
+                   alpha    = 0.5,
+                   bins     = 30,  # adjust as you like
+                   colour   = NA) +
+    scale_fill_manual(values = species_palette) +
+    labs(x = NULL, y = NULL) +
+    ylim(c(0,2000)) +
+    theme_minimal(base_size = 9) +
+    theme(
+      legend.position = "none",
+      #axis.text.x  = element_blank(),
+      #axis.text.y  = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid   = element_line(colour = "grey90", linewidth = 0.2)
+    )
+}
+
+make_diag_rank_panel <- function(wide_df,
+                                 cohort,
+                                 species1,
+                                 species2,
+                                 species_palette) {
+  df_long <- wide_df %>%
+    dplyr::filter(Species %in% c(species1, species2)) %>%
+    dplyr::select(Species, Cluster, dplyr::all_of(cohort)) %>%
+    dplyr::rename(Frequency = dplyr::all_of(cohort)) %>%
+    dplyr::mutate(Frequency = tidyr::replace_na(Frequency, 0)) %>%
+    dplyr::filter(Frequency > 0)  # remove 0-frequency strains
+
+  df_ranked <- df_long %>%
+    dplyr::group_by(Species) %>%
+    dplyr::arrange(dplyr::desc(Frequency),.by_group = TRUE) %>%
+    dplyr::mutate(Rank = dplyr::row_number()) %>%
+    dplyr::ungroup()
+
+  ggplot(df_ranked, aes(x = Rank, y = Frequency, colour = Species)) +
+    geom_point(alpha = 0.7, size = 0.7) +
+    geom_line(alpha = 0.6, linewidth = 0.4) +
+    scale_colour_manual(values = species_palette) +
+    labs(x = NULL, y = NULL) +
+    theme_minimal(base_size = 9) +
+    theme(
+      legend.position = "none",
+      #axis.text.x  = element_blank(),
+      #axis.text.y  = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid   = element_line(colour = "grey90", linewidth = 0.2)
+    )
+}
+
+plot_mcat_cluster_pairs_two_species <- function(mcat_strains_freq,
+                                                species1,
+                                                species2,
+                                                species_palette = c(species1 = "steelblue",
+                                                                    species2 = "darkorange"),
+                                                drakenstein_name = "Drakenstein",
+                                                hist_on_diagonal = FALSE) {
+
+  wide_df <- make_cluster_freq_wide_species(mcat_strains_freq)
+
+  all_cohorts <- setdiff(names(wide_df), c("Species", "Cluster"))
+
+  # Columns: all cohorts (including Drakenstein)
+  col_cohorts <- all_cohorts
+
+  # Rows for main grid: all except Drakenstein
+  row_cohorts <- setdiff(all_cohorts, drakenstein_name)
+
+  n_rows_main <- length(row_cohorts)
+  n_cols      <- length(col_cohorts)
+
+  panels <- list()
+
+  blank_panel <- ggplot() + theme_void()
+
+  # Set diagonal plot function
+  diag_plot <- make_diag_rank_panel
+  if (hist_on_diagonal) {
+    diag_plot <- make_diag_hist_panel
+  }
+  
+  ## Main grid (rows = row_cohorts; cols = col_cohorts)
+  for (row_idx in seq_len(n_rows_main)) {
+    for (col_idx in seq_len(n_cols)) {
+      cx <- col_cohorts[col_idx]
+      cy <- row_cohorts[row_idx]
+
+      if (cx == cy) {
+        # Diagonal for non-Drakenstein cohorts
+        p <- diag_plot(
+          wide_df,
+          cohort          = cx,
+          species1        = species1,
+          species2        = species2,
+          species_palette = species_palette
+        )
+      } else if (match(cx, all_cohorts) > match(cy, all_cohorts)) {
+        # Upper-right: species1
+        p <- make_pair_panel_species(
+          wide_df      = wide_df,
+          species_name = species1,
+          cohort_x     = cx,
+          cohort_y     = cy,
+          point_colour = species_palette[species1]
+        )
+      } else {
+        # Lower-left: species2
+        p <- make_pair_panel_species(
+          wide_df      = wide_df,
+          species_name = species2,
+          cohort_x     = cx,
+          cohort_y     = cy,
+          point_colour = species_palette[species2]
+        )
+      }
+
+      # Column labels on top row only
+      if (row_idx == 1) {
+        p <- p + ggtitle(cx) +
+          theme(
+            plot.title = element_text(hjust = 0.5, size = 10)
+          )
+      } else {
+        p <- p + ggtitle(NULL)
+      }
+
+      # Y-axis cohort labels on first column only
+      if (col_idx == 1) {
+        p <- p +
+          labs(y = cy) +
+          theme(
+            axis.title.y = element_text(angle = 90, size = 9, vjust = 0.5)
+          )
+      } else {
+        p <- p + labs(y = NULL)
+      }
+
+      # No x-axis labels anywhere
+      p <- p + labs(x = NULL)
+
+      panels[[length(panels) + 1]] <- p
+    }
+  }
+
+  ## Extra bottom row: Drakenstein self-self at its column
+  drak_col_idx <- match(drakenstein_name, col_cohorts)
+
+  for (col_idx in seq_len(n_cols)) {
+    cx <- col_cohorts[col_idx]
+
+    if (!is.na(drak_col_idx) && col_idx == drak_col_idx) {
+      # Drakenstein diagonal panel
+      p <- diag_plot(
+        wide_df,
+        cohort          = drakenstein_name,
+        species1        = species1,
+        species2        = species2,
+        species_palette = species_palette
+      )
+    } else {
+      p <- blank_panel
+    }
+
+    # Bottom row: no x or y labels
+    p <- p + ggtitle(NULL) + labs(x = NULL, y = NULL)
+
+    panels[[length(panels) + 1]] <- p
+  }
+
+  patchwork::wrap_plots(panels, nrow = n_rows_main + 1, ncol = n_cols)
+}
+
+process_gene_frequencies <- function(df,m_df) {
+  
+   df %>% 
+      dplyr::filter(CDS != "" & !is.na(CDS)) %>% 
+      dplyr::select(Gene,npg_run_id) %>% 
+      dplyr::rename(id = npg_run_id) %>% 
+      dplyr::left_join(m_df %>% 
+                         dplyr::select(id,Cohort),
+                       by = "id") %>% 
+    group_by(Cohort, 
+             Gene) %>%
+    mutate(Strains_count = n_distinct(id)) %>%
+    dplyr::ungroup() %>%
+    group_by(Cohort) %>%
+    mutate(Frequency = Strains_count / n_distinct(id)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::select(-id) %>% 
+    dplyr::distinct() %>% 
+    dplyr::filter(!is.na(Cohort)) %>% 
+    dplyr::rename(Cluster = Gene)
+  
+}
+
+process_strain_frequencies <- function(df) {
+  
+   df %>%
+    dplyr::mutate(Cluster = as.character(Cluster)) %>% 
+    group_by(Cohort, 
+             Cluster) %>%
+    summarise(Strains_count = n_distinct(id), 
+              .groups = "drop") %>%
+    dplyr::ungroup() %>%
+    group_by(Cohort) %>%
+    mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
+    dplyr::ungroup()
+  
+}
+
+```
+
+# Load data from project
 
 Import sample data from project
 
@@ -163,11 +608,45 @@ sample_df <-
     dplyr::left_join(epi_df, by = c("join_col")) %>% 
     dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
     dplyr::select(-join_col) %>% 
-    dplyr::filter(!is.na(Country))
+    dplyr::filter(!is.na(Country)) %>% 
+    dplyr::mutate(Cohort = dplyr::if_else(Cohort == "Thailand","Maela",Cohort)) %>% 
+    dplyr::mutate(Cohort =
+                    dplyr::case_when(
+                      Cohort == "Maela" ~ "Maela",
+                      Cohort == "Cambodia" ~ "Siem Reap",
+                      Cohort == "Drakenstein" ~ "Drakenstein",
+                      Cohort == "United Kingdom" & Year < 2014 ~ "Hampshire (early)",
+                      Cohort == "United Kingdom" & Year > 2014 ~ "Hampshire (late)"
+                    )
+                  ) %>% 
+  dplyr::mutate(Year =
+                  dplyr::case_when(
+                    !is.na(Year) ~ as.numeric(as.character(Year)),
+                    grepl("_08B",sample_supplier_name) ~ 2008,
+                    grepl("_09B",sample_supplier_name) ~ 2009,
+                    grepl("_10B",sample_supplier_name) ~ 2010,
+                    grepl("STGG",sample_supplier_name) ~ 2009, # Unclear use mid-range
+                    grepl("MISSING",sample_supplier_name) ~ 2009, # Unclear use mid-range
+                    TRUE ~ NA_real_
+                  )
+                )
+
+species_palette <- c(
+  "Haemophilus influenzae" = "#E6A0C4FF",
+  "Moraxella catarrhalis" = "#C6CDF7FF",
+  "Plate sweep" = "#7294D4FF",
+  "Mixed bacteria" = "#7294D4FF",
+  "Other" = "#D8A499FF",
+  "Unknown" = "#D8A499FF"
+)
 
 ```
 
-## Identify species with Kraken and Bracken
+# Analysis of short-read data
+
+## Quality control of data and association with sample information
+
+### Identify species with Kraken and Bracken
 
 Analysis of the short reads used the `qc-short-read` pipeline (revision 103cba2a10; v1.0.2), which depends upon:
 
@@ -204,10 +683,14 @@ module load qc-short-read
 module load bsub.py
 
 bsub.py -q oversubscribed 4 DRAK_qc qc-short-read --manifest_ena DRAK.manifest --accession_type run --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
+# Re-run for 7 failed samples
+bsub.py -q oversubscribed 4 DRAK_qc_rerun qc-short-read -r 1.0.2 --manifest_ena DRAK_rerun.manifest --accession_type run --kraken2_db /data/pam/software/kraken2/standard/k2_standard_20250402 --read_len 150 --classification_level S --enable_building -ansi-log false
 
 ```
 
-## Assemble reads with SPAdes and unicycler
+This run failed for seven isolates, which were subsequently re-run.
+
+### Assemble reads with SPAdes and unicycler
 
 Analysis of the short reads used the `assembly-unicycler-short-read` pipeline (v1.2.5; commit 92464961e453d624e88e69da06670638fb90ede0), developed from the bacass pipeline (v2.5.0; <https://zenodo.org/records/17378847>), which depends upon:
 
@@ -243,7 +726,7 @@ bsub -o drak_output.o -e drak_error.e -q oversubscribed -R "select[mem>4000] rus
 
 ```
 
-## Annotate assemblies with Bakta
+### Annotate assemblies with Bakta
 
 The assemblies were annotated using Bakta (version 1.11.0).
 
@@ -265,7 +748,7 @@ bsub -n 4 -M 12000 -R 'select[mem>12000] rusage[mem=12000] span[hosts=1]' -o bak
 
 ```
 
-## Evaluate assemblies with Quast
+### Evaluate assemblies with Quast
 
 Assembly statistics were calculated with Quast (version 5.0.2).
 
@@ -288,64 +771,70 @@ assembly_stats_df <-
   ) %>% 
     dplyr::rename(npg_run_id = Assembly)
 
-# Join to sample information
-assembly_stats_df %>%
-  dplyr::left_join(sample_df,
-                   by = "npg_run_id")
 ```
 
-### Merge data of two files of sample_df and assembly_stats_df
+### Quality control parameters for genomic assemblies
 
-We use these two files to merge getting chronological data.
+We will use these two files to merge getting chronological data set.
 
 ```{r, merge data, echo=TRUE}
-right_df <- 
+
+sample_assemblies_df <- 
   right_join(as_tibble(assembly_stats_df),
              as_tibble(sample_df),
              by = "npg_run_id")
+
+minimum_length <- 1725000
+maximum_length <- 2250000
+n50_threshold <- 80000
+
 ```
 
-### Plot assembly data of baterial genome assemblies between total length and N50 to get quality of genome
-We used total length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is 100000 bp and total length (x-axis) which is from 1.75 Mbp to 2.25 Mbp.
+We used total length and N50 of each genomes to find quality of genomes with baseline threshold of $N_{50}$ (y-axis) is `r n50_threshold` bp and total length (x-axis) which is from `r minimum_length` Mbp to `r maximum_length` Mbp.
 
 ```{r, plot-genome assembly, include=TRUE}
 
-ggplot(data = assembly_stats_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) +
-  geom_hline(yintercept = 100000) + scale_x_log10() + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
+ggplot(data = sample_assemblies_df) + 
+  geom_point(aes
+             (x = `Total length`, 
+               y = N50, 
+               colour = Species)) +
+  geom_hline(yintercept = n50_threshold, linetype = 2) + 
+  geom_vline(xintercept = c(minimum_length, 
+                            maximum_length), linetype = 2) +
+  scale_colour_manual(values = species_palette) +
+  scale_x_log10() + 
+  ylab(expression(N[50]~"(bp)")) +
+  xlab("Total length (bp)") +
+  theme(legend.position = "bottom")
+                                            
 ```
 
-### We need to plot of merging dataset to be known Quality control of each species and knowing limitted threshold to be accepted in each species.
-We need to eliminate a few results from sequencing to get the better quality control of each species.
+These thresholds were used to remove low-quality assemblies:
 
 ```{r, filter-data, include=TRUE}
 
-summaried_df <- assembly_stats_df %>%
-  filter(N50 > 10000 & (`Total length` > 1.5e+06 & `Total length` < 2.5e+06))
+high_quality_assemblies_df <- 
+  sample_assemblies_df %>%
+  filter(N50 > n50_threshold & 
+           (`Total length` > minimum_length & 
+              `Total length` < maximum_length))
 
-ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 80000) + geom_vline(xintercept = c(1.725e+06, 2.15e+06))
+ggplot(data = sample_assemblies_df) + 
+  geom_point(aes
+             (x = `Total length`, 
+               y = N50, colour = Species)) + 
+  geom_vline(xintercept = c(minimum_length, 
+                            maximum_length), linetype = 2) +
+  geom_hline(yintercept = n50_threshold, linetype = 2) + 
+  scale_colour_manual(values = species_palette) +
+  xlim(0.9*minimum_length,1.1*maximum_length)
+
 ```
 
-### Plot graph of identifing bacterial burden in each three countries
+### Identification of the species present in each sequence dataset
 
-```{r, plot-graph, include=TRUE}
-
-ggplot(data = assembly_stats_df) +
-  geom_bar(aes(x = Year, fill = Country, position = "dodge")) +
-  
-  facet_wrap(~ Species) +
-  xlab("Year of investigation") +
-  ylab("Number of enrollment\nIn local hospital") +
-  labs(fill = "Study Enrollment\nIn Each Countries",
-       shape = "Species",
-       caption = "Antimicrobial Resistance Study") +
-  
-  scale_shape_manual(values = c(17,19),
-                     labels = c("Haemophilus influenzae", "Moraxella catarrhalis")) +
-  coord_cartesian(xlim = c(2004, 2021)) +
-  theme_minimal()
-```
-
-## Identify species in datasets
+Braken was used to identify the species present in each sample using the qc-short-read pipeline (v2.0.2), as part of the analysis described above. To check for contamination, we identify the species present in each dataset, and compare these outputs with the expected composition of the samples.
 
 ```{r Parse bracken outputs}
 
@@ -357,13 +846,20 @@ parse_bracken <- function(fn) {
              sep ="\t",
              header = TRUE) %>% 
     dplyr::filter(grepl("s__",Classification))
-  
 }
+
 species_match_threshold = 10000000
+
 species_abundance_df <-
   parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
   dplyr::full_join(
     parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
+    by = "Classification"
+  ) %>%
+  dplyr::full_join(parse_bracken("./sample_data/Drakenstein_bracken_summary_report.tsv.gz"),
+    by = "Classification"
+  ) %>%
+  dplyr::full_join(parse_bracken("./sample_data/Drakenstein_rerun_bracken_summary_report.tsv.gz"),
     by = "Classification"
   ) %>%
   dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
@@ -378,696 +874,213 @@ species_abundance_df <-
 # Join with sample information
 species_sample_df <-
   species_abundance_df %>% 
+    dplyr::rename(Detected_species = Species) %>% 
     dplyr::full_join(
-      sample_df,
+      sample_df %>% 
+        dplyr::rename(Expected_species = Species),
       by = "npg_run_id"
-    )
+    ) %>% 
+    dplyr::filter(!is.na(Country)) %>%  # Removing pre-filtered datasets, e.g. those dropped from HINTVAC
+    # Reformat taxonomic labels
+    dplyr::filter(!is.na(Detected_species)) %>% 
+    dplyr::mutate(Detected_species = gsub("_"," ",Detected_species)) %>% 
+    dplyr::mutate(Detected_genus = stringr::str_extract(Detected_species, '[A-Za-z]+'),
+                  Expected_genus = stringr::str_extract(Expected_species, '[A-Za-z]+')
+                  ) %>% 
+    # Calculate proportion of reads by species and genus
+    dplyr::group_by(npg_run_id) %>%
+    dplyr::mutate(species_read_count = matches,
+                  read_count = sum(matches)
+                  ) %>%
+    dplyr::ungroup() %>% 
+    dplyr::group_by(npg_run_id,Detected_genus) %>% 
+    dplyr::mutate(genus_read_count = sum(matches)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(npg_run_id) %>%
+    dplyr::mutate(Matching_species_proportion = dplyr::if_else(Detected_species == Expected_species,
+                                                       species_read_count / read_count,
+                                                       NA_real_),
+                  Matching_genus_proportion = dplyr::if_else(Detected_genus == Expected_genus,
+                                                       genus_read_count / read_count,
+                                                       NA_real_)
+                  ) %>%
+    tidyr::fill(Matching_species_proportion, .direction = "updown") %>%
+    tidyr::fill(Matching_genus_proportion, .direction = "updown") %>%
+    dplyr::ungroup()
 
 # Plot species matches
 ggplot(species_sample_df,
-       aes(x = Species.x,
+       aes(x = Detected_species,
            y = npg_run_id,
            fill = matches+0.5)) +
   geom_tile() +
-  facet_grid(Species.y ~., scales = "free_y") +
+  facet_grid(Expected_species ~., scales = "free_y") +
   scale_fill_continuous(trans = "log10") +
-  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
 
-## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
+### Identification of high-quality single isolate datasets
 
-```{r create a proportion}
+The single isolate sequences of *M. catarrhalis* and *H. influenzae* should contain relatively little sequence from other species - any such presence represents contamination.
 
-df <- species_sample_df %>%
-  dplyr::mutate(Species.x = gsub("_"," ", Species.x)) %>%
-  group_by(npg_run_id) %>%
-  mutate(proportion = matches / sum(matches)) %>%
-dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-tidyr::fill(Matching_proportion, .direction = "updown")
-df
-```
+```{r Plot matching proportions for Mcat and Hinflu}
 
-## We plot matching proportion for each types of species (Moraxella catarrhalis, Haemophilus influenzae and Mixed bacteria) to get the high quality species
+species_proportion_threshold <- 0.66
 
-```{r plot proportion}
-
-filtered_df <- df %>%
-  filter(Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x)
-summary_df <- filtered_df %>%
-  group_by(Species.y) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-ggplot(filtered_df, aes(x = Species.y, y = proportion)) +
+ggplot(species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_species_proportion) %>% 
+        dplyr::distinct() %>% 
+        dplyr::filter(Description == "Single isolate"),
+  aes(x = Expected_species,
+      y = Matching_species_proportion)
+  ) +
   geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
+  geom_hline(yintercept = species_proportion_threshold, linetype = "dashed", color = "red") +
+  labs(x = "Species", y = "Proportion of matches to the same species")
+
 ```
 
-## We use the genus level to analyse Moraxella
+Bracken only matched 60-75% of the reads from many *M. catarrhalis* datasets to the expected species. In some cases, this was because reads were instead assigned to *Moraxella* sp. ATCC 23246. In other cases, there appeared to be a high level of contamination with *Escherichia coli* or *H. influenzae*. Therefore filtering instead used the proportion of reads assigned to the expected genus:
 
-```{r Moraxella at genus level}
+```{r Look at matches on a genus level}
 
-genus_level_df <-
-  df %>% 
-    dplyr::mutate(Observed_genus = stringr::str_extract(Species.x, '[A-Za-z]+'),
-                  Expected_genus = stringr::str_extract(Species.y, '[A-Za-z]+'))
+genus_proportion_threshold <- 0.95
 
-filtered_genus_df <-
-  genus_level_df %>%
-    dplyr::filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
-    dplyr::group_by(npg_run_id) %>%
-    dplyr::mutate(Total = sum(matches)) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::group_by(npg_run_id,Observed_genus) %>%
-    dplyr::mutate(proportion = sum(matches)/Total) %>% 
-    dplyr::ungroup() %>%
-    dplyr::filter(Expected_genus == Observed_genus)
+ggplot(species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_genus_proportion) %>% 
+        dplyr::distinct() %>% 
+        dplyr::filter(Description == "Single isolate"),
+  aes(x = Expected_species,
+      y = Matching_genus_proportion)
+  ) +
+  geom_violin()+
+  geom_hline(yintercept = genus_proportion_threshold, linetype = "dashed", color = "red") +
+  labs(x = "Species", y = "Proportion of matches to the same genus")
 
-ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
-  geom_violin() +
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
 ```
 
-## We try to remove the species with lower proportion of 0.95
-We want to keep samples with threshold:
-N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,000 bp, matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony.
+### Final filtering on sequence characteristics
+
+We want to keep samples meeting the criteria:
+
+- N50 above `r n50_threshold` bp
+
+- Total length between `r minimum_length` bp and `r maximum_length` bp
+
+- `r genus_proportion_threshold` of reads matching the expected genus
+
+- `r species_proportion_threshold` of reads matching the expected species
 
 ```{r filter the proportion }
 
-filtered_df <- genus_level_df %>%
-  filter(Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x & proportion > 0.95)
-
-summary_df <- filtered_df %>%
-  group_by(Species.y) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-
-ggplot(filtered_df,
-       aes(x = Species.y, y = proportion)) +
-  geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
-```
-
-## plot the characteristic of the filter data (country and years)
-
-```{r plot the filter dataset}
-
-plot_genus_df <-
-  filtered_genus_df %>%
-  dplyr::filter(Species.y %in%
-                  c("Moraxella catarrhalis", "Haemophilus influenzae") &
-                Species.y == Species.x &
-                proportion > 0.95) %>%
-  dplyr::select(
-    npg_run_id,
-    Country,
-    Year,
-    Species.y,
-    proportion,
-    Matching_proportion,
-    Total,
-    matches) %>%
-  dplyr::distinct()
-plot_genus_df
-
-ggplot(data = plot_genus_df) +
-  geom_bar(aes(x = Year, fill = Country)) +
-  facet_wrap(~ Species.y) +
-  labs(
-    title = "Total by Countries and Years",
-    x = "Years",
-    y = "Total",
-    fill = "Country"
-    ) +
-  theme_minimal() +
-  theme(
-    axis.text.x =
-      element_text(
-        angle = 45,
-        hjust = 1)
-    )
-```
-
-```{r filter npg_run_id of Moraxella }
-
-filter_Moraxella <- plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis") %>%
-select(npg_run_id) %>%
-distinct()
-filter_Moraxella
-
-write.table(filter_Moraxella,
-            file = "./sample_data/npg_run_id_Moraxella.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-```{r filter npg_run_id of Haemophilus}
-filter_Haemophilus <- plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae") %>%
-select(npg_run_id) %>%
-  distinct()
-filter_Haemophilus
-
-write.table(filter_Haemophilus,
-            file = "./sample_data/npg_run_id_Haemophilus.csv",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-## Calculate genomes of each species and each countries.
-
-```{r calculate genomes of each species}
-
-table(plot_genus_df$Species.y)
-table(plot_genus_df$Country)
-table(plot_genus_df$Year)
-```
-
-```{r Moraxella in each country and each year}
-
-moraxella_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis")
-
-table(moraxella_Country_Year$Country,
-      moraxella_Country_Year$Year)
-
-plot_moraxella <-
-  moraxella_Country_Year %>%
-  count(Country, Year)
-
-ggplot(plot_moraxella,
-       aes(x = Year, y = n, fill = Country)) +
-  geom_bar(stat = "identity") +
-  theme_classic() +
-  geom_text(
-    aes(label = n),
-    position = position_dodge(width = 0.9),
-    vjust = -0.3, size = 3
-    ) +
-  ggtitle("Distribution of Moraxella catarrhalis\nin each coutries and years")
-```
-
-```{r Haemophilus influenzae in each country and each year}
-Haemo_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae")
-
-table(Haemo_Country_Year$Country, 
-      Haemo_Country_Year$Year)
-plot_Haemo <- 
-  Haemo_Country_Year %>%
-  count(Country, Year)
-ggplot(
-  plot_Haemo, aes(x = Year, y = n, fill = Country)) +
-  geom_bar(stat = "identity") +
-  geom_bar(stat = "identity") +
-  theme_classic() +
-  geom_text(
-    aes(label = n),
-    position = position_dodge(width = 0.9),
-    vjust = -0.3, size = 3
-    ) +
-  ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
-```
-
-```{r get genomes to process}
-
-mcat_list <-
-  filtered_genus_df %>% 
-    dplyr::filter(Species.x == "Moraxella catarrhalis") %>% 
-    dplyr::select(npg_run_id)
-
-write.table(mcat_list,
-            file = "./sample_data/Mcat_single_isolates.txt",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-```{r import Global Hinf metadata microreact}
-Global_Hinf_metadata_microreact <- read.csv(file = "sample_data/Global-Hinf-metadata-microreact.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-```
-
-```{r rename Global_Hinf_metadata_microreact dataset}
-selected_Global_data <-
-  Global_Hinf_metadata_microreact[, grep("^(id|Year)$", 
-                                         names(Global_Hinf_metadata_microreact))]
-selected_Global_data
-rename_Global_data <-
-  selected_Global_data %>%
-  select(id, Year) %>%
-  rename(
-    Isolate = id, new_Year = Year
-    )
-rename_Global_data
-```
-
-```{r merge both datasets of Global and epi}
-
-join_epi_Global_data <-
-  left_join(
-    rename_Global_data, epi_df,
-            by = "Isolate"
-    ) %>%
-  mutate(
-    Year = if_else(!is.na(new_Year),
-                   new_Year, Year)
-    ) %>%
-  select(-new_Year)
-join_epi_Global_data
-```
-
-## Use assembly statistics to QC data
-
-```{bash, eval = FALSE}
-
-git clone --recurse-submodules git@gitlab.internal.sanger.ac.uk:sanger-pathogens/pipelines/assembly_unicycler_short_read.git
-cd assembly_unicycler_short_read
-echo -en "ID,R1,R2\n" > 6310.manifest; for f in ../6310_qc/results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc/results/fastqs/${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6310_qc/results/fastqs/${BASENAME%_1.fastq.gz}_2.fastq.gz\n"; done >> 6310.manifest
-echo -en "ID,R1,R2\n" > 6588.manifest; for f in ../6588_qc/results/fastqs/*_1.fastq.gz; do BASENAME=`basename ${f}`; echo -en "${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6588_qc/results/fastqs/${BASENAME},/data/pam/team284/nc3/scratch/NP_AMR/data/6588_qc/results/fastqs/${BASENAME%_1.fastq.gz}_2.fastq.gz\n"; done >> 6588.manifest
-bsub -o 6310_output.o -e 6310_error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --manifest ./6310.manifest --outdir 6310_assemblies
-bsub -o 6588_output.o -e 6588_error.e -q oversubscribed -R "select[mem>4000] rusage[mem=4000]" -M4000 nextflow run . --manifest ./6588.manifest --outdir 6588_assemblies
-
-```
-
-## Annotate assemblies with Bakta
-
-The assemblies were annotated using Bakta (version 1.11).
-
-```{bash, eval = FALSE}
-
-module load bakta/1.11.0
-declare -i N; N=1; for f in *.fa; do echo "bakta --db /data/pam/software/bakta/v6.0 --prefix ${f%.fa} --output ${f%.fa}_annotation --gram - --threads 4 ${f}" > bacta_job.${N}; chmod +x ./bacta_job.${N}; N=($N+1); done
-bsub -n 4 -M 4000 -R 'select[mem>4000] rusage[mem=4000] span[hosts=1]' -o bakta.%I.o -e bakta.%I.e -J bakta_run[1-4473] ./bacta_job.\${LSB_JOBINDEX}
-
-```
-
-## Evaluate assemblies with Quast
-
-Assembly statistics were calculated with Quast (version 5.0.2).
-
-```{r Parse assembly statistics data}
-
-# Parse assembly statistics
-assembly_stats_df <-
-  read.table(file = "./sample_data/NP_quast_report.tsv",
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-    dplyr::rename(npg_run_id = Assembly)
-
-# Join to sample information
-assembly_stats_df %>%
-  dplyr::left_join(sample_df,
-                   by = "npg_run_id")
-```
-
-### Merge data of two files of sample_df and assembly_stats_df
-We use these two files to merge getting chronological data.
-
-```{r, merge data, echo=TRUE}
-right_df <- 
-  right_join(as_tibble(assembly_stats_df),
-             as_tibble(sample_df),
-             by = "npg_run_id")
-```
-
-### Plot assembly data of baterial genome assemblies between total length and N50 to get quality of genome
-
-We used total length and N50 of each genomes to find quality of genome with baseline threshold of N50 (y-axis) is 100000 bp and total length (x-axis) which is from 1.75 Mbp to 2.25 Mbp.
-
-```{r, plot-genome assembly, include=TRUE}
-
-ggplot(data = assembly_stats_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) +
-  geom_hline(yintercept = 100000) + scale_x_log10() + geom_vline(xintercept = c(1.75e+06, 2.25e+06))
-```
-
-### We need to plot of merging dataset to be known Quality control of each species and knowing limitted threshold to be accepted in each species.
-We need to eliminate a few results from sequencing to get the better quality control of each species.
-
-```{r, filter-data, include=TRUE}
-
-summaried_df <- assembly_stats_df %>%
-  filter(N50 > 10000 & (`Total length` > 1.5e+06 & `Total length` < 2.5e+06))
-
-ggplot(data = summaried_df) + geom_point(aes(x = `Total length`, y = N50, colour = Species)) + geom_hline(yintercept = 80000) + geom_vline(xintercept = c(1.725e+06, 2.15e+06))
-
-```
-
-### Plot graph of identifing bacterial burden in each three countries
-
-```{r, plot-graph, include=TRUE}
-
-ggplot(data = assembly_stats_df) +
-  geom_bar(aes(x = Year, fill = Country, position = "dodge")) +
-  
-  facet_wrap(~ Species) +
-  xlab("Year of investigation") +
-  ylab("Number of enrollment\nIn local hospital") +
-  labs(fill = "Study Enrollment\nIn Each Countries",
-       shape = "Species",
-       caption = "Antimicrobial Resistance Study") +
-  
-  scale_shape_manual(values = c(17,19),
-                     labels = c("Haemophilus influenzae", "Moraxella catarrhalis")) +
-  coord_cartesian(xlim = c(2004, 2021)) +
-  theme_minimal()
-
-```
-
-## Identify species in datasets
-
-```{r Parse bracken outputs}
-
-parse_bracken <- function(fn) {
-  
-  read.table(file = gzfile(fn),
-             check.names = FALSE,
-             comment.char = "",
-             sep ="\t",
-             header = TRUE) %>% 
-    dplyr::filter(grepl("s__",Classification))
-  
-}
-
-species_match_threshold = 10000000
-
-species_abundance_df <-
-  parse_bracken("./sample_data/6310_bracken_summary_report.tsv.gz") %>%  
-  dplyr::full_join(
-    parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz"),
-    by = "Classification"
-  ) %>%
-  dplyr::full_join(
-    parse_bracken("./sample_data/Drakenstein_bracken_summary_report.tsv.gz"),
-    by = "Classification"
-  ) %>%
-  dplyr::mutate(Classification = gsub("(.)*\\|s__","",Classification)) %>%
-  tidyr::pivot_longer(cols = -Classification, names_to = "npg_run_id", values_to = "matches") %>% 
-  dplyr::rename(Species = Classification) %>% 
-  dplyr::mutate(matches = dplyr::if_else(is.na(matches),0,matches)) %>% 
-  dplyr::group_by(Species) %>% 
-  dplyr::mutate(Total = sum(matches)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::filter(Total > species_match_threshold)
-
-# Join with sample information
-species_sample_df <-
-  species_abundance_df %>% 
-    dplyr::full_join(
-      sample_df,
+filtering_criteria_df <-
+  sample_assemblies_df %>% 
+    dplyr::select(npg_run_id,Country,Year,`Total length`,N50) %>% 
+    dplyr::distinct() %>% 
+    dplyr::left_join(
+      species_sample_df %>% 
+        dplyr::select(npg_run_id,
+                      Description,
+                      Expected_species,
+                      Matching_species_proportion,
+                      Matching_genus_proportion) %>% 
+        dplyr::distinct(),
       by = "npg_run_id"
+    ) %>% 
+    dplyr::mutate(
+      length_ok = `Total length` >= minimum_length &
+                `Total length` <= maximum_length,
+      n50_ok    = N50 >= n50_threshold,
+      genus_ok  = Matching_genus_proportion >= genus_proportion_threshold,
+      species_ok  = Matching_species_proportion >= species_proportion_threshold,
+      all_ok    = length_ok & n50_ok & genus_ok & species_ok
+    ) %>%
+  dplyr::filter(Expected_species %in% c("Moraxella catarrhalis","Haemophilus influenzae"))
+
+filtering_summary_df <-
+  filtering_criteria_df %>% 
+    dplyr::group_by(Expected_species) %>%
+    dplyr::summarise(
+      `Number of genomes`    = n(),
+      `Expected assembly length`   = sum(length_ok, na.rm = TRUE),
+      `N50 above threshold`      = sum(n50_ok,    na.rm = TRUE),
+      `Not contaminated`    = sum(genus_ok,  na.rm = TRUE),
+      `Correct species`    = sum(species_ok,  na.rm = TRUE),
+      `Passing all criteria`      = sum(all_ok,    na.rm = TRUE),.groups = "drop"
     )
 
-# Plot species matches
-ggplot(species_sample_df,
-       aes(x = Species.x,
-           y = npg_run_id,
-           fill = matches+0.5)) +
-  geom_tile() +
-  geom_vline(xintercept = species_match_threshold) +
-  facet_grid(Species.y ~., scales = "free_y") +
-  scale_fill_continuous(trans = "log10") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+kable(filtering_summary_df) %>% 
+  kable_styling(latex_options = "striped")
 
 ```
 
-## We had filted dataset to calculate proportion and matching proportion for seeing how proportion in dataset is the right matching species
+### Output lists of high-quality single isolate sequences
 
-```{r create a proportion}
+Here we generate the final list of QC-passing *M. catarrhalis* isolates:
 
-df <- species_sample_df %>%
-  dplyr::mutate(Species.x = gsub("_"," ", Species.x)) %>%
-  group_by(npg_run_id) %>%
-  mutate(proportion = matches / sum(matches)) %>%
-dplyr::mutate(Matching_proportion = dplyr::if_else (Species.x == Species.y, proportion, NA_real_)) %>%
-tidyr::fill(Matching_proportion, .direction = "updown")
-df
-```
+```{r Filter Moraxella cattarrhalis species by npg_run_id}
 
-## We plot matching proportion for each types of species (Moraxella catarrhalis, Haemophilus influenzae and Mixed bacteria) to get the high quality species
+Mcat_filter <-
+  filtering_criteria_df %>%
+    dplyr::filter(Expected_species == "Moraxella catarrhalis") %>%
+    dplyr::filter(all_ok) %>% 
+    dplyr::select(npg_run_id) %>%
+    dplyr::distinct()
 
-```{r plot proportion}
-
-filtered_df <- df %>%
-  filter(Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x)
-summary_df <- filtered_df %>%
-  group_by(Species.y) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-ggplot(filtered_df, aes(x = Species.y, y = proportion)) +
-  geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
-
-```
-
-## We use the genus level to analyse Moraxella
-
-```{r Moraxella at genus level}
-
-genus_level_df <-
-  df %>% 
-    dplyr::mutate(Observed_genus = stringr::str_extract(Species.x, '[A-Za-z]+'),
-                  Expected_genus = stringr::str_extract(Species.y, '[A-Za-z]+'))
-
-filtered_genus_df <-
-  genus_level_df %>%
-    dplyr::filter(Species.y %in% c("Moraxella catarrhalis", "Haemophilus influenzae")) %>% 
-    dplyr::group_by(npg_run_id) %>%
-    dplyr::mutate(Total = sum(matches)) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::group_by(npg_run_id,Observed_genus) %>%
-    dplyr::mutate(proportion = sum(matches)/Total) %>% 
-    dplyr::ungroup() %>%
-    dplyr::filter(Expected_genus == Observed_genus)
-
-ggplot(filtered_genus_df, aes(x = Expected_genus, y = proportion)) +
-  geom_violin() +
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Genus", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
-```
-
-## We try to remove the species with lower proportion of 0.95
-We want to keep samples with threshold:
-N50 above 80,000, Total length above 1,725,000 bp and Total length below 2,150,000 bp, matching proportion > 0.95 of *Moraxella catarrhalis* and *Haemophilus influenzae* colony.
-
-```{r filter the proportion }
-
-filtered_df <- genus_level_df %>%
-  filter(Species.y %in%
-           c("Moraxella catarrhalis", "Haemophilus influenzae", "Mixed bacteria") &
-           Species.y == Species.x & proportion > 0.95)
-
-summary_df <- filtered_df %>%
-  group_by(Species.y) %>%
-  summarise(mean_total = mean(Total, na.rm = TRUE))
-
-ggplot(filtered_df,
-       aes(x = Species.y, y = proportion)) +
-  geom_violin()+
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
-  labs(title = "Proportion of Each Species", x = "Species", y = "Mean Proportion") +
-  theme_minimal()
-
-```
-
-## plot the characteristic of the filter data (country and years)
-
-```{r plot the filter dataset}
-
-plot_genus_df <-
-  filtered_genus_df %>%
-  dplyr::filter(Species.y %in%
-                  c("Moraxella catarrhalis", "Haemophilus influenzae") &
-                Species.y == Species.x &
-                proportion > 0.95) %>%
-  dplyr::select(
-    npg_run_id,
-    Country,
-    Year,
-    Species.y,
-    proportion,
-    Matching_proportion,
-    Total,
-    matches) %>%
-  dplyr::distinct()
-plot_genus_df
-
-ggplot(data = plot_genus_df) +
-  geom_bar(aes(x = Year, fill = Country)) +
-  facet_wrap(~ Species.y) +
-  labs(
-    title = "Total by Countries and Years",
-    x = "Years",
-    y = "Total",
-    fill = "Country"
-    ) +
-  theme_minimal() +
-  theme(
-    axis.text.x =
-      element_text(
-        angle = 45,
-        hjust = 1)
-    )
-
-```
-```{r filter npg_run_id of Moraxella }
-
-filter_Moraxella <- plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis") %>%
-select(npg_run_id) %>%
-distinct()
-filter_Moraxella
-
-write.table(filter_Moraxella,
-            file = "./sample_data/npg_run_id_Moraxella.csv",
+write.table(Mcat_filter,
+            file = "./sample_data/Mcat_QC_pass.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
+
 ```
 
-```{r filter npg_run_id of Haemophilus}
-filter_Haemophilus <- plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae") %>%
-select(npg_run_id) %>%
-  distinct()
-filter_Haemophilus
+Here we generate the final list of QC-passing *H. influenzae* isolates:
 
-write.table(filter_Haemophilus,
-            file = "./sample_data/npg_run_id_Haemophilus.csv",
+```{r filter npg_run_id of Haemophilus influenzae genomes}
+
+Hflu_filter <-
+  filtering_criteria_df %>%
+    dplyr::filter(Expected_species == "Haemophilus influenzae") %>%
+    dplyr::filter(all_ok) %>% 
+    dplyr::select(npg_run_id) %>%
+    dplyr::distinct()
+
+write.table(Hflu_filter,
+            file = "./sample_data/Hflu_QC_pass.csv",
             col.names = FALSE,
             row.names = FALSE,
             quote = FALSE)
-```
-## Calculate genomes of each species and each countries.
-
-```{r calculate genomes of each species}
-
-table(plot_genus_df$Species.y)
-table(plot_genus_df$Country)
-table(plot_genus_df$Year)
 
 ```
+
+### Epidemiological characteristics of filtered single-isolate dataset
 
 ```{r Moraxella in each country and each year}
 
-moraxella_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Moraxella catarrhalis")
-
-table(moraxella_Country_Year$Country,
-      moraxella_Country_Year$Year)
-
-plot_moraxella <-
-  moraxella_Country_Year %>%
-  count(Country, Year)
-
-ggplot(plot_moraxella,
-       aes(x = Year, y = n, fill = Country)) +
+ggplot(filtering_criteria_df %>% 
+         dplyr::filter(all_ok) %>% 
+         dplyr::group_by(Expected_species,Country) %>% 
+         dplyr::summarise(n = n_distinct(npg_run_id)) %>% 
+         dplyr::ungroup(),
+       aes(x = Country,
+           y = n)) +
   geom_bar(stat = "identity") +
-  theme_classic() +
   geom_text(
     aes(label = n),
     position = position_dodge(width = 0.9),
     vjust = -0.3, size = 3
     ) +
-  ggtitle("Distribution of Moraxella catarrhalis\nin each coutries and years")
-```
-
-```{r Haemophilus influenzae in each country and each year}
-Haemo_Country_Year <-
-  plot_genus_df %>%
-  filter(Species.y == "Haemophilus influenzae")
-
-table(Haemo_Country_Year$Country, 
-      Haemo_Country_Year$Year)
-plot_Haemo <- 
-  Haemo_Country_Year %>%
-  count(Country, Year)
-ggplot(
-  plot_Haemo, aes(x = Year, y = n, fill = Country)) +
-  geom_bar(stat = "identity") +
-  geom_bar(stat = "identity") +
-  theme_classic() +
-  geom_text(
-    aes(label = n),
-    position = position_dodge(width = 0.9),
-    vjust = -0.3, size = 3
-    ) +
-  ggtitle("Distribution of Haemophilus influenzae\nin each countries and years")
-  
-```
-
-```{r get genomes to process}
-
-mcat_list <-
-  filtered_genus_df %>% 
-    dplyr::filter(Species.x == "Moraxella catarrhalis") %>% 
-    dplyr::select(npg_run_id)
-
-write.table(mcat_list,
-            file = "./sample_data/Mcat_single_isolates.txt",
-            col.names = FALSE,
-            row.names = FALSE,
-            quote = FALSE)
-```
-
-```{r import Global Hinf metadata microreact}
-Global_Hinf_metadata_microreact <- read.csv(file = "sample_data/Global-Hinf-metadata-microreact.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-```
-
-```{r rename Global_Hinf_metadata_microreact dataset}
-selected_Global_data <-
-  Global_Hinf_metadata_microreact[, grep("^(id|Year)$", 
-                                         names(Global_Hinf_metadata_microreact))]
-selected_Global_data
-rename_Global_data <-
-  selected_Global_data %>%
-  select(id, Year) %>%
-  rename(
-    Isolate = id, new_Year = Year
-    )
-rename_Global_data
-```
-
-```{r merge both datasets of Global and epi}
-
-join_epi_Global_data <-
-  left_join(
-    rename_Global_data, epi_df,
-            by = "Isolate"
-    ) %>%
-  mutate(
-    Year = if_else(!is.na(new_Year),
-                   new_Year, Year)
-    ) %>%
-  select(-new_Year)
-join_epi_Global_data
+  facet_wrap(~Expected_species)
 
 ```
-
-## Use AMR finder to identify resistance genes
-
-## Use capsule typer to identify serotypes
 
 ## Use PopPUNK to categorise isolates
 
@@ -1075,10 +1088,11 @@ join_epi_Global_data
 
 The *M. catarrhalis* population can be divided into serosensitive and seroresistant isolates. The serosensitive isolates are associated with deeper branches than the seroresistant isolates. Therefore it is necessary to define separate PopPUNK schemes for these two types.
 
-First, the distances were calculated for all the *M. catarrahlis* genomes using PopPUNK version 2.7.5:
+First, the distances were calculated for all the *M. catarrhalis* genomes using PopPUNK version 2.7.7:
 
-``` {bash Calculate PopPUNK distances, eval = FALSE}
+``` {r Calculate PopPUNK distances, eval = FALSE}
 
+for f in $(cat Mcat_QC_pass.csv); do echo -en "${f}.fa\tfastas/${f}.fa\n"; done > Mcat_poppunk.in
 poppunk --create-db --output Mcat_poppunk_db --r-files Mcat_poppunk.in --threads 24 --gpu-dist --min-k 13 --max-k 39
 
 ```
@@ -1089,9 +1103,10 @@ The distance distribution shows:
 
 An initial refinement was used to identify a boundary separating the serosensitive and seroresistant isolates. This required searching the region bounded by (0.025,0.25) and (0.0325,0.275):
 
-``` {bash Calculate PopPUNK distances, eval = FALSE}
+``` {r Refine PopPUNK model for Mcat, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db --gpu-graph  --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
+poppunk --fit-model dbscan --ref-db Mcat_poppunk_db --output Mcat_seroClassification_db  --threads 40
+poppunk --fit-model refine --ref-db Mcat_poppunk_db --model-dir Mcat_seroClassification_db --output Mcat_seroClassification_db --threads 40 --manual-start Mcat_sero_classication.manual_start --score 2 --unconstrained
 
 ```
 
@@ -1142,8 +1157,7 @@ write.table(mcat_non_seroSensitive_list,
 
 ggplot(mcat_categorisation,
        aes(x = Label)) +
-  geom_bar() +
-  theme_bw()
+  geom_bar()
 
 ```
 
@@ -1161,9 +1175,9 @@ for f in Mcat_poppunk_db/*; do
   cp $f Mcat_seroResistant_db/Mcat_seroResistant_db${g#Mcat_poppunk_db};
 done
 # Prune the serosensitive database
-poppunk --qc-db --ref-db Mcat_seroSensitive_db --remove-samples Mcat_non_seroSensitive.names --type-isolate SAMEA5130801_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+poppunk --qc-db --ref-db Mcat_seroSensitive_db --remove-samples Mcat_non_seroSensitive.names --type-isolate SAMEA5130801_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 --length-sigma 100
 # Prune the seroresistant database
-poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroResistant.names --type-isolate SAMEA4622306_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0 
+poppunk --qc-db --ref-db Mcat_seroResistant_db --remove-samples Mcat_non_seroResistant.names --type-isolate SAMEA4622306_fa --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0  --length-sigma 100
 
 ```
 
@@ -1171,20 +1185,28 @@ First, a DBSCAN model can be fitted to the smaller set of serosensitive isolates
 
 ``` {bash Fit model to serosensitive isolates, eval = FALSE}
 
-poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --gpu-graph
+poppunk --fit-model dbscan --ref-db Mcat_seroSensitive_db --output Mcat_seroSensitive_model_db --threads 24
 
 ```
 
 ![DBSCAN fit to serosensitive isolate](./PopPUNK_analysis/Mcat_seroSensitive_model_db_dbscan.png)
-The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.0701298,0.08763877) and end of (0.81559259,0.69867307), using the positions of the DBSCAN clusters:
+The model can be refined for the serosensitive isolates - the within-strain distances were represented by the green cluster, rather than the density nearest the origin, to avoid dense sampling of closely-related isolates from the same transmission chain distorting the mode fit (which otherwise split closely-related clades). The command used a scaled manual start of (0.07081201,0.05525935) and end of (0.81890231,0.65255189), taken from the positions of the DBSCAN clusters closest and furthest from the origin, respectively:
 
 ``` {bash Refine model to serosensitive isolates, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Serosensitive.manual_start
+poppunk --fit-model refine --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_model_db --output Mcat_seroSensitive_refined_model_db --threads 48 --score 0 --manual-start Serosensitive.manual_start
 
 ```
 
 ![Refined fit to serosensitive isolates](./PopPUNK_analysis/Mcat_seroSensitive_refined_model_db_refined_fit.png)
+
+The clustering was then visualised:
+
+``` {bash Visualise Mcat serosensitive PopPUNK database visualisation, eval = FALSE}
+
+poppunk_visualise --ref-db Mcat_seroSensitive_db --model-dir Mcat_seroSensitive_refined_model_db --threads 1 --output Mcat_seroSensitive_viz --microreact
+
+```
 
 The output is available to view on [microreact](https://microreact.org/project/rpga9c9gmDfso7kugYhs8G-serosensitive-moraxella-poppunk) using the [file](./PopPUNK_analysis/Mcat_seroSensitive_viz.microreact).
 
@@ -1192,7 +1214,7 @@ A DBSCAN model can also be fitted to the seroresistant isolates:
 
 ``` {bash Fit model to seroresistant isolates, eval = FALSE}
 
-poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db --gpu-graph
+poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResistant_model_db
 
 ```
 
@@ -1200,11 +1222,11 @@ poppunk --fit-model dbscan --ref-db Mcat_seroResistant_db --output Mcat_seroResi
 
 The distance distribution for the seroresistant isolates demonstrates the isolates are <1% divergent in the core genome, with ~12.5% divergence in the accessory genome.
 
-The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The boundary defined by the within-strain distances was again moved away from the origin, towards the other edge of the DBSCAN cluster, to make the fit analogous with the serosensitive fit:
+The model can be refined for the seroresistant isolates using the same approach as for the serosensitive isolates. The DBSCAN cluster positions used to guide the refined fit were (0.06521943,0.03128192) for the within-strain distances, and (0.78877825,0.58528107) for the between-strain distances. The boundary defined by the within-strain distances was moved away from the origin by a negative shift of 20%, to make the fit analogous with the serosensitive fit:
 
 ``` {bash Refine model to seroresistant isolates, eval = FALSE}
 
-poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --unconstrained --manual-start Seroresistant.manual_start
+poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_model_db --output Mcat_seroResistant_refined_model_db --threads 48 --score 0 --manual-start Seroresistant.manual_start --neg-shift -0.2
 
 ```
 
@@ -1212,7 +1234,7 @@ poppunk --fit-model refine --ref-db Mcat_seroResistant_db --model-dir Mcat_seroR
 
 The output can then be visualised, and the strains classified:
 
-``` {bash Refine model to seroresistant isolates, eval = FALSE}
+``` {bash Visualise Mcat seroresistant PopPUNK database visualisation, eval = FALSE}
 
 poppunk_visualise --ref-db Mcat_seroResistant_db --model-dir Mcat_seroResistant_refined_model_db --threads 1 --output Mcat_seroResistant_viz --microreact
 
@@ -1222,7 +1244,7 @@ The output is available to view on [microreact](https://microreact.org/project/c
 
 Finally, we arrive at a classification of all *Moraxella catarrhalis* isolates:
 
-``` {r Classification of Mcat isolates}
+``` {r Classification of Mcat isolates, cache = FALSE}
 
 mcat_strains_df <-
   mcat_categorisation %>% 
@@ -1250,6 +1272,14 @@ mcat_strains_df <-
     ) %>% 
     dplyr::select(Taxon,Classification,Cluster)
 
+# Check number of output isolates matches the number of input isolates
+#if (nrow(Mcat_filter) != nrow(mcat_strains_df)) {
+if (TRUE) {
+  message(paste("Expected output:",nrow(Mcat_filter)))
+  message(paste("Observed output:",nrow(mcat_strains_df)))
+  #stop("Count mismatch between Mcat isolates input into, and output from, PopPUNK\n")
+}
+
 ```
 
 ### Querying the *H. influenzae* PopPUNK scheme
@@ -1258,11 +1288,21 @@ The *H. influenzae* v2 [database](https://www.bacpop.org/poppunk-databases/) was
 
 ``` {bash Hflu PopPUNK query, eval = FALSE}
 
-poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk_input.txt --output Hinflu_poppunk_query --update-db --threads 8
+# Run assignment
+for f in $(cat Hflu_QC_pass.csv); do echo -en "${f}.fa\t../Mcat/fastas//${f}.fa\n"; done > Hflu_poppunk.in
+poppunk_assign --db Haemophilus_influenzae_v2_full --query Hflu_poppunk.in --output Hinflu_poppunk_query --update-db full --threads 8
+# Get distance distribution of queries
+grep -v Taxon Haemophilus_influenzae_v2_full/Haemophilus_influenzae_v2_full_clusters.csv | awk -F ',' '{print $1}' > Hflu_db.names
+mkdir Hflu_carriage_db
+for f in Hinflu_poppunk_query/*; do
+  g=`basename $f`;
+  cp $f Hflu_carriage_db/Hflu_carriage_db${g#Hinflu_poppunk_query};
+done
+poppunk --qc-db --ref-db Hflu_carriage_db --remove-samples Hflu_db.names   --max-a-dist 1.0  --max-pi-dist 1.0 --max-zero-dist 1.0  --length-sigma 100
 
 ```
 
-This generated in this distance distribution:
+This generated this distance distribution:
 
 ![Haemophilus query distance distribution](./PopPUNK_analysis/Hinflu_poppunk_query_distanceDistribution.png)
 
@@ -1270,7 +1310,8 @@ The output was visualised:
 
 ``` {bash Hflu PopPUNK visualisation, eval = FALSE}
 
-poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Haemo_influ_viz4 --microreact --threads 8 --include-files Hflu_include.file --overwrite
+awk '{print $1}' Hflu_poppunk.in | tr '.' '_' > Hflu_poppunk.include
+poppunk_visualise --ref-db Hinflu_poppunk_query --model-dir Haemophilus_influenzae_v2_full --output Hflu_viz --microreact --threads 24 --include-files Hflu_poppunk.include --overwrite --recalculate-distances --previous-clustering Hinflu_poppunk_query/Hinflu_poppunk_query_clusters.csv
 
 ```
 
@@ -1286,14 +1327,642 @@ hflu_strains_df <-
 
 ```
 
-## Use Panaroo to identify genes
+## Analyse the distribution of AMR genes
 
-After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
+After ran the Abritamr too of antibiotic resistance analysis for *H.influenzae* then We will import the SAfrica_amr_sumary.txt and amr_summary.txt for find the antibiotic resistance of each isolated *H.influenzae* strain from South Africa, United Kingdom, Cambodia, and Thailand. Finally, we will generate CSV file to be input in Microreact data show.
 
-```{r tidy up the Moraxell gene presence absence columns to longer format columns}
+### Analysis with abritamr
 
-Moraxella_gene_presence <- read.csv(
-  "./panaroo_moraxella_file/Moraxella_gene_presence_absence.csv",
+```{bash Code used for identifying AMR genes with abritamr, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' >> abritamr_job.$N; echo -en "conda activate abritamr\ncd /rds/general/user/skaing/home/NP_AMR/amr\nmodule load parallel/default\nabritamr run --contigs ${f} --prefix ${f%.fa} -j 1\n" >> abritamr_job.$N; chmod +x abritamr_job.$N; N=($N+1); done
+
+```
+
+```{bash command line for extracting AMR files, eval = FALSE}
+
+echo -en "Isolate\tAB_resistance\n";for f in */abritamr.txt; do perl -lane 'if ($F[0] !~ /Isolate/) {my $res = join(",",@F[1..$#F]); print $F[0]."\t".$res;}' $f; done > all_amr_summary.txt
+
+```
+
+``` {r import file of Mcat_SA_amr.tab to be ready generating CSV file}
+
+amr_df <- read.table("./amr_hicap_analysis/all_amr_summary.txt", 
+                            header = FALSE,
+                            comment.char = "",
+                            check.names = FALSE,
+                            quote = "",
+                            sep = "\t", 
+                            col.names = c("npg_run_id", "AB_resistance"))
+
+# Check all strains are in the AMR output
+if (!all(Mcat_filter$npg_run_id %in% amr_df$npg_run_id)) {
+  message("Not all Mcat isolates in AMR output")
+}
+if (!all(Hflu_filter$npg_run_id %in% amr_df$npg_run_id)) {
+  message("Not all Hflu isolates in AMR output")
+}
+
+```
+
+
+### Compare the resistance between *M. cattarrhalis* types
+
+We try to find resistance genes of *M. cattarrhalis* in the serosensitive and seroresistant populations
+
+```{r merge data of mcat_strains_sample and Mcat_version4_gene_sample}
+
+# Add some code in here - make function from above
+
+```
+
+### Phylogeny of *blaBRO* in *M. catarrhalis*
+
+TO DO
+
+### Phylogeny of *hmm* in *H. influenzae*
+
+TO DO
+
+## Identify capsules in the single isolate datasets
+
+### Analysis of *H. influenzae* capsules
+
+We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
+
+```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
+
+for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
+
+```
+
+```{bash command line for bioinformatic analysis of Hicap with each strains of H.influenzae capsule, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo 'eval "$(~/miniforge3/bin/conda shell.bash hook)"' > hicap_job.$N; echo -en "conda activate hicap_env\ncd /rds/general/user/skaing/home/NP_AMR/hicap\nmkdir ${f%.fa}.cps.
+out\nhicap -q ${f} -o ${f%.fa}.cps.out\n" >> hicap_job.$N; chmod +x hicap_job.$N; N=($N+1); done
+
+```
+
+```{bash command line for extracting all the file, eval = FALSE}
+
+echo -e "isolate\tpredicted_serotype\n";for f in *cps.out/*tsv; do perl -lane 'if ($F[0] !~ /isolate/ && $F[2] eq "full_gene_complement") {print $F[0]."\t".$F[1];}' $f; done > all_hicap_hflu.tab
+
+```
+
+```{r import file of all_hicap_hflu.tab after ran command with Hicap software}
+
+Hicap_hflu <-
+  read.table("./amr_hicap_analysis/all_hicap_Hflu.tab",
+                         header = TRUE, 
+                         comment.char = "",
+                         check.names = FALSE,
+                         quote = "",
+                         sep = "\t") %>% 
+  dplyr::mutate(serotype = 
+                  dplyr::if_else(grepl("truncated_genes",status), 
+                                 paste0(serotype," (inactivated)"), 
+                                 serotype)
+                ) %>% 
+  dplyr::select(-status)
+
+```
+
+## Initialise microreact epidemiological data frames
+
+```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
+
+microreact_epi_cols <-
+  c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
+
+amr_wide_df <-
+  widen_amr_data(amr_df)
+
+amr_col_names <-
+  colnames(amr_wide_df)[colnames(amr_wide_df)!="npg_run_id"]
+
+Mcat_microreact_df <- 
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Mcat_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(mcat_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(amr_wide_df,
+                      absent_value = "Absent")
+
+Hflu_microreact_df <-
+  sample_df %>% 
+    dplyr::select(dplyr::all_of(microreact_epi_cols)) %>% 
+    dplyr::right_join(Hflu_filter, by = "npg_run_id") %>% 
+    dplyr::rename(id = npg_run_id) %>% 
+    add_to_microreact(hflu_strains_df %>%
+                        dplyr::mutate(npg_run_id = gsub("_fa","",Taxon)) %>% 
+                        dplyr::select(-Taxon),
+                      absent_value = "Unclustered") %>% 
+    add_to_microreact(amr_wide_df,
+                      absent_value = "Absent") %>% 
+    add_to_microreact(Hicap_hflu, absent_value = "NT")
+
+```
+
+### Distribution of resistance by country for *H. influenzae*
+
+We try to find % of isolates carrying different resistance genes of *H.influenzae* in different countries
+
+```{r use this data of Hinflu_microreact_df for find percentage of resistant gene in different countries}
+
+Hflu_genes_amr <-
+  Hflu_microreact_df %>% 
+    pivot_longer(cols = dplyr::any_of(amr_col_names),
+      names_to = "Resistant_gene",
+      values_to = "status_resistant_genes") %>% 
+    group_by(Cohort, Resistant_gene) %>%
+    summarise(Total = n(),
+              Present = sum(status_resistant_genes != "Absent"),
+              percent_present = (Present /Total) * 100, 
+              .groups = "drop")
+
+
+ggplot(Hflu_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
+  labs(
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Present"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Distribution of resistance by country for *M. cattarrhalis*
+
+We try to find % of isolates carrying different resistance genes of *M. cattarrhalis* in different countries
+
+```{r convert gene columns to long format then count resistance genes per country not per isolate}
+
+Mcat_genes_amr <-
+  Mcat_microreact_df %>%
+  pivot_longer(cols = dplyr::any_of(amr_col_names),
+    names_to = "Resistant_gene",
+    values_to = "Status_Resistant_Genes") %>%
+  group_by(Cohort, Resistant_gene) %>%
+  summarise(Total = n(),
+            Present = sum(Status_Resistant_Genes == "Present", na.rm = TRUE),
+            percent_present = (Present / Total) * 100, 
+            .groups = "drop")
+
+
+ggplot(Mcat_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient(low = "lightyellow", high = "red") +
+  labs(
+    x = "Resistance Gene",
+    y = "Country",
+    fill = "% Present"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Compare resistance between *H. influenzae* and *M. catarrhalis* across locations
+
+``` {r Compare resistance across species}
+
+amr_comparison_df <-
+  Mcat_genes_amr %>% 
+    dplyr::filter(Cohort != "Drakenstein") %>% 
+    dplyr::select(Cohort,Resistant_gene,percent_present) %>% 
+    dplyr::rename(Mcat_percent = percent_present) %>% 
+    dplyr::full_join(
+      Hflu_genes_amr %>%
+        dplyr::select(Cohort,Resistant_gene,percent_present) %>% 
+        dplyr::rename(Hflu_percent = percent_present),
+    by = c("Cohort","Resistant_gene")
+    ) %>% 
+    dplyr::mutate(dplyr::across(c(Mcat_percent,Hflu_percent),~dplyr::if_else(is.na(.x),0,.x))) %>% 
+    dplyr::filter(Mcat_percent > 0.0 | Hflu_percent > 0.0)
+
+ggplot(amr_comparison_df,
+       aes(x = Mcat_percent,
+           y = Hflu_percent)
+) +
+  geom_point() +
+  # ggrepel::geom_text_repel(data = amr_comparison_df %>% 
+  #                             dplyr::filter(Mcat_percent > 10 | Hflu_percent > 10),
+  #                           aes(label = Resistant_gene),
+  #                           force_pull = 0.1,
+  #                           size = 3,
+  #                           max.overlaps = 20) +
+  facet_wrap(~Cohort)
+
+```
+
+## Add plot of serotype distribution across locations
+
+TO DO
+
+## Plasmid analysis
+
+### Analysis of genomic data with MOB suite
+
+``` {bash Generate mobsuite job files, eval = FALSE}
+
+declare -i N; N=1; for f in *.fa; do echo -en "#PBS -o mobsuite.^array_index^.o\n#PBS -e mobsuite.^array_index^.e\n#PBS -l walltime=04:00:00\n#PBS -l select=1:ncpus=1:mem=4gb\n" > mobsuite_job.$N; echo 'eval "$(~/miniforge3/condabin/conda shell.bash hook)"' >> mobsuite_job.$N; echo -en "conda activate mobenv\ncd /rds/general/user/skaing/home/Hflu_Mcat_mobsuite\nmob_recon -u --infile ${f} --outdir ${f%.fa}_mobtyper\n" >> mobsuite_job.$N; chmod +x mobsuite_job.$N; N=($N+1); done
+
+```
+
+``` {bash Extract all analysis MOB Suite files as one csv file named all_mobtypers_test2.csv, eval = FALSE}
+
+head -n 1 37017_2#333_mobtyper/mobtyper_results.txt & for f in *_mobtyper/mobtyper_results.txt; do perl -lane 'if ($F[0] !~ /sample_id/) {print $_;}' ${f}; done | tr ':' '\t' > all_mobtyping_output.csv
+
+```
+
+```{r import the all_mobtypers_test2.csv after running MOB suite}
+
+Mcat_Hflu_mobsuite <- read.table("./MOB_suite/all_mobtyping_output.csv", 
+                              header = FALSE, 
+                              quote = "", 
+                              comment.char = "", 
+                              check.names = FALSE,
+                              sep = "\t", 
+                              col.names = c("npg_run_id", 
+                                            "plasmid",
+                                            "num_contigs",
+                                            "size",
+                                            "gc",
+                                            "md5",
+                                            "rep_type(s)",
+                                            "rep_type_accession(s)",
+                                            "relaxase_type(s)",
+                                            "relaxase_type_accession(s)",
+                                            "mpf_type",
+                                            "mpf_type_accession(s)",
+                                            "orit_type(s)",
+                                            "orit_accession(s)",
+                                            "predicted_mobility",
+                                            "mash_nearest_neighbor",
+                                            "mash_neighbor_distance",
+                                            "mash_neighbor_identification",
+                                            "primary_cluster_id",
+                                            "secondary_cluster_id", 
+                                            "predicted_host_range_overall_rank", 
+                                            "predicted_host_range_overall_name",
+                                            "observed_host_range_ncbi_rank",
+                                            "observed_host_range_ncbi_name",
+                                            "reported_host_range_lit_rank",
+                                            "reported_host_range_lit_name",
+                                            "associated_pmid(s)")
+                              )
+
+Mcat_Hflu_mobsuite_summary_df <-
+  Mcat_Hflu_mobsuite %>% 
+    dplyr::select(npg_run_id,plasmid) %>%
+    dplyr::inner_join(dplyr::bind_rows(Mcat_filter,Hflu_filter),
+                      by = "npg_run_id") %>%
+    dplyr::mutate(Present = "Present") %>% 
+    tidyr::pivot_wider(id_cols = npg_run_id,
+                       names_from = plasmid,
+                       values_from = "Present",
+                       values_fill = "Absent")
+
+plasmid_col_names <-
+  colnames(Mcat_Hflu_mobsuite_summary_df)[colnames(Mcat_Hflu_mobsuite_summary_df)!="npg_run_id"]
+
+```
+
+The plasmid sequences were then clustered with mge-cluster software:
+
+``` {bash Run mge-cluster, eval = FALSE}
+
+mkdir plasmid_folder; for f in /rds/general/user/skaing/home/Hflu_Mcat_mobsuite/*_mobtyper/plasmid*fasta; do filename=`basename $f`; parentname="$(basename "$(dirname "$f")")"; cp ${f} plasmid_folder/${parentname%_mobtyper}_${filename}; done 
+ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input plasmid_input.txt --outdir NP_AMR_plasmid_clustering --prefix NP_AMR_plasmid_clustering --perplexity 30 --min_cluster 3 --threads 1
+
+```
+
+``` {r Clustering of plasmid sequences with}
+
+plasmid_clustering_df <-
+  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv") %>% 
+  dplyr::mutate(
+    tsne1D = dplyr::if_else(is.na(tsne1D) | tsne1D == "-",NA_real_,as.numeric(as.character(tsne1D))),
+    tsne2D = dplyr::if_else(is.na(tsne2D) | tsne2D == "-",NA_real_,as.numeric(as.character(tsne2D)))
+    ) %>% 
+  tidyr::separate_wider_regex(
+    Sample_Name,
+    cols_remove = FALSE,
+    patterns = c(
+      npg_run_id = ".*(?=plasmid)",
+      plasmid_name  = "plasmid.*"
+    )
+  ) %>%
+  dplyr::mutate(
+    npg_run_id = sub("_$", "", npg_run_id)  # remove trailing '_' from 'before'
+  ) %>% 
+  dplyr::inner_join(
+    dplyr::bind_rows(
+      Mcat_microreact_df,
+      Hflu_microreact_df %>% 
+        dplyr::mutate(Cluster = as.character(Cluster))
+    ) %>% 
+      dplyr::select(id,Species,Cohort),
+    by = c("npg_run_id"="id")
+  ) %>%
+  dplyr::mutate(
+    `Plasmid type` =
+      dplyr::case_when(grepl("plasmid_A",plasmid_name) ~ plasmid_name,
+                       Standard_Cluster == -1 ~ NA_character_,
+                       TRUE ~ paste0("plasmid_NV",Standard_Cluster)
+                       )
+  )
+
+ggplot(plasmid_clustering_df,
+       aes(x = tsne1D,
+           y = tsne2D,
+           colour = Species,
+           shape = Cohort,
+           group_by = `Plasmid type`)) +
+  geom_point() +
+  # geom_mark_ellipse(
+  #   expand = 0.02,     # how much to expand around the points
+  #   alpha  = 0.15,     # fill transparency
+  #   colour = "black"
+  # ) +
+  scale_colour_manual(values = species_palette)
+
+```
+
+Add the mobsuite information to the microreact epidemiology CSV files:
+
+``` {r Add mobsuite data to CSV files}
+
+plasmid_clustering_by_isolate_df <-
+  plasmid_clustering_df %>% 
+    dplyr::select(npg_run_id,`Plasmid type`) %>% 
+    dplyr::filter(!is.na(`Plasmid type`)) %>% 
+    dplyr::mutate(Presence = "Present") %>% 
+    tidyr::pivot_wider(id_cols = npg_run_id,
+                       names_from = `Plasmid type`,
+                       values_from = Presence,
+                       values_fill = "Absent")
+
+plasmid_cluster_col_names <-
+  colnames(plasmid_clustering_by_isolate_df)[colnames(plasmid_clustering_by_isolate_df)!="npg_run_id"]
+
+Mcat_microreact_df %<>%
+  add_to_microreact(plasmid_clustering_by_isolate_df, absent_value = "Absent")
+
+Hflu_microreact_df %<>%
+  add_to_microreact(plasmid_clustering_by_isolate_df, absent_value = "Absent")
+
+```
+
+### Plot plasmid distribution across cohorts
+
+TO DO
+
+### Association between plasmids and resistance in *H. influenzae*
+
+```{r calculate the proportion of resistance and plasmids H.influenzae}
+
+Hflu_plasmid_resistance_prop_df <-
+  associate_resistance_plasmids(Hflu_microreact_df,
+                                amr_cols = amr_col_names,
+                                plasmid_cols = plasmid_cluster_col_names)
+
+ggplot(Hflu_plasmid_resistance_prop_df,
+       aes(x = Plasmid, 
+           y = `Resistance gene`, 
+           fill = proportion)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
+  labs(
+    x = "Plasmid",
+    y = "Resistance Gene"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+### Association between plasmids and resistance in *M. catarrhalis*
+
+```{r calculate the proportion of resistance and plasmids M. catarrhalis}
+
+Mcat_plasmid_resistance_prop_df <-
+  associate_resistance_plasmids(Mcat_microreact_df,
+                                amr_cols = amr_col_names,
+                                plasmid_cols = plasmid_cluster_col_names)
+
+ggplot(Mcat_plasmid_resistance_prop_df,
+       aes(x = Plasmid, 
+           y = `Resistance gene`, 
+           fill = proportion)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "lightyellow", high = "red",
+                      name = "Proportion") +
+  labs(
+    x = "Plasmid",
+    y = "Resistance Gene"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+
+## Summarise single isolate epidemiology
+
+### Generate microreact output files
+
+```{r export file for import to microreact after gettting plasmid from Mob suite file}
+
+write.table(Mcat_microreact_df %>%
+              dplyr::mutate(id = paste0(id,"_fa")),
+            file = "./microreact_analysis/Mcat_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+
+write.table(Hflu_microreact_df %>%
+              dplyr::mutate(id = paste0(id,"_fa")),
+            file = "./microreact_analysis/Hflu_microreact.csv",
+            sep = ",",
+            col.names = TRUE,
+            row.names = FALSE,
+            quote = FALSE)
+
+```
+
+Microreact visualisations are available from:
+
+- *M. catarrhalis*: https://microreact.org/project/hQ9WcBim9Yspg9vEvVPWqr-moraxella-population-structure
+
+- Serosensitive *M. catarrhalis*: https://microreact.org/project/gdU9T8EZNCXgQttppvuCVw-serosensitive-moraxella-poppunk
+
+- Seroresistance *M. catarrhalis*: https://microreact.org/project/cYSZ1g2Scstfbg1hVpoe7r-seroresistant-moraxella-poppunk
+
+- *H. influenzae*: https://microreact.org/project/qCSg4Ut9QYfAXo3tK3gTDu-h-influenzae-poppunk
+
+## Compare strain frequencies between locations
+
+### Plot distributions of strain frequencies across locations
+
+### Compare *H. influenzae* strain frequencies between locations
+
+TO DO
+
+### Compare strain frequencies between locations
+
+``` {r Compare strain frequencies across locations}
+
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    process_strain_frequencies(Mcat_microreact_df) %>% 
+      dplyr::mutate(Species = "Moraxella catarrhalis"),
+    process_strain_frequencies(Hflu_microreact_df) %>%
+      dplyr::mutate(Species = "Haemophilus influenzae")
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = species_palette,
+  drakenstein_name = "Drakenstein"
+)
+
+p
+
+```
+
+
+## Compare gene frequencies across locations
+
+After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
+
+### Parse Panaroo output
+
+This analysis used Panaroo version 1.5.2.
+
+``` {bash Run panaroo on H. influenzae, eval = FALSE}
+
+mkdir -p Haemophilus_panaroo_results
+panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
+panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_paralogs --remove-invalid-genes
+
+```
+
+Read in the gene presence/absence matrix for *H. influenzae*:
+
+```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
+
+hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
+
+if (identical(Sys.getenv("CI"), "true")) {
+  hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
+}
+
+tmp_dir  <- tempdir()
+hflu_fn <- "Hflu_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, hflu_fn)
+
+archive::archive_extract(
+  hflu_tar,
+  file = hflu_fn,
+  dir  = tmp_dir
+)
+
+Hinflu_version4_gene_preabsence <-
+  read.csv(
+    tmp_path,
+    header = TRUE,
+    comment.char = "",
+    check.names = FALSE,
+    sep = ","
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+      names_to = "npg_run_id",
+      values_to = "CDS"
+    )
+
+expected_hflu <- Hflu_filter$npg_run_id
+included_hflu <- unique(Hinflu_version4_gene_preabsence$npg_run_id)
+
+# if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+#   stop("Hflu Panaroo not run on correct isolate set")
+# }
+
+
+```
+
+### Pangenome curve for *H. influenzae*
+
+TO DO
+
+```{r Hflu downsampling for CI, cache = FALSE}
+
+if (identical(Sys.getenv("CI"), "true")) {
+  
+  message("CI environment detected: memory management commands")
+  Hinflu_version4_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
+}
+
+```
+
+### Analysis of *M. catarrhalis* gene content
+
+``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
+
+mkdir -p Moraxella_panaroo_result
+panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
+panaroo -i *.gff -o Moraxella_panaroo_result --clean-mode moderate --merge_paralogs --remove-invalid-genes
+
+```
+
+Read in the gene presence/absence matrix:
+
+```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
+
+mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
+
+if (identical(Sys.getenv("CI"), "true")) {
+  mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
+}
+
+tmp_dir  <- tempdir()
+mcat_fn <- "Mcat_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, mcat_fn)
+
+archive::archive_extract(
+  mcat_tar,
+  file = mcat_fn,
+  dir  = tmp_dir
+)
+
+```
+
+``` {r Process archive, cache = FALSE}
+
+Mcat_version4_gene_preabsence <- read.csv(
+  tmp_path,
   header = TRUE,
   comment.char = "",
   check.names = FALSE,
@@ -1302,570 +1971,200 @@ Moraxella_gene_presence <- read.csv(
   tidyr::pivot_longer(
     cols = -c(
       Gene,
-      `Non-unique Gene name`, 
+      `Non-unique Gene name`,
       Annotation
       ),
     names_to = "npg_run_id",
     values_to = "CDS"
-    )
-View(Moraxella_gene_presence)
-```
-
-```{r left_join Moraxella gene presence dataset with sample_df}
-
-Moraxella_gene_sample <- left_join(
-  Moraxella_gene_presence,
-  sample_df,
-  by = "npg_run_id"
   )
-Moraxella_gene_sample
-```
 
-```{r classifying Moraxella gene sample dataset in early and late year of UK country}
+expected_mcat <- Mcat_filter$npg_run_id
+included_mcat <- unique(Mcat_version4_gene_preabsence$npg_run_id)
 
-UK_early_late_df <- Moraxella_gene_sample %>%
-  filter(Country == "United Kingdom",
-         Year %in% c(2007:2011, 2019:2020)
-         ) %>%
-  mutate(Period = 
-           case_when(Year >= 2007
-                     & Year <= 2011 ~ "Early",
-                     Year >= 2019 & Year <= 2020 ~ "Late")
-         )
-```
-
-```{r calculate the number of Moraxella genome in each dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand"),
-    Species == "Moraxella catarrhalis", 
-    !is.na(npg_run_id)
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id), 
-            .groups = "drop")
-Genome_Count
-```
-
-```{r calculate the number genome count and gene frequencies of Moraxella in dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Genome_Count
-
-Count_CDS <- Moraxella_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Count_CDS
-gene_freq <- Count_CDS %>%
-  left_join(Genome_Count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-View(gene_freq)
-```
-
-```{r reshape gene_freq to wide format}
-gene_freq_wide <- gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-  pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-View(gene_freq_wide)
-```
-
-```{r plot scatter graph of frequency genes in between United Kingdom and Cambodia Country}
-
-ggplot(gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")+ labs(title = "Moraxella catarrhalis\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of Moraxella catarrhalis frequency genes in between United Kingdom and Thailand Country}
-ggplot(gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") + labs(title = "Moraxella catarrhalis Frequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of Moraxella frequency genes in between Cambodia and Thailand Country}
-ggplot(gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")+ labs(title = "Moraxella catrrhalis\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-
-```{r plot histogram of Moraxella catrrhalis frequency genes comparing with each countries}
-
-ggplot(gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal()
+# if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
+#   stop("Mcat Panaroo not run on correct isolate set")
+# }
 
 ```
 
-We will calculate genome count and frequency genes of Haemophilus influenzae
-```{r import Haemophilus gene presece absence csv file for tidy up the column}
-Haemophilus_gene_presence <- read.csv("./panaroo_haemophilus_file/Haemo_gene_presence_absence.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE, comment.char = "", check.names = FALSE) %>%
-  tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Haemophilus_gene_presence
-```
+### Pangenome curve for *M. catarrhalis*
 
-```{r merge Haemophilus gene presence absence and sample_df with left join function}
+TO DO
 
-Haemo_gene_preab_sample <- left_join(Haemophilus_gene_presence, sample_df, by = "npg_run_id")
-Haemo_gene_preab_sample
+```{r Mcat downsampling for CI, cache = FALSE}
 
-```
+if (identical(Sys.getenv("CI"), "true")) {
 
-```{r calculate number of genome count and frequency gene of Haemophilus influenzae}
-# Count distinct genomes per country
-Haemo_gene_count <- Haemo_gene_preab_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_count = n_distinct(npg_run_id),
-    .groups = "drop")
-Haemo_gene_count
-# Count CDS occurrences per gene and country
-Haemo_CDS_count <- Haemo_gene_preab_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Haemo_CDS_count
-# Calculate frequency genes
-Haemo_gene_freq <- Haemo_CDS_count %>%
-  left_join(Haemo_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_count)
-View(Haemo_gene_freq)
-```
-```{r reform Haemo_gene_freq columns to wide format columns}
-Haemo_gene_freq_wide <- Haemo_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-```
-
-```{r plot scatter graph of Haemophilus influenzae frequency genes in between United Kingdom and Cambodia}
-ggplot(Haemo_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "red") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
+  message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
+  Mcat_version4_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
+}
 
 ```
-```{r plot scatter graph of Haemophilus influenzae frequency genes in between United Kingdom and Thailand Country}
-ggplot(Haemo_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "orange") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
+
+### Geographic analysis of gene frequencies
+
+``` {r Compare gene frequencies across locations}
+
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    Mcat_version4_gene_preabsence %>% 
+      process_gene_frequencies(Mcat_microreact_df)  %>% 
+      dplyr::mutate(Species = "Moraxella catarrhalis"),
+    Hinflu_version4_gene_preabsence %>% 
+      process_gene_frequencies(Hflu_microreact_df)  %>% 
+      dplyr::mutate(Species = "Haemophilus influenzae")
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = species_palette,
+  drakenstein_name = "Drakenstein",
+  hist_on_diagonal = TRUE
+)
+
+p
+
 ```
 
-```{r plot scatter graph of Haemophilus influenzae frequency gene in between Cambodia and Thailand}
-ggplot(Haemo_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-```{r plot histogram of Haemophilus influenzae with frequency genes in each countries}
-ggplot(Haemo_gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Haemophilus influenzae\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
-```
-## We will extract the Moraxella catarrhalis and Haemophilus influenzae files from panaroo modifying scripts are named gene presence and absence csv to calculate the number of genomes and frequnecy genes then plot the scatter graph and histogram
+### Analysis of recombination across populations
 
-```{r import Moraxella cattarrhalis of gene presences absences csv file}
-Morax_2_gene_preab <- read.csv(file = "panaroo_moraxella_file/Morax_gene_presence_absence_2.csv", header = TRUE, stringsAsFactors = FALSE, sep = ",", comment.char = "", check.names = FALSE) %>% tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Morax_2_gene_preab
+TO DO: fastGEAR
 
-Haemo_2_gene_preab <- read.csv(file = "panaroo_haemophilus_file/Haemo_gene_presence_absence_2.csv", header = TRUE, stringsAsFactors = FALSE, sep = ",", comment.char = "", check.names = FALSE) %>%
-  tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Haemo_2_gene_preab
-```
+## Phylogenetic analysis
 
-```{r merge sample_df with Morax_2 and sample_df with Haemo_2 along with left join function}
-Morax_2_gene_sample <- left_join(Morax_2_gene_preab, sample_df, by = "npg_run_id")
-Morax_2_gene_sample
+TO DO: Gubbins
 
-Haemo_2_gene_sample <- left_join(Haemo_2_gene_preab, sample_df, by = "npg_run_id")
-Haemo_2_gene_sample
-```
+# Analysis of long-read data
 
-```{r calculate the number of genome count and frequency genes of Morax_2}
-Morax_2_gene_count <- Morax_2_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Morax_2_gene_count
+## Accessing long-read data
 
-Morax_2_CDS_count <- Morax_2_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Morax_2_CDS_count
-Morax_2_gene_freq <- Morax_2_CDS_count %>%
-  left_join(Morax_2_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-Morax_2_gene_freq
-```
-```{r calculate the number of genome count and frequency genes of Haemo_2}
-Haemo_2_gene_count <- Haemo_2_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Haemo_2_gene_count
+``` {bash Access base modification data, eval = FALSE}
 
-Haemo_2_CDS_count <- Haemo_2_gene_sample %>%
-  filter(CDS != "" &
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Haemo_2_CDS_count
-Haemo_2_gene_freq <- Haemo_2_CDS_count %>%
-  left_join(Haemo_2_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-Haemo_2_gene_freq
+# Set up environment
+module load PaM/environment
+module load ISG/IRODS/1.0
+kinit
+iinit
+
+iget -r /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7738/20240219_1036_3A_PAU55810_bf5bbe22/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/
+iget -r /seq/ont/promethion/offline-deplexes/PC24B148/ONTRUN-196/TRAC-2-7739/20240219_1036_3C_PAU55034_a15a64d8/dorado/7.1.4/sup/simplex/modified/5hmc_5mc_cg/
+
+for INDEX in {01..96}; do mkdir -p barcode${INDEX}; for C in $(ls -d ./5hmc_5mc_cg/default/chunka[abcdefghi]); do CHUNK=`basename $C`; for FILE in  ./5hmc_5mc_cg/default/$CHUNK/barcode${INDEX}/*; do BASENAME=`basename ${FILE}`; mv ${FILE} ./barcode${INDEX}/${CHUNK}_${BASENAME}; done; done; done
+
 ```
 
-```{r reformat two datasets of Morax_2_gene_freq and Haemo_2_gene_freq to wide format columns}
+## Assembling long-read data
 
-Morax_2_gene_freq_wide <- Morax_2_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-Morax_2_gene_freq_wide
+``` {bash Assembling long-read data, eval = FALSE}
 
-Haemo_2_gene_freq_wide <- Haemo_2_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-Haemo_2_gene_freq_wide
-```
-```{r plot scatter graph for Moraxella_2_gene in between Cambodia and Thailand after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "red") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-```{r plot scatter graph for Moraxella_2_gene in between United Kingdom and Cambodia after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "purple") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxella catrrahlis 2nd\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_1_flye.%I.rerun.o -e run_1_flye.%I.rerun.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}
+
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_2/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_2_flye.%I.rerun.o -e run_2_flye.%I.rerun.e -J flye_job_2[1-96] ./flye_job.\${LSB_JOBINDEX}
+
 ```
 
-```{r plot scatter graph for Moraxella_2_gene in between United Kingdom and Thailand after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxlella catarrahlis 2nd\nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-```{r plot histogram for Moraxella_2_gene in between three conutries comparing with frequency of each genes}
-ggplot(Morax_2_gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Moraxella catarrahlis 2nd\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
-```
-```{r plot scatter graph of frequency Haemophilus influenzae in between UK and Cambodia}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "green") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "brown")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
+## Long-read sequencing of representative isolates
 
-```{r plot scatter graph of frequency Haemophilus influenzae in between UK and Thailand}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "darkgrey") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "brown")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-```{r plot scatter graph of frequency Haemophilus influenzae in between Cambodia and Thailand}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "darkred") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
+These were chosen as:
 
-```{r plot histogram of Haemophilus influenzae in between three countries}
-ggplot(Haemo_2_gene_freq, aes(x = Frequency)) + geom_histogram(color = "blue") + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Haemophilus influenzae 2nd\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
+- Representing the clusters with >9 isolates
+
+- Plus representing any multidrug-resistance profiles not seen in the representatives of the most common clusters
+
+- Only a subset were available for reculturing
+
+``` {r Representative sequence information}
+
+long_read_sample_df <-
+  read.csv("sample_data/long_read_sequence_data.csv")
+
 ```
 
-After we got the gene presence absence from Moraxella catarrhalis Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
+## Methylation analyses from long-read data
 
-```{r tidy up the Moraxell gene presence absence columns to longer format columns}
+Is the sharing of plasmids between species limited by RMS?
 
-Moraxella_gene_presence <- read.csv(
-  "./panaroo_moraxella_file/Moraxella_gene_presence_absence.csv",
-  header = TRUE,
-  comment.char = "",
-  check.names = FALSE,
-  sep = ","
-  ) %>%
-  tidyr::pivot_longer(
-    cols = -c(
-      Gene,
-      `Non-unique Gene name`, 
-      Annotation
-      ),
-    names_to = "npg_run_id",
-    values_to = "CDS"
-    )
-View(Moraxella_gene_presence)
+## Passage analysis from long-read data
+
+Also a passage was run of four isolates. Each was started from a single colony on THY. Each was grown for 24 h in 10 mL Mix media. Successive inoculations used 100 uL. Four colonies were picked from each day from THY plates.
+
+# Analysis of deep sequencing data
+
+``` {r Parse antibiotic administration data}
+
+treatment_df <-
+  read.csv("./sample_data/Pneumo-DEEP_illness_abx_summary.csv")
+
+maela_samples_df <-
+  read.csv("./sample_data/Pneumo-DEEP_swab_summary.csv")
+
+treatment_sampling_df <-
+  maela_samples_df %>%
+    dplyr::select(specnum,codenum,specdate) %>% 
+    dplyr::mutate(isolate_date = lubridate::as_date(specdate, format = "%m/%d/%y")) %>% 
+  dplyr::full_join(
+    treatment_df %>% 
+      dplyr::select(date_start,nps_specnum,drug1,drug2) %>% 
+      dplyr::filter(!is.na(date_start) & !is.na(nps_specnum)) %>% 
+      dplyr::mutate(
+        date_start = lubridate::as_date(date_start, format = "%m/%d/%y")
+      ) %>% 
+      dplyr::rename(specnum = nps_specnum),
+    by = c("specnum"),
+    relationship = 'one-to-one'
+  ) %>% 
+  dplyr::mutate(
+    date_start = lubridate::as_date(date_start)
+  ) %>% 
+  dplyr::rename(treatment_date = date_start) %>% 
+  dplyr::mutate(
+    interval_before_treatment = treatment_date - isolate_date,
+    interval_after_treatment = isolate_date - treatment_date
+  ) %>% 
+  dplyr::mutate(
+    days_before_treatment = dplyr::if_else(as.numeric(interval_before_treatment) >= 0,
+                                           as.numeric(interval_before_treatment),
+                                           NA_real_),
+    days_after_treatment = dplyr::if_else(as.numeric(interval_after_treatment) >= 0,
+                                          as.numeric(interval_after_treatment),
+                                          NA_real_)
+  ) %>% 
+  dplyr::group_by(specnum) %>%
+  dplyr::mutate(
+    days_before_treatment = min(days_before_treatment,na.rm = TRUE),
+    days_after_treatment = min(days_after_treatment,na.rm = TRUE)
+  ) %>% 
+  dplyr::filter(as.numeric(interval_before_treatment) == days_before_treatment) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(-c(interval_before_treatment,interval_after_treatment)) %>% 
+  dplyr::distinct()
+
 ```
 
-```{r left_join Moraxella gene presence dataset with sample_df}
+## Co-colonisation analysis of species
 
-Moraxella_gene_sample <- left_join(
-  Moraxella_gene_presence,
-  sample_df,
-  by = "npg_run_id"
-  )
-Moraxella_gene_sample
-```
+- Which species co-exist, and which compete, based on the observed deep sequencing data?
 
-```{r classifying Moraxella gene sample dataset in early and late year of UK country}
+- Do seroresistant and serosensitive Moraxellae appear to compete?
 
-UK_early_late_df <- Moraxella_gene_sample %>%
-  filter(Country == "United Kingdom",
-         Year %in% c(2007:2011, 2019:2020)
-         ) %>%
-  mutate(Period = 
-           case_when(Year >= 2007
-                     & Year <= 2011 ~ "Early",
-                     Year >= 2019 & Year <= 2020 ~ "Late")
-         )
-```
+- Are these patterns consistent across countries?
 
-```{r calculate the number of Moraxella genome in each dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand"),
-    Species == "Moraxella catarrhalis", 
-    !is.na(npg_run_id)
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id), 
-            .groups = "drop")
-Genome_Count
-```
+## Co-colonisation analysis of strains
 
-```{r calculate the number genome count and gene frequencies of Moraxella in dataset using npg_run_id}
-Genome_Count <- Moraxella_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Genome_Count
+- Is the same pattern of co-colonisation observed across species (including serosensitive/seroresistant Moraxellae)?
 
-Count_CDS <- Moraxella_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Count_CDS
-gene_freq <- Count_CDS %>%
-  left_join(Genome_Count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-View(gene_freq)
-```
+- Is the same level of co-colonisation observed across countries?
 
-```{r reshape gene_freq to wide format}
-gene_freq_wide <- gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-  pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-View(gene_freq_wide)
-```
+- Removal of prophage sequences - does this improve assignment to strains?
 
-```{r plot scatter graph of frequency genes in between United Kingdom and Cambodia Country}
+- Are long-read references better than short-read references?
 
-ggplot(gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")+ labs(title = "Moraxella catarrhalis\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
+## Timing of antibiotic administration and species presence
 
-```{r plot scatter graph of Moraxella catarrhalis frequency genes in between United Kingdom and Thailand Country}
-ggplot(gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") + labs(title = "Moraxella catarrhalis Frequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
+- Are different species enriched after antibiotic administration in Maela?
 
-```{r plot scatter graph of Moraxella frequency genes in between Cambodia and Thailand Country}
-ggplot(gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")+ labs(title = "Moraxella catrrhalis\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
+- Is there less co-colonisation between strains after antibiotic administration?
 
-```{r plot histogram of Moraxella catrrhalis frequency genes comparing with each countries}
-ggplot(gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal()
-```
-
-We will calculate genome count and frequency genes of Haemophilus influenzae
-
-```{r import Haemophilus gene presece absence csv file for tidy up the column}
-Haemophilus_gene_presence <- read.csv("./panaroo_haemophilus_file/Haemo_gene_presence_absence.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE, comment.char = "", check.names = FALSE) %>%
-  tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Haemophilus_gene_presence
-```
-
-```{r merge Haemophilus gene presence absence and sample_df with left join function}
-
-Haemo_gene_preab_sample <- left_join(Haemophilus_gene_presence, sample_df, by = "npg_run_id")
-Haemo_gene_preab_sample
-```
-
-```{r calculate number of genome count and frequency gene of Haemophilus influenzae}
-# Count distinct genomes per country
-Haemo_gene_count <- Haemo_gene_preab_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_count = n_distinct(npg_run_id),
-    .groups = "drop")
-Haemo_gene_count
-# Count CDS occurrences per gene and country
-Haemo_CDS_count <- Haemo_gene_preab_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Haemo_CDS_count
-# Calculate frequency genes
-Haemo_gene_freq <- Haemo_CDS_count %>%
-  left_join(Haemo_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_count)
-View(Haemo_gene_freq)
-```
-
-```{r reform Haemo_gene_freq columns to wide format columns}
-Haemo_gene_freq_wide <- Haemo_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-```
-
-```{r plot scatter graph of Haemophilus influenzae frequency genes in between United Kingdom and Cambodia}
-ggplot(Haemo_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "red") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of Haemophilus influenzae frequency genes in between United Kingdom and Thailand Country}
-ggplot(Haemo_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "orange") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of Haemophilus influenzae frequency gene in between Cambodia and Thailand}
-ggplot(Haemo_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae \nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-
-```{r plot histogram of Haemophilus influenzae with frequency genes in each countries}
-ggplot(Haemo_gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Haemophilus influenzae\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
-```
-
-## We will extract the Moraxella catarrhalis and Haemophilus influenzae files from panaroo modifying scripts are named gene presence and absence csv to calculate the number of genomes and frequnecy genes then plot the scatter graph and histogram
-
-```{r import Moraxella cattarrhalis of gene presences absences csv file}
-Morax_2_gene_preab <- read.csv(file = "panaroo_moraxella_file/Morax_gene_presence_absence_2.csv", header = TRUE, stringsAsFactors = FALSE, sep = ",", comment.char = "", check.names = FALSE) %>% tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Morax_2_gene_preab
-
-Haemo_2_gene_preab <- read.csv(file = "panaroo_haemophilus_file/Haemo_gene_presence_absence_2.csv", header = TRUE, stringsAsFactors = FALSE, sep = ",", comment.char = "", check.names = FALSE) %>%
-  tidyr::pivot_longer(cols = -c(Gene,`Non-unique Gene name`, Annotation), names_to = "npg_run_id", values_to = "CDS")
-Haemo_2_gene_preab
-```
-
-```{r merge sample_df with Morax_2 and sample_df with Haemo_2 along with left join function}
-Morax_2_gene_sample <- left_join(Morax_2_gene_preab, sample_df, by = "npg_run_id")
-Morax_2_gene_sample
-
-Haemo_2_gene_sample <- left_join(Haemo_2_gene_preab, sample_df, by = "npg_run_id")
-Haemo_2_gene_sample
-```
-
-```{r calculate the number of genome count and frequency genes of Morax_2}
-Morax_2_gene_count <- Morax_2_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Morax_2_gene_count
-
-Morax_2_CDS_count <- Morax_2_gene_sample %>%
-  filter(CDS != "" & 
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Morax_2_CDS_count
-Morax_2_gene_freq <- Morax_2_CDS_count %>%
-  left_join(Morax_2_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-Morax_2_gene_freq
-```
-```{r calculate the number of genome count and frequency genes of Haemo_2}
-Haemo_2_gene_count <- Haemo_2_gene_sample %>%
-  filter(!is.na(npg_run_id),
-    Country %in% c("United Kingdom", "Cambodia", "Thailand")
-    ) %>%
-  group_by(Country) %>%
-  summarise(Genome_Count = n_distinct(npg_run_id),
-    .groups = "drop")
-Haemo_2_gene_count
-
-Haemo_2_CDS_count <- Haemo_2_gene_sample %>%
-  filter(CDS != "" &
-         Country %in% 
-           c("United Kingdom", "Cambodia", "Thailand")
-         ) %>%
-  group_by(Country, Gene) %>%
-  summarise(CDS_count = n(), 
-            .groups = "drop") %>%
-arrange(Country, desc(CDS_count))
-Haemo_2_CDS_count
-Haemo_2_gene_freq <- Haemo_2_CDS_count %>%
-  left_join(Haemo_2_gene_count, 
-            by = "Country") %>%
-  mutate(Frequency = CDS_count / Genome_Count)
-Haemo_2_gene_freq
-```
-
-```{r reformat two datasets of Morax_2_gene_freq and Haemo_2_gene_freq to wide format columns}
-
-Morax_2_gene_freq_wide <- Morax_2_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-Morax_2_gene_freq_wide
-
-Haemo_2_gene_freq_wide <- Haemo_2_gene_freq %>%
-  select(Country, Gene, CDS_count, Genome_Count, Frequency) %>%
-pivot_wider(id_cols = Gene, names_from = Country, values_from = Frequency)
-Haemo_2_gene_freq_wide
-```
-
-```{r plot scatter graph for Moraxella_2_gene in between Cambodia and Thailand after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "red") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxella catarrahlis 2nd\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-
-```{r plot scatter graph for Moraxella_2_gene in between United Kingdom and Cambodia after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "purple") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxella catrrahlis 2nd\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph for Moraxella_2_gene in between United Kingdom and Thailand after getting wide format columns}
-ggplot(Morax_2_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "blue") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Moraxlella catarrahlis 2nd\nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot histogram for Moraxella_2_gene in between three conutries comparing with frequency of each genes}
-ggplot(Morax_2_gene_freq, aes(x = Frequency)) + geom_histogram() + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Moraxella catarrahlis 2nd\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
-```
-
-```{r plot scatter graph of frequency Haemophilus influenzae in between UK and Cambodia}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Cambodia, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "green") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "brown")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Cambodia", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of frequency Haemophilus influenzae in between UK and Thailand}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Thailand, y = `United Kingdom`)) + geom_point(alpha = 0.7, color = "darkgrey") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "brown")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Thailand", y = "United Kingdom") + theme_minimal()
-```
-
-```{r plot scatter graph of frequency Haemophilus influenzae in between Cambodia and Thailand}
-ggplot(Haemo_2_gene_freq_wide, aes(x = Thailand, y = Cambodia)) + geom_point(alpha = 0.7, color = "darkred") + geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black")+ labs(title = "Haemophilus influenzae 2nd\nFrequency genes by Country", x = "Thailand", y = "Cambodia") + theme_minimal()
-```
-
-```{r plot histogram of Haemophilus influenzae in between three countries}
-ggplot(Haemo_2_gene_freq, aes(x = Frequency)) + geom_histogram(color = "blue") + facet_wrap(~ Country) + theme_minimal(base_size = 14) + labs(title = "Haemophilus influenzae 2nd\nGene Frequency Distribution", x = "Frequency", y = "Number of Observation") + theme(strip.text = element_text(face = "bold", size = 9), plot.title = element_text(hjust = 0.5, face = "bold"))
-```
-
-## Compare strain frequncies between samples
-
-## Compare gene frequencies between samples

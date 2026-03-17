@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+NP_AMR_analysis_files
+NP_AMR_analysis_files/*
+NP_AMR_analysis_files/figure-html/*
+NP_AMR_analysis_cache
