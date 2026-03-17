@@ -1956,110 +1956,6 @@ if (identical(Sys.getenv("CI"), "true")) {
 
 ```
 
-
-``` {r calculate number of genes and frequency genes for Hinfluenzae, cache = FALSE}
-
-# Count distinct genomes per country
-Hinflu_version4_genefreq <-
-  Hinflu_version4_gene_sample %>%
-  dplyr::filter(!is.na(npg_run_id) &
-                Country %in% c("United Kingdom", "Cambodia", "Thailand", "South Africa") &
-                CDS != "") %>%
-  dplyr::select(npg_run_id,Country,Gene) %>%
-    group_by(Country) %>%
-  mutate(Genome_count = n_distinct(npg_run_id)) %>%
-  dplyr::ungroup() %>%
-  group_by(Country, Gene) %>%
-  mutate(CDS_count = n_distinct(npg_run_id)) %>%
-  dplyr::ungroup() %>%
-  dplyr::select(Country,
-         Gene,
-         CDS_count,
-         Genome_count) %>%
-  dplyr::distinct() %>%
-  dplyr::mutate(Frequency = CDS_count/Genome_count)
-
-```
-
-```{r reformat columns to wide format columns}
-
-Hinflu_version4_genefreq_wide <- Hinflu_version4_genefreq %>%
-  select(Country, 
-         Gene, 
-         CDS_count, 
-         Genome_count, 
-         Frequency) %>%
-pivot_wider(id_cols = Gene, 
-            names_from = Country, 
-            values_from = Frequency)
-
-```
-
-```{r plot scatter graph between Cambodia-United Kingdom-1}
-
-ggplot(Hinflu_version4_genefreq_wide, 
-       aes(x = Cambodia, 
-           y = `United Kingdom`)) + 
-  geom_point(alpha = 0.7, 
-             color = "blue") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "yellow")+ 
-  labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
-       x = "Cambodia", 
-       y = "United Kingdom")
-
-```
-
-```{r plot scatter graph between Cambodia-Thailand-1}
-
-ggplot(Hinflu_version4_genefreq_wide, 
-       aes(x = Cambodia, 
-           y = Thailand)) + 
-  geom_point(alpha = 0.7, 
-             color = "black") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "yellow")+ 
-  labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
-       x = "Cambodia", 
-       y = "Thailand")
-
-```
-
-```{r plot scatter graph between United Kingdom-Thailand-1}
-
-ggplot(Hinflu_version4_genefreq_wide, 
-       aes(x = `United Kingdom`, 
-           y = Thailand)) + 
-  geom_point(alpha = 0.7, 
-             color = "darkgreen") + 
-  geom_abline(slope = 1, 
-              intercept = 0, 
-              linetype = "dashed", 
-              color = "red")+ 
-  labs(title = "Version4 Haemophilus influenzae\nFrequency genes by Country", 
-       x = "United Kingdom", 
-       y = "Thailand")
-
-```
-
-```{r plot histogram between United Kingdom, Cambodia and Thailand-1}
-
-ggplot(Hinflu_version4_genefreq, 
-       aes(x = Frequency)) + 
-  geom_histogram(color = "blue") + 
-  facet_wrap(~ Country) + 
-  labs(title = "Version4 Haemophilus influenzae\nGene Frequency Distribution", 
-       x = "Frequency", 
-       y = "Number of Observation") + 
-  theme(strip.text = element_text(face = "bold", size = 9), 
-        plot.title = element_text(hjust = 0.5, face = "bold"))
-
-```
-
 ### Analysis of *M. catarrhalis* gene content
 
 ``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
@@ -2224,6 +2120,13 @@ Is the sharing of plasmids between species limited by RMS?
 Also a passage was run of four isolates. Each was started from a single colony on THY. Each was grown for 24 h in 10 mL Mix media. Successive inoculations used 100 uL. Four colonies were picked from each day from THY plates.
 
 # Analysis of deep sequencing data
+
+``` {r Parse antibiotic administration data}
+
+
+
+```
+
 
 - Removal of prophage sequences - does this improve assignment to strains?
 
