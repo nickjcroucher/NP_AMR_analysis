@@ -1954,7 +1954,7 @@ if (identical(Sys.getenv("CI"), "true")) {
   Hinflu_version4_gene_preabsence <- NULL
   
   message("CI environment detected: memory management commands")
-  Hinflu_version4_gene_sample %<>%
+  Hinflu_version4_gene_preabsence %<>%
   slice_sample(prop = 0.01)
   
 }
