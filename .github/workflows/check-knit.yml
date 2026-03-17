@@ -46,6 +46,7 @@ jobs:
             kableExtra
             ggforce
             ggrepel
+            patchwork
 
       - name: Render NP_AMR_analysis.Rmd
         run: |
