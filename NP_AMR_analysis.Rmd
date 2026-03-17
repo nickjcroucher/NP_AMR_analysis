@@ -1911,38 +1911,6 @@ included_hflu <- unique(Hinflu_version4_gene_preabsence$npg_run_id)
 
 ```
 
-```{r merge two data between Hinflu_version3_gene_preabsence and sample_df, cache = FALSE}
-
-sample_df_cols <-
-  c("npg_run_id",
-    "name",
-    "sample_accession_number",
-    "sample_id",
-    "manual_qc",
-    "annotation_file",
-    "assembly_file",
-    "qc_file",
-    "Isolate",
-    "Cohort",
-    "Country",
-    "Region",
-    "Year",
-    "Description",
-    "Species")
-
-Hinflu_version4_gene_sample <-
-  Hinflu_version4_gene_preabsence %>% 
-      dplyr::select(npg_run_id,
-         Gene,
-         CDS) %>%
-    dplyr::left_join(sample_df %>% 
-                       dplyr::select(
-                         dplyr::all_of(sample_df_cols)
-                       ),
-                     by = "npg_run_id")
-
-```
-
 ### Pangenome curve for *H. influenzae*
 
 TO DO
@@ -1950,8 +1918,6 @@ TO DO
 ```{r Hflu downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
-  
-  Hinflu_version4_gene_preabsence <- NULL
   
   message("CI environment detected: memory management commands")
   Hinflu_version4_gene_preabsence %<>%
@@ -2129,7 +2095,51 @@ Also a passage was run of four isolates. Each was started from a single colony o
 
 ``` {r Parse antibiotic administration data}
 
+treatment_df <-
+  read.csv("/Users/ncrouche/Documents/AMR_MGE/pneumo_withinhost_manuscript/data/epi/Pneumo-DEEP_illness_abx_summary.csv")
 
+maela_samples_df <-
+  read.csv("/Users/ncrouche/Documents/AMR_MGE/pneumo_withinhost_manuscript/data/epi/Pneumo-DEEP_swab_summary.csv")
+
+treatment_sampling_df <-
+  maela_samples_df %>%
+    dplyr::select(specnum,codenum,specdate) %>% 
+    dplyr::mutate(isolate_date = lubridate::as_date(specdate, format = "%m/%d/%y")) %>% 
+  dplyr::full_join(
+    treatment_df %>% 
+      dplyr::select(codenum,date_start) %>% 
+      dplyr::filter(!is.na(date_start)) %>% 
+      dplyr::mutate(
+        date_start = lubridate::as_date(date_start, format = "%m/%d/%y")
+      ),
+    by = c("codenum"),
+    relationship = 'many-to-many'
+  ) %>% 
+  dplyr::mutate(
+    date_start = lubridate::as_date(date_start)
+  ) %>% 
+  dplyr::rename(treatment_date = date_start) %>% 
+  dplyr::mutate(
+    interval_before_treatment = treatment_date - isolate_date,
+    interval_after_treatment = isolate_date - treatment_date
+  ) %>% 
+  dplyr::mutate(
+    days_before_treatment = dplyr::if_else(as.numeric(interval_before_treatment) >= 0,
+                                           as.numeric(interval_before_treatment),
+                                           NA_real_),
+    days_after_treatment = dplyr::if_else(as.numeric(interval_after_treatment) >= 0,
+                                          as.numeric(interval_after_treatment),
+                                          NA_real_)
+  ) %>% 
+  dplyr::group_by(specnum) %>%
+  dplyr::mutate(
+    days_before_treatment = min(days_before_treatment,na.rm = TRUE),
+    days_after_treatment = min(days_after_treatment,na.rm = TRUE)
+  ) %>% 
+  dplyr::filter(as.numeric(interval_before_treatment) == days_before_treatment) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(-c(interval_before_treatment,interval_after_treatment)) %>% 
+  dplyr::distinct()
 
 ```
 
