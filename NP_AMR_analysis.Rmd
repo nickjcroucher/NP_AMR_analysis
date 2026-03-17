@@ -2095,52 +2095,47 @@ Also a passage was run of four isolates. Each was started from a single colony o
 
 ``` {r Parse antibiotic administration data}
 
+# Information on antibiotic treatment
 treatment_df <-
-  read.csv("./sample_data/Pneumo-DEEP_illness_abx_summary.csv")
+  read.csv("./sample_data/Pneumo-DEEP_illness_abx_summary.csv") %>% 
+    dplyr::mutate(date_start = lubridate::as_date(date_start, format = "%m/%d/%y"))
 
-maela_samples_df <-
-  read.csv("./sample_data/Pneumo-DEEP_swab_summary.csv")
+# Information on swabs
+infant_swabs_df <-
+  read.csv("./sample_data/Maela_infant_swabs.csv") %>% 
+    dplyr::mutate(specdate = lubridate::as_date(specdate, format = "%d/%m/%Y"))
 
+# For each specimen, find previous treatment
+previous_treatment_df <-
+  infant_swabs_df %>%
+    left_join(treatment_df, by = c("study_code" = "codenum"), relationship = "many-to-many") %>%
+    filter(specdate >= date_start) %>%
+    group_by(specnum) %>%
+    arrange(desc(date_start)) %>%
+    slice(1) %>%
+    mutate(days_since_previous = as.numeric(specdate - date_start)) %>%
+    select(specnum, days_since_previous, 
+           previous_treatment_date = date_start,
+           previous_drug1 = drug1, previous_drug2 = drug2)
+
+# For each specimen, find next treatment
+next_treatment_df <-
+  infant_swabs_df %>%
+    left_join(treatment_df, by = c("study_code" = "codenum"), relationship = "many-to-many") %>%
+    filter(specdate <= date_start) %>%
+    group_by(specnum) %>%
+    arrange(date_start) %>%
+    slice(1) %>%
+    mutate(days_until_next = as.numeric(date_start - specdate)) %>%
+    select(specnum, days_until_next,
+           next_treatment_date = date_start,
+           next_drug1 = drug1, next_drug2 = drug2)
+
+# Combine all information
 treatment_sampling_df <-
-  maela_samples_df %>%
-    dplyr::select(specnum,codenum,specdate) %>% 
-    dplyr::mutate(isolate_date = lubridate::as_date(specdate, format = "%m/%d/%y")) %>% 
-  dplyr::full_join(
-    treatment_df %>% 
-      dplyr::select(date_start,nps_specnum,drug1,drug2) %>% 
-      dplyr::filter(!is.na(date_start) & !is.na(nps_specnum)) %>% 
-      dplyr::mutate(
-        date_start = lubridate::as_date(date_start, format = "%m/%d/%y")
-      ) %>% 
-      dplyr::rename(specnum = nps_specnum),
-    by = c("specnum"),
-    relationship = 'one-to-one'
-  ) %>% 
-  dplyr::mutate(
-    date_start = lubridate::as_date(date_start)
-  ) %>% 
-  dplyr::rename(treatment_date = date_start) %>% 
-  dplyr::mutate(
-    interval_before_treatment = treatment_date - isolate_date,
-    interval_after_treatment = isolate_date - treatment_date
-  ) %>% 
-  dplyr::mutate(
-    days_before_treatment = dplyr::if_else(as.numeric(interval_before_treatment) >= 0,
-                                           as.numeric(interval_before_treatment),
-                                           NA_real_),
-    days_after_treatment = dplyr::if_else(as.numeric(interval_after_treatment) >= 0,
-                                          as.numeric(interval_after_treatment),
-                                          NA_real_)
-  ) %>% 
-  dplyr::group_by(specnum) %>%
-  dplyr::mutate(
-    days_before_treatment = min(days_before_treatment,na.rm = TRUE),
-    days_after_treatment = min(days_after_treatment,na.rm = TRUE)
-  ) %>% 
-  dplyr::filter(as.numeric(interval_before_treatment) == days_before_treatment) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::select(-c(interval_before_treatment,interval_after_treatment)) %>% 
-  dplyr::distinct()
+  infant_swabs_df %>%
+    left_join(previous_treatment_df, by = "specnum") %>%
+    left_join(next_treatment_df, by = "specnum")
 
 ```
 
