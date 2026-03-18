@@ -1304,7 +1304,7 @@ poppunk --qc-db --ref-db Hflu_carriage_db --remove-samples Hflu_db.names   --max
 
 This generated this distance distribution:
 
-![Haemophilus query distance distribution](./PopPUNK_analysis/Hinflu_poppunk_query_distanceDistribution.png)
+![Haemophilus query distance distribution](./PopPUNK_analysis/Hflu_carriage_db_distanceDistribution.png)
 
 The output was visualised:
 
