@@ -129,17 +129,6 @@ make_cluster_freq_wide_species <- function(mcat_cluster_freq,
                                            species_col  = "Species",
                                            clusters_col = "Cluster",
                                            cohort_col   = "Cohort") {
-  # Aggregate to one frequency per (Species, Cohort, Cluster)
-  # mcat_cluster_freq <- mcat_strains_freq %>%
-  #   group_by(.data[[species_col]],.data[[cohort_col]],.data[[clusters_col]]) %>%
-  #   summarise(
-  #     Strains_count = sum(Strains_count, na.rm = TRUE),.groups = "drop"
-  #   ) %>%
-  #   group_by(.data[[species_col]],.data[[cohort_col]]) %>%
-  #   mutate(
-  #     Frequency = Strains_count / sum(Strains_count)
-  #   ) %>%
-  #   ungroup()
 
   # Wide: rows = Cluster, columns = Cohort; one table per Species
   # We'll keep long by species + cluster, wide by cohort.
@@ -2102,13 +2091,28 @@ treatment_df <-
 
 # Information on swabs
 infant_swabs_df <-
-  read.csv("./sample_data/Maela_infant_swabs.csv") %>% 
-    dplyr::mutate(specdate = lubridate::as_date(specdate, format = "%d/%m/%Y"))
+  dplyr::bind_rows(
+    read.csv("./sample_data/Maela_infant_swabs.csv") %>% 
+      dplyr::mutate(specdate = lubridate::as_date(specdate, format = "%d/%m/%Y")) %>% 
+      dplyr::select(study_code,specnum,specdate,acute) %>% 
+      dplyr::rename(codenum = study_code) %>% 
+      dplyr::mutate(acute = dplyr::if_else(acute == 0,"No","Yes")),
+    read.csv("./sample_data/20151026_maela_imm_who_data.csv") %>% 
+      dplyr::mutate(specdate = lubridate::as_date(specdate, format = "%d/%m/%Y")) %>% 
+      dplyr::select(codenum,category,dob,specdate,specnum,acute),
+    read.csv("./sample_data/pneumoDEEP_microreact_info.csv") %>% 
+      dplyr::mutate(specdate = lubridate::as_date(specdate, format = "%d/%m/%Y")) %>% 
+      dplyr::select(codenum,category,dob,specdate,specnum,acute)
+  ) %>% 
+    dplyr::distinct() %>% 
+    dplyr::group_by(codenum) %>% 
+    tidyr::fill(category,
+                dob,.direction = "updown")
 
 # For each specimen, find previous treatment
 previous_treatment_df <-
   infant_swabs_df %>%
-    left_join(treatment_df, by = c("study_code" = "codenum"), relationship = "many-to-many") %>%
+    left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
     filter(specdate >= date_start) %>%
     group_by(specnum) %>%
     arrange(desc(date_start)) %>%
@@ -2121,7 +2125,7 @@ previous_treatment_df <-
 # For each specimen, find next treatment
 next_treatment_df <-
   infant_swabs_df %>%
-    left_join(treatment_df, by = c("study_code" = "codenum"), relationship = "many-to-many") %>%
+    left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
     filter(specdate <= date_start) %>%
     group_by(specnum) %>%
     arrange(date_start) %>%
@@ -2135,7 +2139,14 @@ next_treatment_df <-
 treatment_sampling_df <-
   infant_swabs_df %>%
     left_join(previous_treatment_df, by = "specnum") %>%
-    left_join(next_treatment_df, by = "specnum")
+    left_join(next_treatment_df, by = "specnum") %>% 
+    dplyr::right_join(
+      sample_df %>% 
+        dplyr::filter(Species == "Mixed bacteria" & Country == "Thailand") %>% 
+        dplyr::select(npg_run_id,Isolate,sample_donor_id,sample_supplier_name) %>% 
+        dplyr::mutate(specnum = gsub("_Mixed","",Isolate)),
+      by = "specnum"
+    )
 
 ```
 
@@ -2147,9 +2158,15 @@ treatment_sampling_df <-
 
 - Are these patterns consistent across countries?
 
+- Is there variation with age in Maela? (mother v. infant, changes in first year)
+
+- Is there variation in acute/non-acute in Maela?
+
 ## Co-colonisation analysis of strains
 
 - Is the same pattern of co-colonisation observed across species (including serosensitive/seroresistant Moraxellae)?
+
+- Seroresistant/serosensitive difference in acute in Maela?
 
 - Is the same level of co-colonisation observed across countries?
 
