@@ -44,6 +44,76 @@ theme_set(theme_bw() + theme(strip.background = element_blank()))
 
 ``` {r Functions}
 
+compute_pairwise_distances <- function(df) {
+  
+  # Create all pairwise combinations of rows (upper triangle, no self-pairs)
+  tidyr::expand_grid(
+    i = seq_len(nrow(df)),
+    j = seq_len(nrow(df))
+  ) |>
+    filter(i < j) |>
+    mutate(
+      # Sample identifiers for each pair
+      sample_i = df$Sample_Name[i],
+      sample_j = df$Sample_Name[j],
+      
+      # Cluster assignments for each pair
+      cluster_i = df$Standard_Cluster[i],
+      cluster_j = df$Standard_Cluster[j],
+      
+      # Euclidean distance: sqrt((x2 - x1)^2 + (y2 - y1)^2)
+      euclidean_dist = sqrt(
+        (df$tsne1D[j] - df$tsne1D[i])^2 +
+        (df$tsne2D[j] - df$tsne2D[i])^2
+      ),
+      
+      # Absolute size difference
+      size_diff = abs(df$size[j] - df$size[i]),
+      
+      # Classify whether the pair shares a cluster
+      same_cluster = case_when(
+        cluster_i == "-1" | cluster_j == "-1" ~ "Unassigned",
+        cluster_i == cluster_j               ~ "Same cluster",
+        TRUE                                 ~ "Different cluster"
+      )
+    ) |>
+    select(
+      sample_i, sample_j,
+      cluster_i, cluster_j,
+      euclidean_dist,
+      size_diff,
+      same_cluster
+    )
+}
+
+merge_clusters_by_distance <- function(df, dist_df, plasmid_dist_threshold, size_diff_threshold) {
+  
+  # --- Build edges from all pairs below both thresholds ---
+  edges <- dist_df |>
+    filter(
+      euclidean_dist <= plasmid_dist_threshold & size_diff <= size_diff_threshold
+    ) |>
+    select(sample_i, sample_j)
+  
+  # --- Build graph from all samples as vertices ---
+  # Isolated points (no edges) are preserved as their own single-node component
+  g <- graph_from_data_frame(
+    d        = edges,
+    vertices = df$Sample_Name,
+    directed = FALSE
+  )
+  
+  # --- Extract connected components ---
+  components_df <- tibble(
+    Sample_Name    = V(g)$name,
+    merged_cluster = components(g)$membership
+  )
+  
+  # --- Join back to original df ---
+  df |>
+    left_join(components_df, by = "Sample_Name")
+}
+
 associate_resistance_plasmids <- function(m_df, amr_cols = NULL, plasmid_cols = NULL) {
   
   plasmid_res_df <-
@@ -622,6 +692,25 @@ sample_df <-
                     TRUE ~ NA_real_
                   )
                 )
+
+plot_plasmid_function <- function(fn, title_str = NULL) {
+  
+  if (is.null(title_str)) {
+    title_str = fn
+  }
+  
+  plasmid_tsv <-
+    readr::read_tsv(paste0('./plasmid_annotations/',fn),
+                    col_names = TRUE,skip = 5)
+  
+  ggplot(plasmid_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
+  geom_gene_arrow() +
+  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3") +
+  ggtitle(title_str) +
+  theme_genes()
+  
+}
 
 species_palette <- c(
   "Haemophilus influenzae" = "#E6A0C4FF",
@@ -2008,62 +2097,30 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 
 ## Analysis of plasmid gene content
 
-## All summary of the resistance gene analysis of *M.cattarrhalis*
+### Plasmids in *M. catarrhalis*
 
-we use Bakta to analise the plasmid to find resistance gene then we use Artemis software to those resistance genes. How can I use file type from which analysis to finalize with gggene in Rstudio?
+#### pAC411
 
 ```{r import tsv file from Bakta_analysis_plasmids folder}
 
-plot_plasmid_function <- function(fn) {
-  
-  plasmid_tsv <-
-    readr::read_tsv('./Bakta_analysis_plasmids/46321_1#275_plasmid_AC411_clean.tsv', col_names = TRUE)
-  
-}
-
-#plasmid275_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46321_1#275_plasmid_AC411_clean.tsv', col_names = TRUE)
-#plasmid275_tsv
-
-#plasmid175_tsv <-readr::read_tsv('./Bakta_analysis_plasmids/46358_2#175_plasmid_AC411.tsv_clean.tsv', col_names = TRUE)
-#plasmid360_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46358_2#360_plasmid_AC411.tsv_clean.tsv', col_names = TRUE)
-#plasmid78_tsv <- readr::read_tsv('./Bakta_analysis_plasmids/46358_2#78_plasmid_AC411.tsv_clean.tsv', col_names = TRUE)
+plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
 
 ```
 
-## Use gggene to plot annotations of plasmids
+Use `plasmid_reclustering_df` to find representatives for annotation:
 
-```{r plot}
-ggplot(plasmid78_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
-  geom_gene_arrow() +
-  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
-  scale_fill_brewer(palette = "Set3")
-
-ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
-  geom_gene_arrow() +
-  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
-  scale_fill_brewer(palette = "Set3") +
-  theme_genes()
-
-dummies <- make_alignment_dummies(plasmid275_tsv,
-  aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, id = Gene),
-  on = "spoIVCA")
-ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
-  geom_gene_arrow() +
-  geom_blank(data = dummies) +
-  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
-  scale_fill_brewer(palette = "Set3") +
-  theme_genes()
-
-ggplot(plasmid275_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene, label = Gene)) +
-  geom_gene_arrow(arrowhead_height = unit(3, "mm"), arrowhead_width = unit(1, "mm")) +
-  geom_gene_label(align = "left") +
-  geom_blank(data = dummies) +
-  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
-  scale_fill_brewer(palette = "Set3") +
-  theme_genes()
+[1] "plasmid_AG261_9"  "plasmid_AG261_10" "plasmid_AG261_11" "plasmid_AB778"    "plasmid_AG261_14" "plasmid_AC411"   
+[7] "plasmid_AG261_17" "plasmid_AG261_20"
 
 
-```
+### Plasmids in *H. influenzae*
+
+Use `plasmid_reclustering_df` to find representatives for annotation:
+
+ [1] "plasmid_AF100_1"  "plasmid_AB621"    "plasmid_AF100_23" "plasmid_AF100_25" "plasmid_AF100_26" "plasmid_AB946_27"
+ [7] "plasmid_AF100_28" "plasmid_AF098_29" "plasmid_AB946"    "plasmid_AC497_2"  "plasmid_AF098_3"  "plasmid_AE025"   
+[13] "plasmid_AB946_30" "plasmid_AF100_5"  "plasmid_AF100_6"  "plasmid_AF100_7"  "plasmid_AF100_8"  "plasmid_AF100_16"
+[19] "plasmid_AC497_18" "plasmid_AF100_19" "plasmid_AC497_21" "plasmid_AE169"    "plasmid_AB947_24"
 
 ## Summarise single isolate epidemiology
 
@@ -2188,7 +2245,6 @@ included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
 if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
   stop("Hflu Panaroo not run on correct isolate set")
 }
-
 
 ```
 
