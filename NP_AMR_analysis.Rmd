@@ -1640,11 +1640,7 @@ ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input
 ``` {r Clustering of plasmid sequences with}
 
 plasmid_clustering_df <-
-  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv",
-           sep = "\t",
-           header = TRUE,
-           comment.char = "",
-           check.names = FALSE) %>% 
+  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv") %>% 
   dplyr::mutate(
     tsne1D = dplyr::if_else(is.na(tsne1D) | tsne1D == "-",NA_real_,as.numeric(as.character(tsne1D))),
     tsne2D = dplyr::if_else(is.na(tsne2D) | tsne2D == "-",NA_real_,as.numeric(as.character(tsne2D)))
@@ -1677,6 +1673,12 @@ plasmid_clustering_df <-
                        )
   )
 
+# Validate that only QC pass samples are included in the analysis
+if (length(setdiff(unique(plasmid_clustering_df$npg_run_id),c(expected_hflu,expected_mcat))) > 0) {
+  stop("QC fail samples included in plasmid analysis")
+}
+
+# Plot
 ggplot(plasmid_clustering_df,
        aes(x = tsne1D,
            y = tsne2D,
@@ -1690,6 +1692,22 @@ ggplot(plasmid_clustering_df,
   #   colour = "black"
   # ) +
   scale_colour_manual(values = species_palette)
+
+plotly::ggplotly(
+ggplot(plasmid_clustering_df,
+       aes(x = tsne1D,
+           y = tsne2D,
+           colour = Standard_Cluster,
+           shape = Cohort,
+           group_by = `Plasmid type`)) +
+  geom_point()
+)
+  # geom_mark_ellipse(
+  #   expand = 0.02,     # how much to expand around the points
+  #   alpha  = 0.15,     # fill transparency
+  #   colour = "black"
+  # ) +
+  #scale_colour_manual(values = species_palette)
 
 ```
 
