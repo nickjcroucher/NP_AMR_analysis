@@ -1640,7 +1640,11 @@ ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input
 ``` {r Clustering of plasmid sequences with}
 
 plasmid_clustering_df <-
-  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv") %>% 
+  read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv",
+           sep = "\t",
+           header = TRUE,
+           comment.char = "",
+           check.names = FALSE) %>% 
   dplyr::mutate(
     tsne1D = dplyr::if_else(is.na(tsne1D) | tsne1D == "-",NA_real_,as.numeric(as.character(tsne1D))),
     tsne2D = dplyr::if_else(is.na(tsne2D) | tsne2D == "-",NA_real_,as.numeric(as.character(tsne2D)))
@@ -1872,7 +1876,7 @@ archive::archive_extract(
   dir  = tmp_dir
 )
 
-Hinflu_version4_gene_preabsence <-
+Hinflu_gene_preabsence <-
   read.csv(
     tmp_path,
     header = TRUE,
@@ -1891,11 +1895,11 @@ Hinflu_version4_gene_preabsence <-
     )
 
 expected_hflu <- Hflu_filter$npg_run_id
-included_hflu <- unique(Hinflu_version4_gene_preabsence$npg_run_id)
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
 
-# if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
-#   stop("Hflu Panaroo not run on correct isolate set")
-# }
+if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+  stop("Hflu Panaroo not run on correct isolate set")
+}
 
 
 ```
@@ -1909,7 +1913,7 @@ TO DO
 if (identical(Sys.getenv("CI"), "true")) {
   
   message("CI environment detected: memory management commands")
-  Hinflu_version4_gene_preabsence %<>%
+  Hinflu_gene_preabsence %<>%
   slice_sample(prop = 0.01)
   
 }
@@ -1950,7 +1954,7 @@ archive::archive_extract(
 
 ``` {r Process archive, cache = FALSE}
 
-Mcat_version4_gene_preabsence <- read.csv(
+Mcat_gene_preabsence <- read.csv(
   tmp_path,
   header = TRUE,
   comment.char = "",
@@ -1968,11 +1972,11 @@ Mcat_version4_gene_preabsence <- read.csv(
   )
 
 expected_mcat <- Mcat_filter$npg_run_id
-included_mcat <- unique(Mcat_version4_gene_preabsence$npg_run_id)
+included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
 
-# if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
-#   stop("Mcat Panaroo not run on correct isolate set")
-# }
+if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
+  stop("Mcat Panaroo not run on correct isolate set")
+}
 
 ```
 
@@ -1985,7 +1989,7 @@ TO DO
 if (identical(Sys.getenv("CI"), "true")) {
 
   message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
-  Mcat_version4_gene_preabsence %<>%
+  Mcat_gene_preabsence %<>%
   slice_sample(prop = 0.01)
   
 }
@@ -1998,10 +2002,10 @@ if (identical(Sys.getenv("CI"), "true")) {
 
 p <- plot_mcat_cluster_pairs_two_species(
   dplyr::bind_rows(
-    Mcat_version4_gene_preabsence %>% 
+    Mcat_gene_preabsence %>% 
       process_gene_frequencies(Mcat_microreact_df)  %>% 
       dplyr::mutate(Species = "Moraxella catarrhalis"),
-    Hinflu_version4_gene_preabsence %>% 
+    Hinflu_gene_preabsence %>% 
       process_gene_frequencies(Hflu_microreact_df)  %>% 
       dplyr::mutate(Species = "Haemophilus influenzae")
   ),
