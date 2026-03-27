@@ -2208,9 +2208,9 @@ Read in the gene presence/absence matrix for *H. influenzae*:
 
 hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
 
-if (identical(Sys.getenv("CI"), "true")) {
-  hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
-}
+# if (identical(Sys.getenv("CI"), "true")) {
+#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
+# }
 
 tmp_dir  <- tempdir()
 hflu_fn <- "Hflu_gene_presence_absence.csv"
@@ -2280,9 +2280,9 @@ Read in the gene presence/absence matrix:
 
 mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
 
-if (identical(Sys.getenv("CI"), "true")) {
-  mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
-}
+# if (identical(Sys.getenv("CI"), "true")) {
+#   mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
+# }
 
 tmp_dir  <- tempdir()
 mcat_fn <- "Mcat_gene_presence_absence.csv"
@@ -2430,6 +2430,8 @@ long_read_sample_df <-
 ## Methylation analyses from long-read data
 
 Is the sharing of plasmids between species limited by RMS?
+
+Methylase: group_2030.
 
 ## Passage analysis from long-read data
 
