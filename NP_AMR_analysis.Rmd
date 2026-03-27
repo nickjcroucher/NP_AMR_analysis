@@ -30,8 +30,9 @@ require(GGally)
 require(archive)
 require(kableExtra)
 require(ggforce)
-#require(ggrepel)
+require(ggrepel)
 require(patchwork)
+require(igraph)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -1637,8 +1638,33 @@ ls -d -1 plasmid_folder/*.fasta > plasmid_input.txt mge_cluster --create --input
 
 ```
 
-``` {r Clustering of plasmid sequences with}
+We calculate the plasmid sizes:
 
+``` {bash Look at plasmid sizes, eval = FALSE}
+
+for f in *fasta; do echo -en "${f}\t"; grep -v ">" ${f} | tr -d "\n" | wc -c; done
+
+```
+
+We plot the overall size distribution of the plasmids:
+
+``` {r Load size and clustering of plasmid sequences }
+
+# For checking no QC failures are analysed
+expected_hflu <- Hflu_filter$npg_run_id
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
+
+# Load up sizes
+plasmid_sizes_df <-
+  read.table("./MOB_suite/plasmid_sizes.tab", header = F, comment.char = "") %>% 
+  dplyr::rename(
+    file = V1,
+    size = V2
+  ) %>% 
+  dplyr::mutate(Sample_Name = gsub(".fasta","",file)) %>% 
+  dplyr::select(Sample_Name,size)
+
+# Load up clustering
 plasmid_clustering_df <-
   read.csv("./MOB_suite/NP_AMR_plasmid_clustering_results.csv") %>% 
   dplyr::mutate(
@@ -1671,6 +1697,10 @@ plasmid_clustering_df <-
                        Standard_Cluster == -1 ~ NA_character_,
                        TRUE ~ paste0("plasmid_NV",Standard_Cluster)
                        )
+  ) %>% 
+  dplyr::left_join(
+    plasmid_sizes_df,
+    by = "Sample_Name"
   )
 
 # Validate that only QC pass samples are included in the analysis
@@ -1678,36 +1708,194 @@ if (length(setdiff(unique(plasmid_clustering_df$npg_run_id),c(expected_hflu,expe
   stop("QC fail samples included in plasmid analysis")
 }
 
-# Plot
+# Plot size range
 ggplot(plasmid_clustering_df,
-       aes(x = tsne1D,
-           y = tsne2D,
-           colour = Species,
-           shape = Cohort,
-           group_by = `Plasmid type`)) +
-  geom_point() +
-  # geom_mark_ellipse(
-  #   expand = 0.02,     # how much to expand around the points
-  #   alpha  = 0.15,     # fill transparency
-  #   colour = "black"
-  # ) +
-  scale_colour_manual(values = species_palette)
+       aes(x = size)) +
+  geom_density()
 
-plotly::ggplotly(
-ggplot(plasmid_clustering_df,
-       aes(x = tsne1D,
-           y = tsne2D,
-           colour = Standard_Cluster,
-           shape = Cohort,
-           group_by = `Plasmid type`)) +
-  geom_point()
-)
-  # geom_mark_ellipse(
-  #   expand = 0.02,     # how much to expand around the points
-  #   alpha  = 0.15,     # fill transparency
-  #   colour = "black"
-  # ) +
-  #scale_colour_manual(values = species_palette)
+```
+
+We plot the plasmids by size and sequence similarity:
+
+``` {r Colour by size}
+
+ggplot(
+  plasmid_clustering_df |>
+    dplyr::filter(
+      !is.na(tsne1D), !is.na(tsne2D),
+      !is.infinite(tsne1D), !is.infinite(tsne2D)
+    ),
+  aes(
+    x      = tsne1D,
+    y      = tsne2D,
+    colour = size
+  )
+) + geom_point()
+
+```
+
+This shows the smallest plasmids are at the top.
+
+``` {r Load up plasmid clustering}
+
+# Calculate distances between plasmids from tSNE
+dist_df <- compute_pairwise_distances(plasmid_clustering_df)
+
+# Calcualte a distance threshold
+plasmid_dist_threshold <- 4
+
+# Look at pairwise distances
+ggplot(dist_df,
+       aes(x = euclidean_dist,
+           colour = same_cluster)) +
+  geom_density() +
+  geom_vline(colour = "red", linetype = 2, xintercept = plasmid_dist_threshold)
+
+```
+
+
+``` {r Plot size differentials}
+
+# Compare by size differences
+plasmid_size_threshold <- 2500
+
+ggplot(dist_df,
+       aes(x = size_diff,
+           colour = same_cluster)) +
+  geom_density() +
+  scale_x_log10() +
+  geom_vline(colour = "red", linetype = 2, xintercept = plasmid_size_threshold)
+
+```
+
+
+``` {r Decide on clustering of plasmids}
+
+# Merge nearby plasmids through single linkage clustering with the new threshold
+plasmid_reclustering_df <- merge_clusters_by_distance(
+  df                     = plasmid_clustering_df,
+  dist_df                = dist_df,
+  plasmid_dist_threshold = plasmid_dist_threshold,
+  size_diff_threshold    = plasmid_size_threshold
+) %>%
+  dplyr::mutate(merged_cluster = as.character(merged_cluster))|>
+  dplyr::group_by(plasmid_name) |>
+  dplyr::mutate(
+    n_clusters_in_group = dplyr::n_distinct(merged_cluster, na.rm = TRUE)
+  ) |>
+  dplyr::ungroup() |>
+  dplyr::group_by(merged_cluster) |>
+  dplyr::mutate(
+    all_novel_in_cluster = all(grepl("^plasmid_novel_", plasmid_name)),
+    representative_name  = dplyr::case_when(
+      all_novel_in_cluster ~ "plasmid_novel",
+      TRUE                 ~ dplyr::first(plasmid_name[!grepl("^plasmid_novel_", plasmid_name)])
+    )
+  ) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(
+    new_plasmid_name = dplyr::case_when(
+      # Unassigned plasmids get NA
+      is.na(merged_cluster)    ~ NA_character_,
+      # All novel in cluster - use plasmid_novel prefix with cluster number appended
+      all_novel_in_cluster     ~ paste0("plasmid_novel_", merged_cluster),  # <-- cluster number appended
+      # Single cluster for this plasmid_name - keep representative name as-is
+      n_clusters_in_group == 1 ~ representative_name,
+      # Split across multiple clusters - append sub-cluster index
+      TRUE                     ~ paste0(
+        representative_name, "_",
+        as.integer(factor(merged_cluster))
+      )
+    )
+  ) |>
+  dplyr::select(-n_clusters_in_group, -all_novel_in_cluster, -representative_name)
+
+# Plotting groups after merging
+cluster_sizes <- plasmid_reclustering_df |>
+  dplyr::count(merged_cluster)
+
+small_clusters <- cluster_sizes |> dplyr::filter(n <= 25) |> dplyr::pull(merged_cluster)
+large_clusters <- cluster_sizes |> dplyr::filter(n >  25) |> dplyr::pull(merged_cluster)
+
+# --- Cluster centroids for ggrepel labels ---
+cluster_centroids <-
+  plasmid_reclustering_df |>
+  dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |>
+  dplyr::group_by(merged_cluster,new_plasmid_name) |>
+  dplyr::summarise(
+    tsne1D = mean(tsne1D),
+    tsne2D = mean(tsne2D),
+    # True radius: max Euclidean distance from centroid to any point in cluster
+    radius = max(sqrt(
+      (tsne1D - mean(tsne1D))^2 +
+      (tsne2D - mean(tsne2D))^2
+    )),.groups = "drop"
+  ) |>
+  dplyr::mutate(
+    # Nudge direction is determined by centroid position relative to plot origin
+    # Magnitude scales with true cluster radius + fixed buffer
+    nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
+    nudge_y = sign(tsne2D) * (radius + 2)
+  )
+
+# --- Plot ---
+ggplot(
+  plasmid_reclustering_df |>
+    dplyr::filter(
+      !is.na(tsne1D), !is.na(tsne2D),
+      !is.infinite(tsne1D), !is.infinite(tsne2D)
+    ),
+  aes(
+    x      = tsne1D,
+    y      = tsne2D,
+    colour = Species,
+    shape  = Cohort
+  )
+) +
+  # Ellipses for small clusters - NO label aesthetic
+  ggforce::geom_mark_ellipse(
+    data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
+                                      !is.na(merged_cluster)),
+    aes(group = new_plasmid_name),
+    expand    = 0.015,
+    alpha     = 0.15,
+    colour    = "black"
+  ) +
+  # Hulls for large clusters - NO label aesthetic
+  ggforce::geom_mark_hull(
+    data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
+                                      !is.na(merged_cluster)),
+    aes(group = new_plasmid_name),
+    expand    = 0.015,
+    alpha     = 0.15,
+    colour    = "black",
+    concavity = 10
+  ) +
+  geom_point() +
+  # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
+  ggrepel::geom_label_repel(
+    data = cluster_centroids,
+    aes(
+      x     = tsne1D,
+      y     = tsne2D,
+      label = new_plasmid_name
+    ),
+    inherit.aes        = FALSE,
+    colour             = "black",
+    size               = 3,
+    fontface           = "bold",
+    fill               = alpha("white", 0.7),
+    label.size         = 0.2,
+    point.padding      = unit(1, "lines"),
+    box.padding        = unit(0.5, "lines"),
+    nudge_x            = cluster_centroids$nudge_x*0.5 * sign(cluster_centroids$tsne1D),
+    nudge_y            = cluster_centroids$nudge_y*0.5 * sign(cluster_centroids$tsne2D),
+    max.overlaps       = Inf,
+    min.segment.length = 0,
+    segment.size       = 0.3,
+    segment.colour     = NA     # <-- hide segments if drawn
+  ) +
+  scale_colour_manual(values = species_palette)
 
 ```
 
@@ -1716,12 +1904,11 @@ Add the mobsuite information to the microreact epidemiology CSV files:
 ``` {r Add mobsuite data to CSV files}
 
 plasmid_clustering_by_isolate_df <-
-  plasmid_clustering_df %>% 
-    dplyr::select(npg_run_id,`Plasmid type`) %>% 
-    dplyr::filter(!is.na(`Plasmid type`)) %>% 
+  plasmid_reclustering_df %>% 
+    dplyr::select(npg_run_id,new_plasmid_name) %>% 
     dplyr::mutate(Presence = "Present") %>% 
     tidyr::pivot_wider(id_cols = npg_run_id,
-                       names_from = `Plasmid type`,
+                       names_from = new_plasmid_name,
                        values_from = Presence,
                        values_fill = "Absent")
 
@@ -1912,9 +2099,6 @@ Hinflu_gene_preabsence <-
       values_to = "CDS"
     )
 
-expected_hflu <- Hflu_filter$npg_run_id
-included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
-
 if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
   stop("Hflu Panaroo not run on correct isolate set")
 }
@@ -2038,13 +2222,21 @@ p
 
 ```
 
-### Analysis of recombination across populations
+## Compare gene frequencies across locations
 
-TO DO: fastGEAR
+Key hypothesis for the evolution of plasmids is that they enable the local adaptation of strains. Therefore we can plot their frequency across locations.
+
+### Frequency of plasmids across populations
+
+### Frequency of plasmid-borne genes across populations
 
 ## Phylogenetic analysis
 
 TO DO: Gubbins
+
+### Analysis of recombination across populations
+
+TO DO: fastGEAR
 
 # Analysis of long-read data
 
