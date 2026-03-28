@@ -2107,11 +2107,12 @@ plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
 
 ```
 
-Use `plasmid_reclustering_df` to find representatives for annotations - these groups are in the column new_plasmid_name:
+Use `plasmid_reclustering_df` to find representatives for annotation:
 
 [1] "plasmid_AG261_9"  "plasmid_AG261_10" "plasmid_AG261_11" "plasmid_AB778"    "plasmid_AG261_14" "plasmid_AC411"   
 [7] "plasmid_AG261_17" "plasmid_AG261_20"
 
+For each one, search the dataframe, then use the "sample_name" column to find the right annotation (note you may have to replace the # character with an underscore).
 
 ### Plasmids in *H. influenzae*
 
