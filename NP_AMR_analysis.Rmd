@@ -4,7 +4,6 @@ author: "Sunheng Kaing & Nicholas Croucher"
 date: "`r Sys.Date()`"
 output:
   html_document: default
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -33,14 +32,15 @@ require(kableExtra)
 require(ggforce)
 require(ggrepel)
 require(patchwork)
-<<<<<<< HEAD
 require(igraph)
-library(gggenes)
-library(readr)
-=======
-require(reshape2)
-require(vegan)
->>>>>>> 22be70d (Integrate epidemiological data)
+require(gggenes)
+require(readr)
+require(bluster) 
+require(mia) 
+require(TreeSummarizedExperiment) 
+require(SummarizedExperiment)
+require(dendextend)
+require(ggdendro)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -112,12 +112,12 @@ merge_clusters_by_distance <- function(df, dist_df, plasmid_dist_threshold, size
   # --- Extract connected components ---
   components_df <- tibble(
     Sample_Name    = V(g)$name,
-    merged_cluster = components(g)$membership
+    merged_cluster = igraph::components(g)$membership
   )
   
   # --- Join back to original df ---
   df |>
-    left_join(components_df, by = "Sample_Name")
+    dplyr::left_join(components_df, by = "Sample_Name")
 }
 
 associate_resistance_plasmids <- function(m_df, amr_cols = NULL, plasmid_cols = NULL) {
@@ -867,7 +867,7 @@ We will use these two files to merge getting chronological data set.
 ```{r, merge data, echo=TRUE}
 
 sample_assemblies_df <- 
-  right_join(as_tibble(assembly_stats_df),
+  dplyr::right_join(as_tibble(assembly_stats_df),
              as_tibble(sample_df),
              by = "npg_run_id")
 
@@ -2500,11 +2500,11 @@ infant_swabs_df <-
 # For each specimen, find previous treatment
 previous_treatment_df <-
   infant_swabs_df %>%
-    left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
+    dplyr::left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
     filter(specdate >= date_start) %>%
     group_by(specnum) %>%
     arrange(desc(date_start)) %>%
-    slice(1) %>%
+    dplyr::slice(1) %>%
     mutate(days_since_previous = as.numeric(specdate - date_start)) %>%
     select(specnum, days_since_previous, 
            previous_treatment_date = date_start,
@@ -2513,11 +2513,11 @@ previous_treatment_df <-
 # For each specimen, find next treatment
 next_treatment_df <-
   infant_swabs_df %>%
-    left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
+    dplyr::left_join(treatment_df, by = "codenum", relationship = "many-to-many") %>%
     filter(specdate <= date_start) %>%
     group_by(specnum) %>%
     arrange(date_start) %>%
-    slice(1) %>%
+    dplyr::slice(1) %>%
     mutate(days_until_next = as.numeric(date_start - specdate)) %>%
     select(specnum, days_until_next,
            next_treatment_date = date_start,
@@ -2526,8 +2526,8 @@ next_treatment_df <-
 # Combine all information
 treatment_sampling_df <-
   infant_swabs_df %>%
-    left_join(previous_treatment_df, by = "specnum") %>%
-    left_join(next_treatment_df, by = "specnum") %>% 
+    dplyr::left_join(previous_treatment_df, by = "specnum") %>%
+    dplyr::left_join(next_treatment_df, by = "specnum") %>% 
     dplyr::right_join(
       sample_df %>% 
         dplyr::filter(Species == "Mixed bacteria" & Country == "Thailand") %>% 
@@ -2542,6 +2542,430 @@ treatment_sampling_df <-
 
 - Which species co-exist, and which compete, based on the observed deep sequencing data?
 
+To answer this question, I used the Kraken/Bracken output to perform the following steps:    
+1. Generated an abundance table at the species level.  
+2. Filtered out all single-infection samples.  
+3. Performed a Pearson correlation test across species to obtain a correlation matrix.  
+4. Visualised the results using ggplot2.  
+
+
+``` {r Pearson correlation analysis for competition or association between species analysis }
+Mixed_bacteria_samples <- parse_bracken("./sample_data/6588_bracken_summary_report.tsv.gz")%>%
+  mutate(Species_Detected1 = str_extract(Classification, "[^|]+$")) %>%
+  mutate(Species_Detected2 = str_extract(Species_Detected1, "[^_]+_[^_]+$")) %>%
+  mutate(Species=str_replace(Species_Detected2,"_"," "))%>%
+  select(-Classification,-Species_Detected1,-Species_Detected2)%>%
+  select(Species,everything())%>%
+filter(
+  str_count(Species, "\\S+") == 2,            # keep only two-word names
+  !str_detect(Species, "\\[.*\\]"),           # remove brackets
+  !str_detect(Species, "\\(.*\\)"),
+  !str_detect(Species, "^\\d") ,             # remove strings starting with a number
+  str_detect(Species, "^[A-Z][a-z]+\\s[a-z]+$"),
+  !str_detect(Species, "ATCC|FSL|DSM|taxon|sp|PCC"), # remove 'sp' 'PCC' 'ATCC' etc
+  Species%in%species_sample_df$Detected_species,
+  Species!="Homo sapiens")%>% # keep species in species_sample_df 
+column_to_rownames("Species") %>%
+t() %>%
+as.data.frame() %>%
+rownames_to_column(var ="npg_run_id" )%>%
+ dplyr::left_join(
+  species_sample_df %>% select(npg_run_id, Country, Description),
+  by = "npg_run_id"
+ )%>%
+  distinct(npg_run_id, .keep_all = TRUE)%>%
+mutate(npg_run_id = as.factor(npg_run_id))%>%
+ column_to_rownames(var = "npg_run_id")%>%
+  filter(Description=="Mixed bacteria")
+
+cor_matrix_Thailand <- cor(Mixed_bacteria_samples%>%filter(Country=="Thailand")%>%select(-c(Country,Description)), method = "spearman")
+cor_matrix_Cambodia <- cor(Mixed_bacteria_samples%>%filter(Country=="Cambodia")%>%select(-c(Country,Description)), method = "spearman")
+
+melted_Thailand <-reshape2:: melt(cor_matrix_Thailand)
+melted_Thailand$Country = "Thailand"
+melted_Combodia <- reshape2::melt(cor_matrix_Cambodia)
+melted_Combodia$Country = "Cambodia"
+
+species_co_colonisation_per_country = bind_rows(melted_Thailand,melted_Combodia) 
+species_co_colonisation_per_country = na.omit(species_co_colonisation_per_country)
+species_co_colonisation_per_country$Country = factor(species_co_colonisation_per_country$Country)
+```
+#### Visualisation of pearson correlation: Species co_colonisation in mixed infection from deep sequencing data in Cambodia and Thailand 
+
+``` {r Visualisation of pearson correlation }
+p1=ggplot(data = species_co_colonisation_per_country, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation")+
+  theme(
+    legend.title = element_text(size=16), 
+    legend.text = element_text(size = 16),
+       axis.text.x = element_text(angle = 90,size = 14, vjust=.5, hjust=1),
+        axis.text.y = element_text(size = 13, vjust=.5, hjust=1))+
+  labs(x="", y="")
+p1
+```
+
+
+#### Visualisation of pearson correlation:Species co_colonisation in mixed infection per Country 
+
+``` {r Visualisation of pearson correlation accross Thailand and Cambodia }
+p2=ggplot(data = species_co_colonisation_per_country, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation")+
+  guides(color = guide_legend(override.aes = list(size = 30)))+
+  facet_wrap(~Country)+
+  theme(
+    legend.title = element_text(size=16), 
+    legend.text = element_text(size = 16),
+    strip.text = element_text(face="bold", size=40),
+    axis.text.x = element_text(angle = 90,size = 12, vjust=.5, hjust=1),
+        axis.text.y = element_text(size = 10, face = "bold", vjust=.5, hjust=1))+
+  labs(x="", y="")
+p2
+```
+
+
+This analysis revealed a **competition** between *Haemophilus influenzae*, and *Moraxella catarrhalis*.  
+
+To confirm this observation, we clustered samples/species using bluster/TreeSummarizedExperiment/mia packages.  
+
+To do this:   
+
+1. I first created a tse object using TreeSummarizedExperiment.  
+2. I Filtered out species with low proportion to ease the calculation.  
+3. I added clusters with addcluster and HclustParam functions.  
+4. I generated a table with the number of samples contributing for each cluster.  
+5. I got the hclust data from metadata.  
+6. I used as.dendrogram and color_branches functions from dendextend package to convert hclust data and color the graph.  
+
+#### Add sample cluster
+``` {r Samples clustering}                  
+metadata = species_sample_df%>%
+filter(npg_run_id%in%rownames(Mixed_bacteria_samples))%>%
+  distinct(npg_run_id, .keep_all = TRUE) %>%
+  column_to_rownames(var = "npg_run_id")
+
+tse <- TreeSummarizedExperiment(
+  assays = list(counts = Mixed_bacteria_samples%>%
+                  select(-Country,-Description)%>%
+                  t() %>% 
+                  as.data.frame()),
+  colData=metadata
+)
+
+altExp(tse, "prevalent") <- agglomerateByPrevalence(
+  tse,
+  rank = NULL, prevalence = 20 / 100, detection = 1 / 100
+)
+
+# Add sample cluster 
+altExp(tse, "prevalent") <- addCluster(
+  altExp(tse, "prevalent"),
+  assay.type = "counts",
+  by = "cols",
+  HclustParam(method = "ward.D2", dist.fun = getDissimilarity, metric = "bray",
+              cut.params = list(k=6)),
+  full = TRUE,
+  clust.col = "hclust"
+)
+table(altExp(tse, "prevalent")$hclust)
+
+# Get hclust data from metadata
+hclust_data <- metadata(altExp(tse, "prevalent"))$clusters$hclust
+
+ # Get the dendrogram object
+dendro <- as.dendrogram(hclust_data)
+k <- length(unique(altExp(tse, "prevalent")$hclust))
+
+# Color the branches by clusters
+cols <- scales::hue_pal()(k)
+
+# Order the colors to be equivalent to the factor levels
+cols <- cols[c( 2, 1, 3,4,5,6)]
+dend <- color_branches(dendro, k = k, col = unlist(cols))
+
+# Label the samples by their dominant taxon
+
+alt <- altExp(tse, "prevalent")
+
+assay(alt) <- as.matrix(assay(alt))
+
+altExp(tse, "prevalent") <- addDominant(alt)
+
+labels(dend) <- altExp(tse, "prevalent")$dominant_taxa
+dend <- color_labels(dend, k = k, col = unlist(cols))
+# Adjust frame for the figure
+par(mar = c(9, 3, 0.5, 0.5))
+# Plot dendrogram
+dend |>
+  set("labels_cex", 0.5) |>
+  plot()
+
+ 
+```
+
+
+#### Dominant species per clester.  
+
+Dominant species were extracted from individual samples across clusters to identify species contributions to each cluster.  
+
+A summary table was generated to quantify the frequency with which each species appeared as the dominant species within clusters, and corresponding proportions were calculated.  
+
+These proportions were visualized using a bar plot produced with ggplot2.  
+
+
+```{r species contibution to clusters }
+Dominant_taxa_sample = as.data.frame( altExp(tse, "prevalent")$dominant_taxa) %>%
+  bind_cols(., as.data.frame(altExp(tse, "prevalent")$hclust))%>%
+  rownames_to_column(var="npg_run_id")
+colnames(Dominant_taxa_sample) = c("npg_run_id","Dominant_Species","Cluster")
+
+table_Dominant_taxa = as.data.frame(table(Dominant_taxa_sample$Dominant_Species,Dominant_taxa_sample$Cluster))
+colnames(table_Dominant_taxa) = c("Dominant_Species","Cluster","Frequency")
+list_freq=list()
+a=1
+for (i in unique(table_Dominant_taxa$Cluster)) {
+  df1= table_Dominant_taxa[table_Dominant_taxa$Cluster==i,]
+  df1=df1%>%mutate(Proportion=Frequency/sum(Frequency))
+  list_freq[[a]]=df1
+  a=a+1
+}
+table_Dominant_taxa = list_freq[[1]]
+for (i in 2:length(list_freq)) {
+  table_Dominant_taxa = bind_rows(table_Dominant_taxa,list_freq[[i]])
+}
+
+species_colors=c("#D9F0A3","#A6CEE3", "#1F78B4", '#B2DF8A',"#FB9A99", 
+  "#33A02C", "#E31A1C","#CAB2D6","#FF7F00","#6A3D9A",
+  "#d5d5d5","#B15928","#08306B","#7CAE00" ,"#F8766D",
+  "#00BFC4", "#C77CFF","#E28900","#C29A00","#F27D54",
+  "#B5A000"  ,"#00BECC","#95A900", "#00B817","#B783FF",
+  "#00BB44" ,"#7D96FF" ,"#00C089" ,"#F365E6", "#00C19C",
+  "#00C1AD" ,"#FD7083","#00C0BD","#FFC107","#4F9FFF",
+  '#EE6677', "#FEB24C", "#000000", "#004529", "#78C679","#1E88E5"
+  )
+names(species_colors) <- c(colnames(Mixed_bacteria_samples[-c(41,42)]),"Other")
+
+
+table_Dominant_taxa<-table_Dominant_taxa%>%
+  mutate(Dominant_Species = factor(Dominant_Species,levels= c('Bacillus safensis',         
+                                                              'Bacillus velezensis','Enterobacter cloacae',       
+                                                              'Enterobacter hormaechei','Escherichia coli'   ,         
+                                                              'Acinetobacter baumannii', 'Klebsiella pneumoniae',       
+                                                              'Mammaliicoccus sciuri' ,'Moraxella bovis' ,            
+                                                              'Bacillus altitudinis','Moraxella lincolnii'  ,       
+                                                              'Moraxella nonliquefaciens','Neisseria subflava',          
+                                                              'Staphylococcus arlettae','Bacillus anthracis','Staphylococcus capitis',      
+                                                              'Bacillus cereus','Staphylococcus haemolyticus',
+                                                              'Staphylococcus hominis','Staphylococcus saprophyticus',
+                                                              'Streptococcus dysgalactiae','Streptococcus mitis',        
+                                                              'Acinetobacter variabilis','Streptococcus pyogenes',        
+                                                              'Staphylococcus epidermidis','Staphylococcus aureus','Moraxella catarrhalis',
+                                                              'Streptococcus pneumoniae','Haemophilus influenzae','Other')))
+
+p3=ggplot(table_Dominant_taxa,aes(fill = Dominant_Species,y=Proportion,x=Cluster))+
+  geom_bar(stat ="identity" ,position = "stack")+
+  scale_fill_manual(values = species_colors)+
+  ggtitle("Dominant Species proportion accross Clusters")+
+  theme(plot.title = element_text(size = 20,face ="bold.italic", hjust = 0.5, 
+                                  margin = margin(t = 10, b = 20, unit = "pt")),
+        legend.text = element_text(size = 10),
+        strip.text = element_text(face="bold.italic", size=40),
+        axis.title.x = element_text(face="bold",size=30),
+        axis.title.y = element_text(face="bold",size=30),
+        axis.text.x = element_text(angle = 90,size = 20, vjust=.5, hjust=1),
+        axis.text.y = element_text(size = 20),
+        axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  labs(x="Cluster",
+       y="Proportion")
+p3
+```
+
+### Species co-colonising samples accross clusters.  
+
+Additionally, the proportion of each species within individual samples across clusters was calculated and visualized using a stacked bar plot.    
+
+#### Proportion of species in samples.  
+
+
+```{r Proportion of species in individual samples }
+Mixed_bacteria_samples_cluster<- Mixed_bacteria_samples%>%
+  rownames_to_column(var="npg_run_id")%>%
+  dplyr::left_join(
+    Dominant_taxa_sample %>% select(npg_run_id,Cluster),
+    by = "npg_run_id") %>%
+  distinct(npg_run_id, .keep_all = TRUE)
+
+Matrix_cluster = Mixed_bacteria_samples_cluster%>%
+  select(-Country,-Description,-Cluster)%>%
+  column_to_rownames(var="npg_run_id")
+
+Metadata_cluster = Mixed_bacteria_samples_cluster%>%
+  select(npg_run_id,Country,Description,Cluster)
+  
+prop_cluster <- sweep(Matrix_cluster, 1, rowSums(Matrix_cluster), FUN = "/")%>%
+ as.data.frame() %>%
+  rownames_to_column(var="npg_run_id")%>%
+  pivot_longer(
+    cols = -npg_run_id,
+    names_to = "Species",
+    values_to = "Proportion"
+  )%>%
+  dplyr::left_join(Metadata_cluster, by = "npg_run_id")%>%
+  arrange(Cluster, npg_run_id) %>%
+  mutate(npg_run_id = factor(npg_run_id, levels = unique(npg_run_id)))
+
+p4=ggplot(prop_cluster, aes(x = Proportion, y = npg_run_id, fill = Species)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Cluster, scales = "free_y", ncol = 1,strip.position = "right") +
+  scale_fill_manual(values = species_colors)+
+  labs(x = "Proportion", y = "Samples") +
+  theme_bw()+
+  theme(strip.text.y.left = element_text(angle = 0),
+        axis.text.x = element_text(size = 20, vjust=.5, hjust=1),
+        axis.title.x = element_text(face="bold", size=30),
+        axis.title.y = element_text(face="bold", size=30),
+        strip.text = element_text(face="bold", size = 50)
+        )
+p4
+```
+
+
+#### Proportion of top 10 species in samples.    
+
+```{r Pproportion of top 10 species in individual samples }
+top_species <- prop_cluster %>%
+  group_by(Species) %>%
+  summarise(total = sum(Proportion)) %>%
+  top_n(10, total) %>%
+  pull(Species)
+
+  prop_cluster$Species <- ifelse(prop_cluster$Species %in% top_species,
+                                 prop_cluster$Species, "Other")
+  prop_cluster <- prop_cluster %>%
+    group_by(Cluster, npg_run_id) %>%
+    mutate(total = sum(Proportion)) %>%
+    ungroup() %>%
+    arrange(Cluster, total) %>%
+    mutate(npg_run_id = factor(npg_run_id, levels = unique(npg_run_id)))
+  
+p5=ggplot(prop_cluster, aes(x = Proportion, y = npg_run_id, fill = Species)) +
+    geom_bar(stat = "identity", width = 0.8) +
+    facet_wrap(~ Cluster, scales = "free_y", ncol = 1,strip.position = "right") +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_fill_manual(values = species_colors)+
+    labs(x = "Relative abundance", y = "Samples") +
+    theme_bw() +
+    theme(
+      strip.text.y.left = element_text(angle = 0),
+      axis.text.x = element_text(size = 20, vjust=.5, hjust=1),
+      axis.title.x = element_text(face="bold", size=30),
+      axis.title.y = element_text(face="bold", size=30),
+      strip.text = element_text(face="bold",size = 50)
+      )
+p5
+
+```
+
+After sample clustering, I clustered species using bluster/TreeSummarizedExperiment/mia packages.  
+
+#### Add species cluster 
+To add species cluster:   
+1. I first calculated the distance between species.  
+2. I converted the distance matrix into hclust object and use cutree function to add specie clusters.  
+3. I ordered clusters and ploted using r base.  
+
+```{r Species clustering }
+mat <- assay(tse)
+dist_mat <- dist(mat, method = "euclidean") # distance between species
+hc <- hclust(dist_mat)
+
+clusters <- cutree(hc, k = 6)  # 
+ord <- hc$order
+clusters_ordered <- clusters[ord]
+cluster_order <- unique(clusters_ordered)
+cols <- 2:(k+1)
+
+plot(hc, labels = FALSE, main = "Species Clustering Dendrogram",
+     xlab = "Species", sub = "")
+
+rect.hclust(hc, k = k, border = cols)
+
+# Species names
+species <- rownames(tse)
+
+# Cluster list
+cluster_list <- split(species, clusters)
+
+# Reorder cluster list to match rectangles
+cluster_list <- cluster_list[as.character(cluster_order)]
+
+legend_labels <- sapply(seq_along(cluster_list), function(i) {
+  if (i == 6) {
+    paste("Cluster", i, ":", paste(cluster_list[[i]][1])," and other species" ) # only first species
+  } else {
+    paste("Cluster", i, ":", paste(cluster_list[[i]], collapse = ", "))
+  }
+})
+legend("topright",
+       legend = legend_labels,
+       pch = 15,
+       col = 2:(k+1),
+       lty = 1,
+       cex = 0.7,
+       bty = "n")
+
+```
+
+
+
+#### UMAP Analysis of Mixed Bacterial Samples to Reveal structure.   
+
+To further explore patterns in species composition, a UMAP analysis was performed on species abundance data using the UMAP package, and samples were colored according to previously defined clusters.  
+
+```{r UMAP analysis }
+umap_samples = umap(Mixed_bacteria_samples%>%select(-Country,-Description),
+                    n_components = 2, random_state = 15)
+layout <- umap_samples[["layout"]] 
+layout <- data.frame(layout) 
+umap_values_per_country <- cbind(layout, Mixed_bacteria_samples$Country) 
+colnames(umap_values_per_country)[3] = "Country"
+umap_values_per_country<- umap_values_per_country%>%
+  rownames_to_column(var="npg_run_id")%>%
+  dplyr::left_join(
+    Dominant_taxa_sample %>% select(npg_run_id,Cluster),
+    by = "npg_run_id"
+  ) %>%
+  distinct(npg_run_id, .keep_all = TRUE)
+
+p6=ggplot(umap_values_per_country, aes(x = X1, y = X2,colour = Cluster)) +
+  geom_point(size=4,aes(shape = Country)) +
+  theme(legend.title = element_text(size=20), 
+        plot.title = element_text(size=40),
+        legend.text = element_text(size = 20),
+        strip.text = element_text(face="bold", size=40),
+        axis.text.x = element_text(size = 36, vjust=.5, hjust=1),
+        axis.title.x = element_text(face="bold", size=40),
+        axis.title.y = element_text(face="bold", size=40),
+        axis.text.y = element_text(size = 36, face = "bold", vjust=.5, hjust=1)
+  )+
+  #scale_color_manual(values =c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF") )+
+  labs(
+    x="UMAP1",
+    y="UMAP2",
+    title = "UMAP of Mixed Infection Samples Across Two Countries")
+p6
+
+
+```
+
+
 - Do seroresistant and serosensitive Moraxellae appear to compete?
 
 - Are these patterns consistent across countries?
@@ -2550,80 +2974,6 @@ treatment_sampling_df <-
 
 - Is there variation in acute/non-acute in Maela?
 
-<<<<<<< HEAD
-=======
-``` {r Pearson Correlation of Species: Overall Dataset vs. Country-Level Analysis}
-
-# co_colonisation_df = species_abundance_df %>% 
-# select(Species,npg_run_id,matches) %>%
-# pivot_wider(
-#   names_from  = Species,
-#   values_from = matches
-# ) %>%
-# inner_join(.,filtering_criteria_df%>%select("npg_run_id","Country"),by="npg_run_id")%>%
-#   mutate(
-#     positive_count = rowSums(across(everything(), ~ . > 0)),
-#     Infection_type = case_when(
-#       positive_count > 1 ~ "mixed_infection",
-#       positive_count == 1 ~ "monoinfection",
-#       TRUE ~ NA_character_
-#     )
-#   ) %>%
-#   select(-positive_count)%>%
-# column_to_rownames(.,var = "npg_run_id") 
-# 
-# cor_matrix_species_co_colonisation <- cor(co_colonisation_df%>%select(-c(Country,Infection_type)), method = "spearman")
-# cor_matrix_Thailand <- cor(co_colonisation_df%>%filter(Country=="Thailand")%>%select(-c(Country,Infection_type)), method = "spearman")
-# cor_matrix_Combodia <- cor(co_colonisation_df%>%filter(Country=="Cambodia")%>%select(-c(Country,Infection_type)), method = "spearman")
-# cor_matrix_South_Africa <- cor(co_colonisation_df%>%filter(Country=="South Africa")%>%select(-c(Country,Infection_type)), method = "spearman")
-# cor_matrix_UK <- cor(co_colonisation_df%>%filter(Country=="United Kingdom")%>%select(-c(Country,Infection_type)), method = "spearman")
-# melted_Thailand <- melt(cor_matrix_Thailand)
-# melted_Thailand$Country = "Thailand"
-# melted_Combodia <- melt(cor_matrix_Combodia)
-# melted_Combodia$Country = "Cambodia"
-# melted_South_Africa <- melt(cor_matrix_South_Africa)
-# melted_South_Africa$Country = "South Africa"
-# melted_UK <- melt(cor_matrix_UK)
-# melted_UK$Country = "United Kingdom"
-# species_co_colonisation_per_country = bind_rows(melted_Thailand,melted_Combodia,
-#                                            melted_South_Africa,melted_UK) 
-# species_co_colonisation_per_country = na.omit(species_co_colonisation_per_country)
-# species_co_colonisation_per_country$Country = factor(species_co_colonisation_per_country$Country)
-# 
-# melted_species_co_colonisation <- melt(cor_matrix_species_co_colonisation)
-# 
-# ### co_colonisation of species in mixed infection from deep sequencing data
-# ggplot(data = melted_species_co_colonisation, aes(x=Var1, y=Var2, fill=value)) + 
-#   geom_tile()+
-#   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-#                        midpoint = 0, limit = c(-1,1), space = "Lab", 
-#                        name="Pearson\nCorrelation")+
-#   theme(
-#     legend.title = element_text(size=16), 
-#     legend.text = element_text(size = 16),
-#        axis.text.x = element_text(angle = 90,size = 14, vjust=.5, hjust=1),
-#         axis.text.y = element_text(size = 13, vjust=.5, hjust=1))+
-#   labs(x="", y="")
-# 
-# ### co_colonisation of species per country
-# ggplot(data = species_co_colonisation_per_country, aes(x=Var1, y=Var2, fill=value)) + 
-#   geom_tile()+
-#   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-#                        midpoint = 0, limit = c(-1,1), space = "Lab", 
-#                        name="Pearson\nCorrelation")+
-#   guides(color = guide_legend(override.aes = list(size = 30)))+
-#   facet_wrap(~Country, ncol=2)+
-#   theme(
-#     legend.title = element_text(size=16), 
-#     legend.text = element_text(size = 16),
-#     strip.text = element_text(face="bold", size=40),
-#     axis.text.x = element_text(angle = 90,size = 12, vjust=.5, hjust=1),
-#         axis.text.y = element_text(size = 10, face = "bold", vjust=.5, hjust=1))+
-#   labs(x="", y="")
-```
-
-
->>>>>>> 22be70d (Integrate epidemiological data)
 ## Co-colonisation analysis of strains
 
 - Is the same pattern of co-colonisation observed across species (including serosensitive/seroresistant Moraxellae)?
@@ -2635,13 +2985,6 @@ treatment_sampling_df <-
 - Removal of prophage sequences - does this improve assignment to strains?
 
 - Are long-read references better than short-read references?
-
-
-
-
-
-
-
 
 ## Timing of antibiotic administration and species presence
 
