@@ -2554,72 +2554,72 @@ treatment_sampling_df <-
 =======
 ``` {r Pearson Correlation of Species: Overall Dataset vs. Country-Level Analysis}
 
-co_colonisation_df = species_abundance_df %>% 
-select(Species,npg_run_id,matches) %>%
-pivot_wider(
-  names_from  = Species,
-  values_from = matches
-) %>%
-inner_join(.,filtering_criteria_df%>%select("npg_run_id","Country"),by="npg_run_id")%>%
-  mutate(
-    positive_count = rowSums(across(everything(), ~ . > 0)),
-    Infection_type = case_when(
-      positive_count > 1 ~ "mixed_infection",
-      positive_count == 1 ~ "monoinfection",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  select(-positive_count)%>%
-column_to_rownames(.,var = "npg_run_id") 
-
-cor_matrix_species_co_colonisation <- cor(co_colonisation_df%>%select(-c(Country,Infection_type)), method = "spearman")
-cor_matrix_Thailand <- cor(co_colonisation_df%>%filter(Country=="Thailand")%>%select(-c(Country,Infection_type)), method = "spearman")
-cor_matrix_Combodia <- cor(co_colonisation_df%>%filter(Country=="Cambodia")%>%select(-c(Country,Infection_type)), method = "spearman")
-cor_matrix_South_Africa <- cor(co_colonisation_df%>%filter(Country=="South Africa")%>%select(-c(Country,Infection_type)), method = "spearman")
-cor_matrix_UK <- cor(co_colonisation_df%>%filter(Country=="United Kingdom")%>%select(-c(Country,Infection_type)), method = "spearman")
-melted_Thailand <- melt(cor_matrix_Thailand)
-melted_Thailand$Country = "Thailand"
-melted_Combodia <- melt(cor_matrix_Combodia)
-melted_Combodia$Country = "Cambodia"
-melted_South_Africa <- melt(cor_matrix_South_Africa)
-melted_South_Africa$Country = "South Africa"
-melted_UK <- melt(cor_matrix_UK)
-melted_UK$Country = "United Kingdom"
-species_co_colonisation_per_country = bind_rows(melted_Thailand,melted_Combodia,
-                                           melted_South_Africa,melted_UK) 
-species_co_colonisation_per_country = na.omit(species_co_colonisation_per_country)
-species_co_colonisation_per_country$Country = factor(species_co_colonisation_per_country$Country)
-
-melted_species_co_colonisation <- melt(cor_matrix_species_co_colonisation)
-
-### co_colonisation of species in mixed infection from deep sequencing data
-ggplot(data = melted_species_co_colonisation, aes(x=Var1, y=Var2, fill=value)) + 
-  geom_tile()+
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation")+
-  theme(
-    legend.title = element_text(size=16), 
-    legend.text = element_text(size = 16),
-       axis.text.x = element_text(angle = 90,size = 14, vjust=.5, hjust=1),
-        axis.text.y = element_text(size = 13, vjust=.5, hjust=1))+
-  labs(x="", y="")
-
-### co_colonisation of species per country
-ggplot(data = species_co_colonisation_per_country, aes(x=Var1, y=Var2, fill=value)) + 
-  geom_tile()+
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation")+
-  guides(color = guide_legend(override.aes = list(size = 30)))+
-  facet_wrap(~Country, ncol=2)+
-  theme(
-    legend.title = element_text(size=16), 
-    legend.text = element_text(size = 16),
-    strip.text = element_text(face="bold", size=40),
-    axis.text.x = element_text(angle = 90,size = 12, vjust=.5, hjust=1),
-        axis.text.y = element_text(size = 10, face = "bold", vjust=.5, hjust=1))+
-  labs(x="", y="")
+# co_colonisation_df = species_abundance_df %>% 
+# select(Species,npg_run_id,matches) %>%
+# pivot_wider(
+#   names_from  = Species,
+#   values_from = matches
+# ) %>%
+# inner_join(.,filtering_criteria_df%>%select("npg_run_id","Country"),by="npg_run_id")%>%
+#   mutate(
+#     positive_count = rowSums(across(everything(), ~ . > 0)),
+#     Infection_type = case_when(
+#       positive_count > 1 ~ "mixed_infection",
+#       positive_count == 1 ~ "monoinfection",
+#       TRUE ~ NA_character_
+#     )
+#   ) %>%
+#   select(-positive_count)%>%
+# column_to_rownames(.,var = "npg_run_id") 
+# 
+# cor_matrix_species_co_colonisation <- cor(co_colonisation_df%>%select(-c(Country,Infection_type)), method = "spearman")
+# cor_matrix_Thailand <- cor(co_colonisation_df%>%filter(Country=="Thailand")%>%select(-c(Country,Infection_type)), method = "spearman")
+# cor_matrix_Combodia <- cor(co_colonisation_df%>%filter(Country=="Cambodia")%>%select(-c(Country,Infection_type)), method = "spearman")
+# cor_matrix_South_Africa <- cor(co_colonisation_df%>%filter(Country=="South Africa")%>%select(-c(Country,Infection_type)), method = "spearman")
+# cor_matrix_UK <- cor(co_colonisation_df%>%filter(Country=="United Kingdom")%>%select(-c(Country,Infection_type)), method = "spearman")
+# melted_Thailand <- melt(cor_matrix_Thailand)
+# melted_Thailand$Country = "Thailand"
+# melted_Combodia <- melt(cor_matrix_Combodia)
+# melted_Combodia$Country = "Cambodia"
+# melted_South_Africa <- melt(cor_matrix_South_Africa)
+# melted_South_Africa$Country = "South Africa"
+# melted_UK <- melt(cor_matrix_UK)
+# melted_UK$Country = "United Kingdom"
+# species_co_colonisation_per_country = bind_rows(melted_Thailand,melted_Combodia,
+#                                            melted_South_Africa,melted_UK) 
+# species_co_colonisation_per_country = na.omit(species_co_colonisation_per_country)
+# species_co_colonisation_per_country$Country = factor(species_co_colonisation_per_country$Country)
+# 
+# melted_species_co_colonisation <- melt(cor_matrix_species_co_colonisation)
+# 
+# ### co_colonisation of species in mixed infection from deep sequencing data
+# ggplot(data = melted_species_co_colonisation, aes(x=Var1, y=Var2, fill=value)) + 
+#   geom_tile()+
+#   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+#                        midpoint = 0, limit = c(-1,1), space = "Lab", 
+#                        name="Pearson\nCorrelation")+
+#   theme(
+#     legend.title = element_text(size=16), 
+#     legend.text = element_text(size = 16),
+#        axis.text.x = element_text(angle = 90,size = 14, vjust=.5, hjust=1),
+#         axis.text.y = element_text(size = 13, vjust=.5, hjust=1))+
+#   labs(x="", y="")
+# 
+# ### co_colonisation of species per country
+# ggplot(data = species_co_colonisation_per_country, aes(x=Var1, y=Var2, fill=value)) + 
+#   geom_tile()+
+#   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+#                        midpoint = 0, limit = c(-1,1), space = "Lab", 
+#                        name="Pearson\nCorrelation")+
+#   guides(color = guide_legend(override.aes = list(size = 30)))+
+#   facet_wrap(~Country, ncol=2)+
+#   theme(
+#     legend.title = element_text(size=16), 
+#     legend.text = element_text(size = 16),
+#     strip.text = element_text(face="bold", size=40),
+#     axis.text.x = element_text(angle = 90,size = 12, vjust=.5, hjust=1),
+#         axis.text.y = element_text(size = 10, face = "bold", vjust=.5, hjust=1))+
+#   labs(x="", y="")
 ```
 
 
