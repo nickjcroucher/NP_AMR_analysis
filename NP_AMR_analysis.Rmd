@@ -1471,7 +1471,7 @@ TO DO
 
 We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
 
-```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
+```{bash convert all gff files from 4thfilter_Hinfluenzae to fa files with assemblies, eval = FALSE}
 
 for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
 
@@ -2424,7 +2424,19 @@ These were chosen as:
 ``` {r Representative sequence information}
 
 long_read_sample_df <-
-  read.csv("sample_data/long_read_sequence_data.csv")
+  read.csv("./sample_data/long_read_sequence_data.csv") %>% 
+    dplyr::filter(Project %in% c("References","Moraxella passage")) %>% 
+    dplyr::mutate(`Parental genotype` = word(Description, 3)) %>% 
+    dplyr::left_join(sample_df %>% 
+                       dplyr::filter(Description == "Single isolate") %>% 
+                       dplyr::mutate(`Parental genotype` = case_when(
+                          str_detect(Isolate, "_") ~ str_extract(Isolate, "^[^_]+"),
+                          TRUE ~ Isolate
+                        )) %>%
+                      dplyr::select(`Parental genotype`,npg_run_id),
+                     relationship = 'many-to-many',
+                     by = 'Parental genotype'
+                     )
 
 ```
 
@@ -2432,7 +2444,19 @@ long_read_sample_df <-
 
 Is the sharing of plasmids between species limited by RMS?
 
-Methylase: group_2030.
+``` {r Do any samples have this methylase}
+
+# Methylase: group_2030.
+non_specific_methylase_carriers <-
+  Hinflu_gene_preabsence %>% 
+    dplyr::filter(Gene == "group_2030" & CDS != "") %>% 
+    dplyr::pull(npg_run_id)
+
+long_read_non_specific_methylase_carriers <-
+  long_read_sample_df %>%
+    dplyr::filter(npg_run_id %in% non_specific_methylase_carriers)
+
+```
 
 ## Passage analysis from long-read data
 
