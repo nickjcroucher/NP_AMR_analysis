@@ -574,7 +574,7 @@ drak_info_df <-
       dplyr::left_join(
         read_csv("./sample_data/Drakenstein_accessions.csv"),
         by = c("Isolate"="run_accession")
-      )
+        )
 
 info_df <-
   dplyr::bind_rows(
@@ -589,9 +589,9 @@ info_df <-
                     sample_common_name = "Moraxella catarrhalis",
                     project = "Drakenstein",
                     sample_supplier_name = Isolate
-      ) %>% 
+                    ) %>% 
       dplyr::select(name,sample_accession_number,sample_common_name,project,sample_supplier_name)
-  )
+    )
 
 run_df <-
   dplyr::bind_rows(
@@ -599,7 +599,7 @@ run_df <-
       dplyr::select(-name),
     parse_sample_file("./sample_data/6310_runs.tsv") %>% 
       dplyr::select(-name)
-  )
+    )
 
 fn_6588 <- "./sample_data/6588_files.tsv"
 fn_6310 <- "./sample_data/6310_files.tsv"
@@ -607,19 +607,19 @@ files_df <-
   dplyr::bind_rows(
     parse_sample_file(fn_6588) %>% process_annotation_file_names(),
     parse_sample_file(fn_6310) %>% process_annotation_file_names()
-  ) %>% dplyr::left_join(
+    ) %>% dplyr::left_join(
     dplyr::bind_rows(
       parse_sample_file(fn_6588) %>% process_assembly_file_names(),
       parse_sample_file(fn_6310) %>% process_assembly_file_names()
-    ),
+      ),
     by = c("npg_run_id")
-  ) %>% dplyr::left_join(
+    ) %>% dplyr::left_join(
     dplyr::bind_rows(
       parse_sample_file(fn_6588) %>% process_qc_file_names(),
       parse_sample_file(fn_6310) %>% process_qc_file_names()
-    ),
+      ), 
     by = c("npg_run_id")
-  )
+    )
 
 epi_df <-
   dplyr::bind_rows(
@@ -651,7 +651,7 @@ epi_df <-
       dplyr::mutate(Isolate = sample_accession) %>% 
       dplyr::select(-sample_accession) %>% 
       dplyr::mutate(Description = "Single isolate")
-  ) %>% 
+    ) %>% 
   dplyr::mutate(join_col = dplyr::case_when(
     project == "6588" ~ Sample,
     Country == "South Africa" ~ Isolate,
@@ -668,7 +668,8 @@ sample_df <-
                                               npg_run_id)) %>%
     dplyr::mutate(join_col = dplyr::if_else(project == "6588",sample_donor_id,npg_run_id)) %>% 
     dplyr::left_join(epi_df, by = c("join_col")) %>% 
-    dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
+    dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)
+                  ) %>% 
     dplyr::select(-join_col) %>% 
     dplyr::filter(!is.na(Country)) %>% 
     dplyr::mutate(Cohort = dplyr::if_else(Cohort == "Thailand","Maela",Cohort)) %>% 
@@ -679,7 +680,7 @@ sample_df <-
                       Cohort == "Drakenstein" ~ "Drakenstein",
                       Cohort == "United Kingdom" & Year < 2014 ~ "Hampshire (early)",
                       Cohort == "United Kingdom" & Year > 2014 ~ "Hampshire (late)"
-                    )
+                      )
                   ) %>% 
   dplyr::mutate(Year =
                   dplyr::case_when(
