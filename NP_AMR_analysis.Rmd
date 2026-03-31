@@ -12,11 +12,7 @@ is_ci <- identical(Sys.getenv("CI"), "true")
 if (is_ci) {
   message("CI environment detected: disabling knitr caching.")
   knitr::opts_chunk$set(
-    echo = TRUE)
-  }
-lines <- readLines("NP_AMR_analysis.Rmd")
-which(!is.na(iconv(lines, "UTF-8", "ASCII")))
-grep("opts_chunk", lines, value = TRUE)
+    echo = TRUE)}
 
 require(magrittr)
 require(tidyverse)
