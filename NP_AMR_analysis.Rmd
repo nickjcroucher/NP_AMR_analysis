@@ -33,8 +33,8 @@ require(ggforce)
 require(ggrepel)
 require(patchwork)
 require(igraph)
-require(gggenes)
-require(readr)
+library(gggenes)
+library(readr)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -1471,7 +1471,7 @@ TO DO
 
 We will find the capsule of each isolated *H. influenzae* strains with bioinformatic Hicap software 
 
-```{bash convert all *gff files from 4thfilter_Hinfluenzae to *fa files with assemblies, eval = FALSE}
+```{bash convert all gff files from 4thfilter_Hinfluenzae to fa files with assemblies, eval = FALSE}
 
 for f in /rds/general/user/skaing/home/4thfilter_Hinfluenzae/*.gff; do g=`basename $f`; cp -s ../assemblies/${g%gff}fa .; done
 
@@ -1510,7 +1510,7 @@ Hicap_hflu <-
 
 ## Initialise microreact epidemiological data frames
 
-```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
+```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by npg_run_id}
 
 microreact_epi_cols <-
   c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
@@ -1883,7 +1883,7 @@ ggplot(dist_df,
 ```
 
 
-``` {r Decide on clustering of plasmids}
+``` {r Decide on clustering of plasmids, echo = TRUE}
 
 # Merge nearby plasmids through single linkage clustering with the new threshold
 plasmid_reclustering_df <- merge_clusters_by_distance(
@@ -1967,14 +1967,15 @@ ggplot(
   )
 ) +
   # Ellipses for small clusters - NO label aesthetic
-  ggforce::geom_mark_ellipse(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
+  stat_ellipse(
+    data = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
                                       !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
+    aes(group = new_plasmid_name),    
+    geom = "polygon",
+    alpha = 0.2,
+    level = 0.95,
     colour    = "black"
-  ) +
+  ) + 
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
     data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
@@ -2104,7 +2105,10 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ```{r import tsv file from Bakta_analysis_plasmids folder}
 
 plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
-
+plasmid_reclustering_df %>% 
+  dplyr::select(Sample_Name,new_plasmid_name) %>% 
+  dplyr::group_by(new_plasmid_name) %>% 
+  dplyr::slice_sample(n = 1)
 ```
 
 Use `plasmid_reclustering_df` to find representatives for annotation:
