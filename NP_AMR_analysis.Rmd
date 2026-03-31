@@ -12,12 +12,12 @@ is_ci <- identical(Sys.getenv("CI"), "true")
 if (is_ci) {
   message("CI environment detected: disabling knitr caching.")
   knitr::opts_chunk$set(
-    echo  = FALSE,
+    echo  = TRUE,
     cache = FALSE
   )
 } else {
   knitr::opts_chunk$set(
-    echo  = FALSE,
+    echo  = TRUE,
     cache = TRUE,
     fig.width = 8
   )
@@ -33,8 +33,8 @@ require(ggforce)
 require(ggrepel)
 require(patchwork)
 require(igraph)
-library(gggenes)
-library(readr)
+require(gggenes)
+require(readr)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
