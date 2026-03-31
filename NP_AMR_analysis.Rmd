@@ -12,16 +12,14 @@ is_ci <- identical(Sys.getenv("CI"), "true")
 if (is_ci) {
   message("CI environment detected: disabling knitr caching.")
   knitr::opts_chunk$set(
-    echo  = TRUE,
-    cache = FALSE
-  )
-} else {
-  knitr::opts_chunk$set(
-    echo  = TRUE,
-    cache = TRUE,
-    fig.width = 8
-  )
-}
+    echo = TRUE)
+  } else {
+    knitr::opts_chunk$set(
+      echo = TRUE, 
+      cache = TRUE, 
+      fig.width = 8
+    )
+    }
 
 require(magrittr)
 require(tidyverse)
