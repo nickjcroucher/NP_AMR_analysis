@@ -2084,20 +2084,41 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ```
 
 ## Analysis of plasmid gene content
+We select the plasmids from the plasmid_reclustering_df to analize in the Bakta tool, then we plot the sequence by gggenes function.
 
-### Plasmids in *M. catarrhalis*
-
-#### pAC411
-
-```{r import tsv file from Bakta_analysis_plasmids folder}
-
-plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
+```{r select the plasmids to analize in Bakta}
 plasmid_reclustering_df %>% 
   dplyr::select(Sample_Name,new_plasmid_name) %>% 
   dplyr::group_by(new_plasmid_name) %>% 
   dplyr::slice_sample(n = 1)
 ```
 
+### Plasmids in *M. catarrhalis*
+
+#### pAC411
+
+```{r import tsv file from Bakta_analysis_plasmids folder}
+plot_plasmid_function("46321_1#275_plasmid_AC411.tsv", title_str = "pAC411")
+plot_plasmid_function("46358_2#78_plasmid_AC411.tsv", title_str = "pAC411")
+plot_plasmid_function("46358_2#175_plasmid_AC411.tsv", title_str = "pAC411")
+plot_plasmid_function("46358_2#360_plasmid_AC411.tsv", title_str = "pAC411")
+```
+
+#### pAB778
+```{r import group of AB778 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
+plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
+```
+
+#### pAG261
+```{r import group of plasmid AG261 of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261")
+plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261")
+plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261")
+plot_plasmid_function("47195_1#185_plasmid_AG261.tsv", title_str = "pAG261")
+plot_plasmid_function("46472_2#179_plasmid_AG261.tsv", title_str = "pAG261")
+plot_plasmid_function("46321_2#278_plasmid_AG261.tsv", title_str = "pAG261")
+```
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
 [1] "plasmid_AG261_9"  "plasmid_AG261_10" "plasmid_AG261_11" "plasmid_AB778"    "plasmid_AG261_14" "plasmid_AC411"   
@@ -2106,6 +2127,79 @@ Use `plasmid_reclustering_df` to find representatives for annotation:
 For each one, search the dataframe, then use the "sample_name" column to find the right annotation (note you may have to replace the # character with an underscore).
 
 ### Plasmids in *H. influenzae*
+
+#### pAE169
+```{r import AE169 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36773_2#35_plasmid_AE169.tsv", title_str = "pAE169")
+
+```
+#### pAC497
+```{r import group of AC497 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36773_2#239_plasmid_AC497.tsv", title_str = "pAC497")
+plot_plasmid_function("36774_1#56_plasmid_AC497.tsv", title_str = "pAC497")
+plot_plasmid_function("46358_2#52_plasmid_AC497.tsv", title_str = "pAC497")
+
+```
+
+#### pAF100
+```{r import group of AF100 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36774_2#244_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("36812_1#226_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("36812_2#245_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("36982_2#124_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("36982_2#156_plasmid_Af100.tsv", title_str = "pAF100")
+plot_plasmid_function("36983_1#333_plasmid_Af100.tsv", title_str = "pAF100")
+plot_plasmid_function("36985_1#44_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("46358_2#63_plasmid_Af100.tsv", title_str = "pAF100")
+plot_plasmid_function("46358_2#81_plasmid_Af100.tsv", title_str = "pAF100")
+plot_plasmid_function("46358_2#312_plasmid_AF100.tsv", title_str = "pAF100")
+plot_plasmid_function("46472_2#222_plasmid_AF100.tsv", title_str = "pAF100")
+
+```
+
+#### pAE025
+```{r import group of AE025 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("48373_1#159_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("48373_1#177_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46358_2#150_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46358_2#92_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46321_2#163_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36985_1#354_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36984_2#130_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36983_1#178_plasmid_AE025.tsv", title_str = "pAE025")
+
+```
+
+#### pAF098
+```{r import AF098 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36812_1#12_plasmid_AF098.tsv", title_str = "pAF098")
+
+```
+
+#### pAB946
+```{r impot AB946 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("46358_2#275_plasmid_AB946.tsv", title_str = "pAB946")
+plot_plasmid_function("46321_2#221_plasmid_AB946.tsv", title_str = "pAB946")
+```
+
+#### pAB947
+```{r import AB947 plasmid of tsv file from Bakta_analysis_plasmid folder}
+plot_plasmid_function("46358_2#99_plasmid_AB947.tsv", title_str = "pAB947")
+
+```
+
+#### pAB621
+```{r import group of AB621 plasmid of tsv files from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36985_2#126_plasmid_AB621.tsv", title_str = "pAB621")
+plot_plasmid_function("36812_1#239_plasmid_AB621.tsv", title_str = "pAB621")
+
+```
+
+#### pnovel
+```{r import novel plasmid of tsv files from Bakta_analysis_plasmid folder}
+plot_plasmid_function("36812_1#100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pnovel")
+plot_plasmid_function("36985_2#360_plasmid_novel_071630adf7395bed54463d0ce41009d5.tsv", title_str = "pnovel")
+```
 
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
