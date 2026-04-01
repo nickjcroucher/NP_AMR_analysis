@@ -2097,7 +2097,7 @@ plasmid_reclustering_df %>%
 
 #### pAC411
 
-```{r import tsv plasmid file from Bakta_analysis_plasmids folder}
+```{r import group of plasmid AC411 of tsv file from Bakta_analysis_plasmids folder}
 plot_plasmid_function("46321_1#275_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2#78_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2#175_plasmid_AC411.tsv", title_str = "pAC411")
