@@ -2096,9 +2096,9 @@ plasmid_reclustering_df %>%
 
 ### Plasmids in *M. catarrhalis*
 
-#### pAC411, pAB778, pAG261
+#### pAC411, pAB778, and pAG261
 
-```{r import group of plasmid AC411, AB778, AG261 of tsv file from Bakta_analysis_plasmids folder}
+```{r import group of plasmid tsv file from Bakta_analysis_plasmids folder}
 plot_plasmid_function("46321_1#275_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2#78_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2#175_plasmid_AC411.tsv", title_str = "pAC411")
@@ -2124,7 +2124,7 @@ For each one, search the dataframe, then use the "sample_name" column to find th
 
 #### pAE169, pAC497, pAF100, pAE025, pAF098, pAB946, pAB947, pAB621, and pnovel
 
-```{r import AE169, plasmid of tsv file from Bakta_analysis_plasmid folder}
+```{r import plasmid of tsv file from Bakta_analysis_plasmid folder}
 plot_plasmid_function("36773_2#35_plasmid_AE169.tsv", title_str = "pAE169")
 plot_plasmid_function("36773_2#239_plasmid_AC497.tsv", title_str = "pAC497")
 plot_plasmid_function("36774_1#56_plasmid_AC497.tsv", title_str = "pAC497")
