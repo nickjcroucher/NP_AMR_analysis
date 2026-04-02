@@ -1,0 +1,46 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	519	839	+	CNDKDH_001		hypothetical protein	RefSeq:WP_005638137.1, SO:0001217, UniParc:UPI00021B3792, UniRef:UniRef100_UPI00021B3792, UniRef:UniRef50_Q8VRB7, UniRef:UniRef90_Q8VRB7
+contig_1	cds	933	1145	-	CNDKDH_002		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000DD32F23, UniRef:UniRef90_UPI00110AEB76
+contig_1	cds	1350	1862	-	CNDKDH_003		DnaJ-like protein	RefSeq:WP_049365223.1, SO:0001217, UniParc:UPI00066BEAA6, UniRef:UniRef100_UPI00066BEAA6, UniRef:UniRef50_A0A1V3J056, UniRef:UniRef90_Q8VRB6
+contig_1	cds	2021	2266	-	CNDKDH_004		hypothetical protein	
+contig_1	cds	2521	2802	+	CNDKDH_005		hypothetical protein	
+contig_1	cds	2839	3450	+	CNDKDH_006		Recombinase	SO:0001217, UniRef:UniRef50_Q2A6M8
+contig_1	cds	3532	4467	-	CNDKDH_007		protein adenylyltransferase	SO:0001217, UniRef:UniRef50_G4A5F4, UniRef:UniRef90_Q4L0U9
+contig_1	cds	4436	4627	-	CNDKDH_008	vbhA	antitoxin VbhA family protein	RefSeq:WP_112077203.1, SO:0001217, UniParc:UPI000DD4B344, UniRef:UniRef100_UPI000DD4B344, UniRef:UniRef50_A0A0A3A2S1, UniRef:UniRef90_UPI002158CA06
+contig_1	cds	4640	4960	-	CNDKDH_009		hypothetical protein	RefSeq:WP_112077204.1, SO:0001217, UniParc:UPI000DD40845, UniRef:UniRef100_UPI000DD40845, UniRef:UniRef50_Q8VRE6, UniRef:UniRef90_UPI00211A76E5
+contig_1	cds	4953	5423	-	CNDKDH_010		hypothetical protein	RefSeq:WP_204355944.1, SO:0001217, UniParc:UPI0019551746, UniRef:UniRef100_UPI0019551746, UniRef:UniRef50_Q8VRE5, UniRef:UniRef90_Q8VRE5
+contig_1	cds	5425	6063	-	CNDKDH_011		ParA-like protein	RefSeq:WP_011053507.1, SO:0001217, UniParc:UPI00000BEB44, UniRef:UniRef100_Q8VRE4, UniRef:UniRef50_A0A1V3KIX1, UniRef:UniRef90_Q8VRE4
+contig_1	cds	6181	6741	-	CNDKDH_012		hypothetical protein	SO:0001217, UniRef:UniRef50_Q8VRE3, UniRef:UniRef90_Q8VRE3
+contig_1	cds	6997	7266	-	CNDKDH_013		DUF1456 domain-containing protein	RefSeq:WP_049365687.1, SO:0001217, UniParc:UPI00066B3123, UniRef:UniRef100_UPI000518C999, UniRef:UniRef50_A0A9X4PF05, UniRef:UniRef90_UPI001890B1A6
+contig_1	cds	7389	7967	-	CNDKDH_014		DUF4304 domain-containing protein	RefSeq:WP_049365686.1, SO:0001217, UniParc:UPI00066C3206, UniRef:UniRef100_UPI00066C3206, UniRef:UniRef50_Q8VRE2, UniRef:UniRef90_Q8VRE2
+contig_1	cds	8891	9907	-	CNDKDH_015		Replication protein	RefSeq:WP_275910310.1, SO:0001217, UniParc:UPI0023DDC1D1, UniRef:UniRef100_UPI0023DDC1D1, UniRef:UniRef50_Q8VRE1, UniRef:UniRef90_Q8VRE1
+contig_1	cds	10507	10704	+	CNDKDH_016		Repressor-like protein	SO:0001217, UniRef:UniRef50_Q8VRE0
+contig_1	cds	10704	11039	+	CNDKDH_017		Lipoprotein	SO:0001217, UniRef:UniRef50_C9PMC3, UniRef:UniRef90_UPI00021B379C
+contig_1	cds	11151	11834	+	CNDKDH_018		TraB-like protein	SO:0001217, UniRef:UniRef50_A0A1V3IX29, UniRef:UniRef90_Q8VRD8
+contig_1	cds	11853	12164	+	CNDKDH_019	traC	conjugal transfer protein TraC	SO:0001217, UniRef:UniRef50_Q8VRD7, UniRef:UniRef90_UPI0023DD68B3
+contig_1	cds	12243	12599	+	CNDKDH_020		TraA/VirB3-like protein	RefSeq:WP_105892268.1, SO:0001217, UniParc:UPI000D015116, UniRef:UniRef100_UPI000D015116, UniRef:UniRef50_A0A1V3KKJ0, UniRef:UniRef90_Q8VRD6
+contig_1	cds	12571	14985	+	CNDKDH_021		TraB/VirB4-like protein	SO:0001217, UniRef:UniRef50_Q8VRD5, UniRef:UniRef90_Q8VRD5
+contig_1	cds	15001	15696	+	CNDKDH_022		type IV secretion system protein	KEGG:K03200, SO:0001217, UniRef:UniRef50_A0A1T0AX86, UniRef:UniRef90_UPI0023DDA251
+contig_1	cds	15713	16708	+	CNDKDH_023		type IV secretion system protein	KEGG:K03201, RefSeq:WP_275910305.1, SO:0001217, UniParc:UPI0023DDBA59, UniRef:UniRef100_UPI0023DDBA59, UniRef:UniRef50_A0A1V3KJU1, UniRef:UniRef90_UPI0023DDBA59
+contig_1	cds	16890	17672	+	CNDKDH_024		TraE/VirB8-like protein	KEGG:K03203, SO:0001217, UniRef:UniRef50_A0A9X4PC34, UniRef:UniRef90_Q8VRD1
+contig_1	cds	17682	18455	+	CNDKDH_025		TrbG/VirB9 family P-type conjugative transfer protein	KEGG:K03204, RefSeq:WP_239495193.1, SO:0001217, UniParc:UPI001EF94955, UniRef:UniRef100_UPI001EF94955, UniRef:UniRef50_Q8VRD0, UniRef:UniRef90_UPI000D01F8B4
+contig_1	cds	18448	19635	+	CNDKDH_026		type IV secretion system protein VirB10	KEGG:K03195, SO:0001217, UniRef:UniRef50_A0A1V3IWQ2, UniRef:UniRef90_UPI0023DDB8B5
+contig_1	cds	19650	20708	+	CNDKDH_027	virB11	P-type DNA transfer ATPase VirB11	GO:0043684, GO:0044097, SO:0001217, UniRef:UniRef50_Q8VRC8, UniRef:UniRef90_Q8VRC8
+contig_1	cds	20718	22550	+	CNDKDH_028	traK	Conjugal transfer protein TraK	SO:0001217, UniRef:UniRef50_A0A1V3IW55
+contig_1	cds	22561	23223	+	CNDKDH_029		TrbM-like protein	SO:0001217, UniRef:UniRef50_A0A1T0AX12, UniRef:UniRef90_Q8VRC6
+contig_1	cds	23233	23400	+	CNDKDH_030		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D4E1245
+contig_1	cds	23384	23809	+	CNDKDH_031		Single-stranded DNA-binding protein	SO:0001217, UniRef:UniRef50_Q8VRC5, UniRef:UniRef90_Q8VRC5
+contig_1	cds	23862	26114	+	CNDKDH_032		DNA topoisomerase	EC:5.6.2.1, KEGG:K03169, SO:0001217, UniRef:UniRef50_Q8VRC4, UniRef:UniRef90_Q8VRC4
+contig_1	cds	26306	26569	+	CNDKDH_033	chpS	Antitoxin ChpS	SO:0001217, UniRef:UniRef50_G4A5W2, UniRef:UniRef90_A0A3S4ZFN3
+contig_1	cds	26569	26922	+	CNDKDH_034		Pemk-like protein	EC:3.1.-.-, KEGG:K18841, SO:0001217, UniRef:UniRef50_A0A447SQC0, UniRef:UniRef90_A0A448PZ80
+contig_1	cds	26971	27159	-	CNDKDH_035		Phage protein	RefSeq:WP_148333737.1, SO:0001217, UniParc:UPI0011D63E08, UniRef:UniRef100_UPI0011D63E08, UniRef:UniRef50_A0A3S4XGE6, UniRef:UniRef90_A0A3S4XGE6
+contig_1	cds	27175	30876	-	CNDKDH_036		LPD7 domain-containing protein	SO:0001217, UniRef:UniRef50_A0A9X4PDX9, UniRef:UniRef90_UPI0011DC3FD5
+contig_1	cds	30866	31213	-	CNDKDH_037		putative relaxosome component	SO:0001217, UniRef:UniRef50_Q8VRC1, UniRef:UniRef90_Q8VRC1
+contig_1	cds	31608	32075	+	CNDKDH_038		hypothetical protein	RefSeq:WP_105892256.1, SO:0001217, UniParc:UPI000D01A4FC, UniRef:UniRef100_UPI000D01A4FC, UniRef:UniRef50_A0A9X4SJ54, UniRef:UniRef90_Q8VRC0
+contig_1	cds	32078	32830	+	CNDKDH_039		TraL(RP4)-like protein	RefSeq:WP_049365219.1, SO:0001217, UniParc:UPI00066BE821, UniRef:UniRef100_UPI00066BE821, UniRef:UniRef50_M1EVA3, UniRef:UniRef90_Q8VRB9
+contig_1	cds	33068	516	+	CNDKDH_040		hypothetical protein	SO:0001217, UniRef:UniRef50_Q8VRB8, UniRef:UniRef90_Q8VRB8

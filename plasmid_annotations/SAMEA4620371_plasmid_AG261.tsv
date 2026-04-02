@@ -1,0 +1,51 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	407	751	-	GGIPNH_001		H-NS family nucleoid-associated regulatory protein	RefSeq:WP_120649648.1, SO:0001217, UniParc:UPI0009C3DC03, UniRef:UniRef100_UPI001C7CA6F8, UniRef:UniRef50_A0A378QCX2, UniRef:UniRef90_UPI001C7CA6F8
+contig_1	cds	907	1341	+	GGIPNH_002		hypothetical protein	RefSeq:WP_081570110.1, SO:0001217, UniParc:UPI0009C29977, UniRef:UniRef100_UPI000EBC2E6A, UniRef:UniRef50_A0A378QCX9, UniRef:UniRef90_UPI000EBC2E6A
+contig_1	cds	1498	1827	+	GGIPNH_003		hypothetical protein	RefSeq:WP_081570109.1, SO:0001217, UniParc:UPI0009C1D894, UniRef:UniRef100_UPI0009C1D894, UniRef:UniRef50_A0A378QDE7, UniRef:UniRef90_UPI0009C1D894
+contig_1	cds	1824	2564	+	GGIPNH_004		Sporulation initiation inhibitor protein soj	KEGG:K03496, RefSeq:WP_227547678.1, SO:0001217, UniParc:UPI001D0D89AC, UniRef:UniRef100_UPI001D0D89AC, UniRef:UniRef50_A0A2D2LWZ7, UniRef:UniRef90_A0A378QGW7
+contig_1	cds	2577	3500	+	GGIPNH_005		ParB/RepB/Spo0J family partition protein	KEGG:K03497, RefSeq:WP_081570107.1, SO:0001217, UniParc:UPI0009C2985D, UniRef:UniRef100_UPI0009C2985D, UniRef:UniRef50_UPI00128CB457, UniRef:UniRef90_UPI0009C2985D
+contig_1	cds	3719	4342	+	GGIPNH_006		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QCN4, UniRef:UniRef90_UPI00128BEF2B
+contig_1	cds	4618	4977	+	GGIPNH_007		TrbC/VirB2 family protein	KEGG:K12069, RefSeq:WP_152724792.1, SO:0001217, UniParc:UPI00128D6C83, UniRef:UniRef100_UPI00128D6C83, UniRef:UniRef50_A0A378QCC9, UniRef:UniRef90_UPI00128DB8AB
+contig_1	cds	5018	5308	+	GGIPNH_008	traL	type IV conjugative transfer system protein TraL	KEGG:K12068, RefSeq:WP_081570104.1, SO:0001217, UniParc:UPI0009C3DD54, UniRef:UniRef100_UPI0009C3DD54, UniRef:UniRef50_A0A378QCD5, UniRef:UniRef90_A0A378QCD5
+contig_1	cds	5313	5903	+	GGIPNH_009		TraE/TraK family type IV conjugative transfer system protein	KEGG:K12067, RefSeq:WP_120649639.1, SO:0001217, UniParc:UPI000EA9BDD9, UniRef:UniRef100_UPI000EA9BDD9, UniRef:UniRef50_A0A378QCT6, UniRef:UniRef90_UPI000EA9BDD9
+contig_1	cds	5842	6570	+	GGIPNH_010	traK	type-F conjugative transfer system secretin TraK	KEGG:K12066, RefSeq:WP_120649638.1, SO:0001217, UniParc:UPI000EAA46E4, UniRef:UniRef100_UPI000EAA46E4, UniRef:UniRef50_A0A378QCC4, UniRef:UniRef90_UPI000EAA46E4
+contig_1	cds	6567	7814	+	GGIPNH_011		TraB/VirB10 family protein	KEGG:K12065, RefSeq:WP_081570101.1, SO:0001217, UniParc:UPI0009C20524, UniRef:UniRef100_UPI0009C20524, UniRef:UniRef50_A0A378QDK6, UniRef:UniRef90_UPI0009C20524
+contig_1	cds	7824	8303	+	GGIPNH_012	dsbC	DsbC family protein	RefSeq:WP_081570100.1, SO:0001217, UniParc:UPI0009C29F2B, UniRef:UniRef100_UPI0009C29F2B, UniRef:UniRef50_A0A378QCY7, UniRef:UniRef90_UPI0009C29F2B
+contig_1	cds	8291	9028	+	GGIPNH_013	dsbC	DsbC family protein	SO:0001217, UniRef:UniRef50_A0A378QDF4, UniRef:UniRef90_UPI00128C538D
+contig_1	cds	9025	9603	+	GGIPNH_014	traV	type IV conjugative transfer system lipoprotein TraV	KEGG:K12064, SO:0001217, UniRef:UniRef50_A0A378QGX7, UniRef:UniRef90_UPI0009C3DE34
+contig_1	cds	9603	10715	+	GGIPNH_015		F pilus assembly Type-IV secretion system for plasmid transfer	SO:0001217, UniRef:UniRef50_A0A378QE76, UniRef:UniRef90_UPI00128CCBD7
+contig_1	cds	10687	13299	+	GGIPNH_016	traC	type IV secretion system protein TraC	KEGG:K12063, SO:0001217, UniRef:UniRef50_A0A378QCP4, UniRef:UniRef90_UPI00128B2DD6
+contig_1	cds	13299	13781	+	GGIPNH_017	trbI	Type-F conjugative transfer system protein TrbI	SO:0001217, UniRef:UniRef50_A0A378QCE1, UniRef:UniRef90_UPI00128D3469
+contig_1	cds	13783	14331	+	GGIPNH_018		S26 family signal peptidase	RefSeq:WP_120649632.1, SO:0001217, UniParc:UPI000EA83AB1, UniRef:UniRef100_UPI000EA83AB1, UniRef:UniRef50_A0A378QCE3, UniRef:UniRef90_UPI000EA83AB1
+contig_1	cds	14321	14965	+	GGIPNH_019	traW	type-F conjugative transfer system protein TraW	KEGG:K12061, RefSeq:WP_120649631.1, SO:0001217, UniParc:UPI000EA87727, UniRef:UniRef100_UPI000EA87727, UniRef:UniRef50_A0A378QCU5, UniRef:UniRef90_UPI000EA87727
+contig_1	cds	14962	15969	+	GGIPNH_020	traU	conjugal transfer pilus assembly protein TraU	KEGG:K12060, RefSeq:WP_152704727.1, SO:0001217, UniParc:UPI00128DA93C, UniRef:UniRef100_UPI00128DA93C, UniRef:UniRef50_A0A6L4YKZ3, UniRef:UniRef90_A0A378QCD7
+contig_1	cds	15978	16685	+	GGIPNH_021	trbC	type-F conjugative transfer system pilin assembly protein TrbC	SO:0001217, UniRef:UniRef50_A0A378QDL0, UniRef:UniRef90_UPI0009D9FE27
+contig_1	cds	16688	18838	+	GGIPNH_022	traN	conjugal transfer protein TraN	KEGG:K12058, SO:0001217, UniRef:UniRef50_A0A378QCZ7, UniRef:UniRef90_UPI00128C84E7
+contig_1	cds	18828	19709	+	GGIPNH_023	traF	conjugal transfer protein TraF	KEGG:K12057, RefSeq:WP_152726692.1, SO:0001217, UniParc:UPI00128D845D, UniRef:UniRef100_UPI00128D845D, UniRef:UniRef50_A0A378QDG9, UniRef:UniRef90_UPI00128C7662
+contig_1	cds	19720	20049	+	GGIPNH_024		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00128D3BBC, UniRef:UniRef90_UPI00128D3BBC
+contig_1	cds	20049	21452	+	GGIPNH_025	traH	conjugal transfer protein TraH	KEGG:K12072, SO:0001217, UniRef:UniRef50_A0A378QE85, UniRef:UniRef90_UPI0009C1FF39
+contig_1	cds	21464	24301	+	GGIPNH_026	traG	conjugal transfer protein TraG N-terminal domain-containing protein	KEGG:K12056, SO:0001217, UniRef:UniRef50_A0A378QCQ7, UniRef:UniRef90_UPI00128B93E0
+contig_1	cds	24388	24810	+	GGIPNH_027		lytic transglycosylase domain-containing protein	RefSeq:WP_152724800.1, SO:0001217, UniParc:UPI00128E483B, UniRef:UniRef100_UPI00128E483B, UniRef:UniRef50_A0A378QCF0, UniRef:UniRef90_UPI00128E483B
+contig_1	cds	24845	25096	-	GGIPNH_028		hypothetical protein	RefSeq:WP_081570085.1, SO:0001217, UniParc:UPI0009C28A85, UniRef:UniRef100_UPI0009C28A85, UniRef:UniRef50_UPI00128C6FD8, UniRef:UniRef90_UPI0009C28A85
+contig_1	cds	25206	25733	+	GGIPNH_029		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A198UN78, UniRef:UniRef90_A0A198UN78
+contig_1	cds	25971	26288	-	GGIPNH_030		Plasmid stabilization protein	RefSeq:WP_064609676.1, SO:0001217, UniParc:UPI0007E370EA, UniRef:UniRef100_A0A198UJP8, UniRef:UniRef50_A0A1T0CD98, UniRef:UniRef90_A0A1T0CD98
+contig_1	cds	26288	26548	-	GGIPNH_031	copG	CopG family transcriptional regulator	SO:0001217, UniRef:UniRef50_A0A1T0CD78, UniRef:UniRef90_A0A1T0CD78
+contig_1	cds	26886	27473	+	GGIPNH_032		DNA-invertase hin	KEGG:K14060, RefSeq:WP_081570082.1, SO:0001217, UniParc:UPI0009C25352, UniRef:UniRef100_UPI0009C25352, UniRef:UniRef50_A0A1S9ZU90, UniRef:UniRef90_A0A378QDH8
+contig_1	cds	27488	30343	-	GGIPNH_033	mobF	MobF family relaxase	GO:0003677, SO:0001217, UniRef:UniRef50_A0A378QGZ7, UniRef:UniRef90_UPI000EA8D057
+contig_1	cds	30360	32150	-	GGIPNH_034	traD	DNA transport protein TraD	RefSeq:WP_120649645.1, SO:0001217, UniParc:UPI000EAAA1EE, UniRef:UniRef100_UPI000EAAA1EE, UniRef:UniRef50_A0A378QE95, UniRef:UniRef90_A0A378QE95
+contig_1	cds	32153	32479	-	GGIPNH_035		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A378QCR7, UniRef:UniRef90_UPI000EE04B43
+contig_1	cds	32629	32820	+	GGIPNH_036		hypothetical protein	
+contig_1	cds	32927	33247	+	GGIPNH_037		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000EBA29AD, UniRef:UniRef90_UPI000EBA29AD
+contig_1	cds	33364	34080	-	GGIPNH_038		hypothetical protein	RefSeq:WP_120649643.1, SO:0001217, UniParc:UPI000EA9BA73, UniRef:UniRef100_UPI000EA9BA73, UniRef:UniRef50_A0A378QCF7, UniRef:UniRef90_UPI000EA9BA73
+contig_1	cds	34313	34597	+	GGIPNH_039		hypothetical protein	RefSeq:WP_081570076.1, SO:0001217, UniParc:UPI0009C2B134, UniRef:UniRef100_UPI0009C2B134, UniRef:UniRef50_UPI000E35BE9D, UniRef:UniRef90_UPI0009C2B134
+contig_1	cds	35369	35566	-	GGIPNH_040		hypothetical protein	RefSeq:WP_081570075.1, SO:0001217, UniParc:UPI0009C23F43, UniRef:UniRef100_UPI0009C23F43, UniRef:UniRef50_A0A378QCM3, UniRef:UniRef90_UPI0009C23F43
+contig_1	cds	35892	36434	-	GGIPNH_041		antirestriction protein	SO:0001217, UniRef:UniRef50_A0A378QCC6, UniRef:UniRef90_UPI00128CB2DA
+contig_1	cds	36675	36881	-	GGIPNH_042		hypothetical protein	RefSeq:WP_081570072.1, SO:0001217, UniParc:UPI0009C371D4, UniRef:UniRef100_UPI0009C371D4, UniRef:UniRef50_UPI0009C371D4, UniRef:UniRef90_UPI0009C371D4
+contig_1	cds	37229	37603	-	GGIPNH_043		Tail protein	SO:0001217, UniRef:UniRef50_A0A0R6PCL0
+contig_1	cds	38016	38189	-	GGIPNH_044		hypothetical protein	RefSeq:WP_156878899.1, SO:0001217, UniParc:UPI0012EC23D9, UniRef:UniRef100_UPI0012EC23D9, UniRef:UniRef50_A0A378QCT0, UniRef:UniRef90_UPI0012EC23D9
+contig_1	cds	38242	39639	-	GGIPNH_045		replication initiation protein	SO:0001217, UniRef:UniRef50_A0A378QCB5, UniRef:UniRef90_UPI00128C8EEB

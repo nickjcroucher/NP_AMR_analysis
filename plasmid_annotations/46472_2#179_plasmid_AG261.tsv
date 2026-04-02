@@ -1,0 +1,56 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	120	398	-	KOMEDA_001		hypothetical protein	
+contig_1	cds	415	750	+	KOMEDA_002		hypothetical protein	
+contig_1	cds	750	1862	+	KOMEDA_003		F pilus assembly Type-IV secretion system for plasmid transfer	SO:0001217, UniRef:UniRef50_A0A378QE76, UniRef:UniRef90_UPI00128CCBD7
+contig_1	cds	1837	4446	+	KOMEDA_004	traC	type IV secretion system protein TraC	KEGG:K12063, RefSeq:WP_120649634.1, SO:0001217, UniParc:UPI000EA9632C, UniRef:UniRef100_UPI000EA9632C, UniRef:UniRef50_A0A378QCP4, UniRef:UniRef90_UPI00128B2DD6
+contig_1	cds	4446	4928	+	KOMEDA_005	trbI	Type-F conjugative transfer system protein TrbI	RefSeq:WP_120649633.1, SO:0001217, UniParc:UPI000EA8DB72, UniRef:UniRef100_UPI000EA8DB72, UniRef:UniRef50_A0A378QCE1, UniRef:UniRef90_UPI00128D3469
+contig_1	cds	4930	5478	+	KOMEDA_006		S26 family signal peptidase	RefSeq:WP_120649632.1, SO:0001217, UniParc:UPI000EA83AB1, UniRef:UniRef100_UPI000EA83AB1, UniRef:UniRef50_A0A378QCE3, UniRef:UniRef90_UPI000EA83AB1
+contig_1	cds	5468	6112	+	KOMEDA_007	traW	type-F conjugative transfer system protein TraW	KEGG:K12061, RefSeq:WP_120649631.1, SO:0001217, UniParc:UPI000EA87727, UniRef:UniRef100_UPI000EA87727, UniRef:UniRef50_A0A378QCU5, UniRef:UniRef90_UPI000EA87727
+contig_1	cds	6109	7116	+	KOMEDA_008	traU	conjugal transfer pilus assembly protein TraU	KEGG:K12060, RefSeq:WP_152704727.1, SO:0001217, UniParc:UPI00128DA93C, UniRef:UniRef100_UPI00128DA93C, UniRef:UniRef50_A0A6L4YKZ3, UniRef:UniRef90_A0A378QCD7
+contig_1	cds	7125	7832	+	KOMEDA_009	trbC	type-F conjugative transfer system pilin assembly protein TrbC	SO:0001217, UniRef:UniRef50_A0A378QDL0, UniRef:UniRef90_UPI0009D9FE27
+contig_1	cds	7835	9985	+	KOMEDA_010	traN	conjugal transfer protein TraN	KEGG:K12058, SO:0001217, UniRef:UniRef50_A0A378QCZ7, UniRef:UniRef90_UPI00128C84E7
+contig_1	cds	9975	10856	+	KOMEDA_011	traF	conjugal transfer protein TraF	KEGG:K12057, RefSeq:WP_120649628.1, SO:0001217, UniParc:UPI000EA97DB2, UniRef:UniRef100_UPI000EA97DB2, UniRef:UniRef50_A0A378QDG9, UniRef:UniRef90_UPI00128C7662
+contig_1	cds	10867	11196	+	KOMEDA_012		hypothetical protein	RefSeq:WP_081570089.1, SO:0001217, UniParc:UPI0009C2F8A6, UniRef:UniRef100_UPI0009C2F8A6, UniRef:UniRef50_UPI00128D3BBC, UniRef:UniRef90_UPI00128D3BBC
+contig_1	cds	11196	12599	+	KOMEDA_013	traH	conjugal transfer protein TraH	KEGG:K12072, SO:0001217, UniRef:UniRef50_A0A378QE85, UniRef:UniRef90_UPI0009C1FF39
+contig_1	cds	12994	13314	-	KOMEDA_014		hypothetical protein	
+contig_1	cds	14095	14484	-	KOMEDA_015		hypothetical protein	
+contig_1	cds	14762	15448	+	KOMEDA_016		hypothetical protein	
+contig_1	cds	15535	15957	+	KOMEDA_017		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QCF0, UniRef:UniRef90_UPI00128E483B
+contig_1	cds	15992	16243	-	KOMEDA_018		hypothetical protein	RefSeq:WP_081570085.1, SO:0001217, UniParc:UPI0009C28A85, UniRef:UniRef100_UPI0009C28A85, UniRef:UniRef50_UPI00128C6FD8, UniRef:UniRef90_UPI0009C28A85
+contig_1	cds	16353	16874	+	KOMEDA_019		hypothetical protein	RefSeq:WP_081570084.1, SO:0001217, UniParc:UPI0009C23ACE, UniRef:UniRef100_UPI0009C23ACE, UniRef:UniRef50_A0A198UN78, UniRef:UniRef90_UPI000EA8FB37
+contig_1	cds	16963	17571	-	KOMEDA_020		recombinase family protein	KEGG:K14060, RefSeq:WP_152704731.1, SO:0001217, UniParc:UPI00128CE07C, UniRef:UniRef100_UPI00128CE07C, UniRef:UniRef50_A0A1B8QAC9, UniRef:UniRef90_UPI00128E4EF1
+contig_1	cds	17810	17947	-	KOMEDA_021		hypothetical protein	
+contig_1	cds	17947	20811	-	KOMEDA_022	mobF	MobF family relaxase	GO:0003677, SO:0001217, UniRef:UniRef50_A0A378QGZ7, UniRef:UniRef90_UPI00128E362C
+contig_1	cds	20827	22617	-	KOMEDA_023		type IV secretion system DNA-binding domain-containing protein	RefSeq:WP_152699130.1, SO:0001217, UniParc:UPI00128DEE6A, UniRef:UniRef100_UPI00128DEE6A, UniRef:UniRef50_A0A378QE95, UniRef:UniRef90_UPI00128DEE6A
+contig_1	cds	22620	22946	-	KOMEDA_024		hypothetical protein	RefSeq:WP_152699131.1, SO:0001217, UniParc:UPI00128AFCC9, UniRef:UniRef100_UPI00128AFCC9, UniRef:UniRef50_A0A378QCR7, UniRef:UniRef90_UPI00128AFCC9
+contig_1	cds	23635	23931	+	KOMEDA_025		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00128E79AD, UniRef:UniRef90_UPI00128E79AD
+contig_1	cds	24678	24980	+	KOMEDA_026		hypothetical protein	RefSeq:WP_152699134.1, SO:0001217, UniParc:UPI00128C7E6E, UniRef:UniRef100_UPI00128C7E6E, UniRef:UniRef50_UPI00128C7E6E, UniRef:UniRef90_UPI00128C7E6E
+contig_1	cds	25835	26356	-	KOMEDA_027		DUF551 domain-containing protein	RefSeq:WP_194161959.1, SO:0001217, UniParc:UPI001883FA0B, UniRef:UniRef100_UPI001883FA0B, UniRef:UniRef50_UPI001883FA0B, UniRef:UniRef90_UPI001883FA0B
+contig_1	cds	26371	26838	-	KOMEDA_028		hypothetical protein	RefSeq:WP_152699136.1, SO:0001217, UniParc:UPI00128B1962, UniRef:UniRef100_UPI00128B1962, UniRef:UniRef50_UPI00128B1962, UniRef:UniRef90_UPI00128B1962
+contig_1	cds	26852	26947	-	KOMEDA_029		hypothetical protein	
+contig_1	cds	27419	27592	-	KOMEDA_030		hypothetical protein	
+contig_1	cds	27689	27886	-	KOMEDA_031		hypothetical protein	RefSeq:WP_152699138.1, SO:0001217, UniParc:UPI00128B931B, UniRef:UniRef100_UPI00128B931B, UniRef:UniRef50_A0A378QCM3, UniRef:UniRef90_UPI00128B931B
+contig_1	cds	28008	28340	-	KOMEDA_032		hypothetical protein	RefSeq:WP_152699139.1, SO:0001217, UniParc:UPI00128B3F93, UniRef:UniRef100_UPI00128B3F93, UniRef:UniRef50_A0A378QH08, UniRef:UniRef90_UPI00128B3F93
+contig_1	cds	28403	28945	-	KOMEDA_033		antirestriction protein	RefSeq:WP_152704734.1, SO:0001217, UniParc:UPI00128AEF00, UniRef:UniRef100_UPI00128AEF00, UniRef:UniRef50_A0A378QCC6, UniRef:UniRef90_UPI00128BC19D
+contig_1	cds	29320	29484	-	KOMEDA_034		hypothetical protein	RefSeq:WP_194161960.1, SO:0001217, UniParc:UPI001884393C, UniRef:UniRef100_UPI001884393C, UniRef:UniRef50_UPI001884393C, UniRef:UniRef90_UPI001884393C
+contig_1	cds	29517	29858	-	KOMEDA_035		type II toxin-antitoxin system PemK/MazF family toxin	RefSeq:WP_152699141.1, SO:0001217, UniParc:UPI00128C93B7, UniRef:UniRef100_UPI00128C93B7, UniRef:UniRef50_A0A329KFG4, UniRef:UniRef90_UPI000668E37F
+contig_1	cds	29852	30085	-	KOMEDA_036		AbrB/MazE/SpoVT family DNA-binding domain-containing protein	RefSeq:WP_152704735.1, SO:0001217, UniParc:UPI00128B8D3D, UniRef:UniRef100_UPI00128B8D3D, UniRef:UniRef50_UPI000B2E5FE9, UniRef:UniRef90_UPI000B2E5FE9
+contig_1	cds	30178	31560	-	KOMEDA_037		replication initiation protein	RefSeq:WP_152699142.1, SO:0001217, UniParc:UPI00128E1AD5, UniRef:UniRef100_UPI00128E1AD5, UniRef:UniRef50_A0A378QCB5, UniRef:UniRef90_UPI00128E1AD5
+contig_1	cds	32215	32556	-	KOMEDA_038		H-NS family nucleoid-associated regulatory protein	SO:0001217, UniRef:UniRef50_UPI001884599E, UniRef:UniRef90_UPI001884599E
+contig_1	cds	32705	33142	+	KOMEDA_039		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A378QCX9, UniRef:UniRef90_UPI00128C717C
+contig_1	cds	33291	33620	+	KOMEDA_040		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A378QDE7, UniRef:UniRef90_UPI00128CACBA
+contig_1	cds	33617	34360	+	KOMEDA_041	parA	ParA family protein	KEGG:K03496, SO:0001217, UniRef:UniRef50_A0A2D2LWZ7, UniRef:UniRef90_UPI00128E8B85
+contig_1	cds	34370	35308	+	KOMEDA_042		ParB/RepB/Spo0J family partition protein	KEGG:K03497, SO:0001217, UniRef:UniRef50_UPI00128CB457, UniRef:UniRef90_UPI00128CB457
+contig_1	cds	35532	36152	+	KOMEDA_043		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QCN4, UniRef:UniRef90_UPI0018844204
+contig_1	cds	36115	36348	+	KOMEDA_044		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0011C3DE89, UniRef:UniRef90_UPI00128C6358
+contig_1	cds	36431	36790	+	KOMEDA_045		TrbC/VirB2 family protein	KEGG:K12069, SO:0001217, UniRef:UniRef50_A0A378QCC9, UniRef:UniRef90_UPI00128DB8AB
+contig_1	cds	36832	37122	+	KOMEDA_046	traL	type IV conjugative transfer system protein TraL	KEGG:K12068, SO:0001217, UniRef:UniRef50_A0A378QCD5, UniRef:UniRef90_UPI00128E6BF3
+contig_1	cds	37127	37717	+	KOMEDA_047		TraE/TraK family type IV conjugative transfer system protein	KEGG:K12067, SO:0001217, UniRef:UniRef50_A0A378QCT6, UniRef:UniRef90_UPI000EA9BDD9
+contig_1	cds	37656	38384	+	KOMEDA_048	traK	type-F conjugative transfer system secretin TraK	KEGG:K12066, SO:0001217, UniRef:UniRef50_A0A378QCC4, UniRef:UniRef90_UPI000EAA46E4
+contig_1	cds	38381	39628	+	KOMEDA_049		TraB/VirB10 family protein	KEGG:K12065, SO:0001217, UniRef:UniRef50_A0A378QDK6, UniRef:UniRef90_UPI0009C20524
+contig_1	cds	39638	40117	+	KOMEDA_050	dsbC	DsbC family protein	RefSeq:WP_152704724.1, SO:0001217, UniParc:UPI00128AE539, UniRef:UniRef100_UPI00128AE539, UniRef:UniRef50_A0A378QCY7, UniRef:UniRef90_UPI0009C29F2B
