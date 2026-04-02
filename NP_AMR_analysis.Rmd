@@ -2126,7 +2126,7 @@ For each one, search the dataframe, then use the "sample_name" column to find th
 
 #### pAE169, pAC497, pAF100, pAE025, pAF098, pAB946, pAB947, pAB621, and pnovel
 
-```{r import group of plasmid tsv files from plamsid_annotations folder after analized from Bakta tool}
+```{r import group plasmid of all tsv files from plamsid_annotations folder after analized from Bakta tool}
 
 plot_plasmid_function("36773_2_35_plasmid_AE169.tsv", title_str = "pAE169")
 plot_plasmid_function("36773_2_239_plasmid_AC497.tsv", title_str = "pAC497")
