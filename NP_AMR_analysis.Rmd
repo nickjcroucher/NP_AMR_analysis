@@ -2098,7 +2098,7 @@ plasmid_reclustering_df %>%
 
 #### pAC411, pAB778, and pAG261
 
-```{r import group of plasmid tsv files from Bakta_analysis_plasmids folder}
+```{r import group of plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool}
 plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2_78_plasmid_AC411.tsv", title_str = "pAC411")
 plot_plasmid_function("46358_2_175_plasmid_AC411.tsv", title_str = "pAC411")
@@ -2124,7 +2124,7 @@ For each one, search the dataframe, then use the "sample_name" column to find th
 
 #### pAE169, pAC497, pAF100, pAE025, pAF098, pAB946, pAB947, pAB621, and pnovel
 
-```{r import plasmid of tsv files from Bakta_analysis_plasmid folder}
+```{r import group of plasmid tsv files from plamsid_annotations folder after analized from Bakta tool}
 plot_plasmid_function("36773_2_35_plasmid_AE169.tsv", title_str = "pAE169")
 plot_plasmid_function("36773_2_239_plasmid_AC497.tsv", title_str = "pAC497")
 plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497")
