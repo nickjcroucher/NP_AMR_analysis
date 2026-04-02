@@ -1,0 +1,10 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	268	1185	-	IAGNCH_01		Replicase	RefSeq:WP_011161233.1, SO:0001217, UniParc:UPI000022591B, UniRef:UniRef100_Q6YA35, UniRef:UniRef50_A0A1Q8DY75, UniRef:UniRef90_Q6YA35
+contig_1	cds	1375	1542	-	IAGNCH_02	copG	ribbon-helix-helix protein, CopG family	RefSeq:WP_081258318.1, SO:0001217, UniParc:UPI0007F4F456, UniRef:UniRef100_UPI0007F4F456, UniRef:UniRef50_A0A378UTU5, UniRef:UniRef90_UPI0007F4F456
+contig_1	cds	1612	3099	-	IAGNCH_03		Putative mobilization protein A	RefSeq:WP_064648746.1, SO:0001217, UniParc:UPI0007E2E553, UniRef:UniRef100_Q6YA33, UniRef:UniRef50_Q6YA33, UniRef:UniRef90_Q6YA33
+contig_1	cds	3096	3509	-	IAGNCH_04		(5' truncated) Putative mobilization protein C	SO:0001217, UniRef:UniRef50_A0A1R4EC33, UniRef:UniRef90_Q6YA34

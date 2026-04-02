@@ -1,0 +1,12 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	2	145	-	MJDOMK_01		(3' truncated) hypothetical protein	
+contig_1	cds	186	1172	-	MJDOMK_02		replication initiation protein	SO:0001217, UniRef:UniRef50_A0A180EYD9, UniRef:UniRef90_UPI00112D9D61
+contig_1	cds	1580	1837	-	MJDOMK_03		DUF2681 domain-containing protein	RefSeq:WP_047923193.1, SO:0001217, UniParc:UPI0005E452EF, UniRef:UniRef100_UPI000AB6243F, UniRef:UniRef50_A0A369ZL47, UniRef:UniRef90_A0A369ZL47
+contig_1	cds	1840	2136	-	MJDOMK_04		Mobilization protein	RefSeq:WP_032490547.1, SO:0001217, UniParc:UPI0000006A87, UniRef:UniRef100_Q84AT5, UniRef:UniRef50_A0A2M8RZP8, UniRef:UniRef90_A0A369ZL39
+contig_1	oriT	2226	2280	?			origin of transfer	
+contig_1	cds	2305	3741	+	MJDOMK_05		MobA/MobL protein domain-containing protein	SO:0001217, UniRef:UniRef50_A0A369ZPL2, UniRef:UniRef90_A0A369ZPL2

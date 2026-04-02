@@ -1,0 +1,64 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	487	735	-	AELPDF_001	tnpA	Transposase TnpA	SO:0001217, UniParc:UPI0002FFDA70, UniRef:UniRef100_A0A7M1HXL5, UniRef:UniRef50_A0A7M1HXL5, UniRef:UniRef90_A0A7M1HXL5
+contig_1	cds	745	1365	-	AELPDF_002		hypothetical protein	SO:0001217, UniParc:UPI00025141EA, UniRef:UniRef100_A0A7M1HWR0, UniRef:UniRef50_A0A7M1HWR0, UniRef:UniRef90_A0A7M1HWR0
+contig_1	cds	1338	1547	-	AELPDF_003		hypothetical protein	
+contig_1	cds	1504	1740	-	AELPDF_004		hypothetical protein	SO:0001217, UniParc:UPI00062CA60C, UniRef:UniRef100_A0A514C834, UniRef:UniRef50_A0A514C834, UniRef:UniRef90_A0A514C834
+contig_1	cds	1777	2187	-	AELPDF_005		hypothetical protein	
+contig_1	cds	2389	3123	-	AELPDF_006		hypothetical protein	SO:0001217, UniRef:UniRef50_F1YWJ3
+contig_1	cds	3178	3312	+	AELPDF_007		hypothetical protein	PFAM:PF01526.23
+contig_1	cds	3488	3844	+	AELPDF_008		hypothetical protein	RefSeq:WP_047922052.1, SO:0001217, UniParc:UPI00064CA139, UniRef:UniRef100_A0A1B0WSC8, UniRef:UniRef50_A0A377IYK1, UniRef:UniRef90_A4N4U3
+contig_1	cds	3871	5367	-	AELPDF_009	traG	TraG N-terminal Proteobacteria domain-containing protein	RefSeq:WP_040975703.1, SO:0001217, UniParc:UPI000595A0EB, UniRef:UniRef100_A0A1B0WPY2, UniRef:UniRef50_A0AAX3ISN8, UniRef:UniRef90_A0A1B0WPY2
+contig_1	cds	5376	5699	-	AELPDF_010		Hemophilus-specific protein	RefSeq:WP_005667837.1, SO:0001217, UniParc:UPI00014FC43B, UniRef:UniRef100_A0A1B0WQU9, UniRef:UniRef50_A0A1V3IET7, UniRef:UniRef90_A0A377IZG3
+contig_1	cds	5709	6152	-	AELPDF_011		DUF5655 domain-containing protein	RefSeq:WP_005687593.1, SO:0001217, UniParc:UPI0001A3F744, UniRef:UniRef100_A0A377IZ23, UniRef:UniRef50_A0A377IZ23, UniRef:UniRef90_A0A377IZ23
+contig_1	cds	6124	8994	-	AELPDF_012		conjugative transfer ATPase	GO:0005524, RefSeq:WP_058230494.1, SO:0001217, UniParc:UPI000655A75A, UniRef:UniRef100_A0A1B0WUH9, UniRef:UniRef50_A0A380U2T4, UniRef:UniRef90_A4N4U7
+contig_1	cds	9010	9417	-	AELPDF_013		Conjugative transfer region lipoprotein	RefSeq:WP_005653518.1, SO:0001217, UniParc:UPI00004036C8, UniRef:UniRef100_A0A1B0WTP9, UniRef:UniRef50_A0A1V3J6D6, UniRef:UniRef90_A0A1B0WTP9
+contig_1	cds	9427	10827	-	AELPDF_014		Conj_TIGR03752: integrating conjugative element protein	RefSeq:WP_005687589.1, SO:0001217, UniParc:UPI00004036C7, UniRef:UniRef100_A0A1B0WPF6, UniRef:UniRef50_Q7VMN9, UniRef:UniRef90_A0A5C6GZ50
+contig_1	cds	10838	11707	-	AELPDF_015		Integrating conjugative element protein, PFL_4704 family	RefSeq:WP_047922050.1, SO:0001217, UniParc:UPI00064C56A9, UniRef:UniRef100_A0A377IYV6, UniRef:UniRef50_Q7VMN8, UniRef:UniRef90_A0A2X1RNF7
+contig_1	cds	11707	12351	-	AELPDF_016		PFL_4703 family integrating conjugative element protein	RefSeq:WP_047922049.1, SO:0001217, UniParc:UPI00064CBCED, UniRef:UniRef100_A0A377IYM0, UniRef:UniRef50_Q7VMN7, UniRef:UniRef90_A0A377IYM0
+contig_1	cds	12363	12734	-	AELPDF_017		Conjugative transfer region protein	RefSeq:WP_011271844.1, SO:0001217, UniParc:UPI000039AD64, UniRef:UniRef100_A0A377IYQ5, UniRef:UniRef50_Q7VMN6, UniRef:UniRef90_A0A377IYQ5
+contig_1	cds	12754	13155	-	AELPDF_018		Integrating conjugative element membrane protein, PFL_4702 family	RefSeq:WP_005653541.1, SO:0001217, UniParc:UPI00004036C3, UniRef:UniRef100_A0A377IYK9, UniRef:UniRef50_Q7VMN5, UniRef:UniRef90_A0A377IYK9
+contig_1	cds	13175	13420	-	AELPDF_019		DUF3262 domain-containing protein	RefSeq:WP_005750915.1, SO:0001217, UniParc:UPI00027B1737, UniRef:UniRef100_A0A377J0R6, UniRef:UniRef50_A0A1V3KWH3, UniRef:UniRef90_A4N4V6
+contig_1	cds	13424	13744	-	AELPDF_020		RAQPRD family integrative conjugative element protein	RefSeq:WP_053007201.1, SO:0001217, UniParc:UPI00065A21A0, UniRef:UniRef100_A0A377IZH2, UniRef:UniRef50_A0A0A2ZZH9, UniRef:UniRef90_A0A369Z1Z2
+contig_1	cds	13905	14591	-	AELPDF_021		Integrating conjugative element membrane protein, PFL_4697 family	RefSeq:WP_012564939.1, SO:0001217, UniParc:UPI00004036C1, UniRef:UniRef100_A0A377IZ32, UniRef:UniRef50_Q7VMN3, UniRef:UniRef90_A0A377IZ32
+contig_1	cds	14591	14926	-	AELPDF_022		Hemophilus-specific protein	RefSeq:WP_005687581.1, SO:0001217, UniParc:UPI0001A3F73F, UniRef:UniRef100_A0A377J0G4, UniRef:UniRef50_A0A377J0G4, UniRef:UniRef90_A0A377J0G4
+contig_1	cds	14910	17159	-	AELPDF_023	traD	type IV conjugative transfer system coupling protein TraD	KEGG:K12071, RefSeq:WP_047922048.1, SO:0001217, UniParc:UPI00064C754E, UniRef:UniRef100_A0A377IYN4, UniRef:UniRef50_A0A5B8SQX9, UniRef:UniRef90_A0A9N8NA81
+contig_1	cds	17156	17662	-	AELPDF_024		Integrating conjugative element protein	RefSeq:WP_011271841.1, SO:0001217, UniParc:UPI000039AD5D, UniRef:UniRef100_A0A377IYX6, UniRef:UniRef50_Q6J5E5, UniRef:UniRef90_Q6J5E5
+contig_1	cds	17678	18436	-	AELPDF_025		Transglycosylase SLT domain-containing protein	RefSeq:WP_011271840.1, SO:0001217, UniParc:UPI000039AD5C, UniRef:UniRef100_A0A377IYW6, UniRef:UniRef50_A0A4S2Q3H1, UniRef:UniRef90_A0A369Z679
+contig_1	cds	18415	19155	-	AELPDF_026		Conj_TIGR03759: integrating conjugative element protein	RefSeq:WP_012564936.1, SO:0001217, UniParc:UPI00004036BE, UniRef:UniRef100_A0A377IYM9, UniRef:UniRef50_W0R2U5, UniRef:UniRef90_A0A5C6GZ40
+contig_1	cds	19159	19788	-	AELPDF_027	virB7	Type IV secretion system putative lipoprotein virB7	RefSeq:WP_012564935.1, SO:0001217, UniParc:UPI00004036BD, UniRef:UniRef100_A0A377IYR1, UniRef:UniRef50_A0A377IYR1, UniRef:UniRef90_A0A377IYR1
+contig_1	cds	19887	20651	-	AELPDF_028	traX	Conjugal transfer protein TraX	RefSeq:WP_012564934.1, SO:0001217, UniParc:UPI00004036BC, UniRef:UniRef100_A0A377IYL9, UniRef:UniRef50_A0A1V3JSG4, UniRef:UniRef90_A0A369Z6X9
+contig_1	cds	20709	20912	-	AELPDF_029		hypothetical protein	RefSeq:WP_047922046.1, SO:0001217, UniParc:UPI00064C53C9, UniRef:UniRef100_A0A1B0WP18, UniRef:UniRef50_A0A377J0S9, UniRef:UniRef90_A0A377J0S9
+contig_2	cds	471	1028	+	AELPDF_030	tnpR	Transposon Tn1331 resolvase	COG:COG1961, COG:L, GO:0000150, GO:0003677, GO:0015074, KEGG:K14060, RefSeq:WP_001235713.1, SO:0001217, UniParc:UPI00001A3763, UniRef:UniRef100_D9Z4Z5, UniRef:UniRef50_P21424, UniRef:UniRef90_P21424
+contig_2	cds	1211	2071	+	AELPDF_031	blaTEM-1	broad-spectrum class A beta-lactamase TEM-1	COG:COG2367, COG:V, EC:3.5.2.6, GO:0008800, GO:0030655, GO:0046677, KEGG:K18698, NCBIProtein:WP_000027057.1, RefSeq:WP_000027057.1, SO:0001217, UniParc:UPI00000000E4, UniRef:UniRef100_P62593, UniRef:UniRef50_P62593, UniRef:UniRef90_P62593
+contig_2	cds	2166	3071	-	AELPDF_032		Antirestriction protein	RefSeq:WP_005687607.1, SO:0001217, UniParc:UPI00004036CD, UniRef:UniRef100_A0A9N8NAT9, UniRef:UniRef50_A0A377IYT5, UniRef:UniRef90_A0A377IYT5
+contig_2	cds	3200	3358	-	AELPDF_033		hypothetical protein	RefSeq:WP_005687605.1, SO:0001217, UniParc:UPI000053E025, UniRef:UniRef100_A0A377IYK2, UniRef:UniRef50_A0A377IYK2, UniRef:UniRef90_A0A377IYK2
+contig_2	cds	3362	3610	-	AELPDF_034		hypothetical protein	RefSeq:WP_005687602.1, SO:0001217, UniParc:UPI000039AD75, UniRef:UniRef100_A0A377IYN8, UniRef:UniRef50_A0A377IYN8, UniRef:UniRef90_A0A377IYN8
+contig_2	cds	3613	3846	-	AELPDF_035		Hemophilus-specific protein	RefSeq:WP_005653503.1, SO:0001217, UniParc:UPI000039AD74, UniRef:UniRef100_A0A377IYJ6, UniRef:UniRef50_A0A1V3IES7, UniRef:UniRef90_A0A377IYJ6
+contig_2	cds	3931	4287	-	AELPDF_036		hypothetical protein	RefSeq:WP_005653504.1, SO:0001217, UniParc:UPI00014FB48F, UniRef:UniRef100_A0A377J0Q1, UniRef:UniRef50_Q7VMQ4, UniRef:UniRef90_A0A377J0Q1
+contig_2	cds	4668	5105	+	AELPDF_037		Integrating conjugative element protein, PFL_4709 family	RefSeq:WP_005687600.1, SO:0001217, UniParc:UPI00004036CC, UniRef:UniRef100_A0A377IZF4, UniRef:UniRef50_A0A377IZF4, UniRef:UniRef90_A0A377IZF4
+contig_2	cds	5102	6043	+	AELPDF_038		Exported protein	RefSeq:WP_005687598.1, SO:0001217, UniParc:UPI000039AD71, UniRef:UniRef100_A0A1B0WR00, UniRef:UniRef50_A7TUJ3, UniRef:UniRef90_A0A377IZ14
+contig_2	cds	6058	8058	+	AELPDF_039		integrating conjugative element protein	RefSeq:WP_047922038.1, SO:0001217, UniParc:UPI00064C7365, UniRef:UniRef100_UPI00064C7365, UniRef:UniRef50_A0A1V3J6G1, UniRef:UniRef90_A0A377J0F0
+contig_2	cds	8074	8481	+	AELPDF_040		C-type lysozyme inhibitor domain-containing protein	RefSeq:WP_005667853.1, SO:0001217, UniParc:UPI000039AD6F, UniRef:UniRef100_A0A377IYL7, UniRef:UniRef50_A0A1V3JSP2, UniRef:UniRef90_A0A377IYL7
+contig_2	cds	8526	8705	-	AELPDF_041		hypothetical protein	RefSeq:WP_047922037.1, SO:0001217, UniParc:UPI00064CA87D, UniRef:UniRef100_A0A1B0WRK8, UniRef:UniRef50_A0A377IYW4, UniRef:UniRef90_A0A1B0WRK8
+contig_2	cds	8871	9707	-	AELPDF_042	aph(6)-Id	aminoglycoside O-phosphotransferase APH(6)-Id	COG:COG3570, COG:V, EC:2.7.1.72, KEGG:K04343, NCBIProtein:WP_000480968.1, RefSeq:WP_000480968.1, SO:0001217, UniParc:UPI0000061CB7, UniRef:UniRef100_Q7ATJ6, UniRef:UniRef50_C5IWK8, UniRef:UniRef90_C5IWK8
+contig_2	cds	9707	10510	-	AELPDF_043	aph(3'')-Ib	aminoglycoside O-phosphotransferase APH(3'')-Ib	COG:COG3231, COG:J, EC:2.7.1.87, KEGG:K10673, NCBIProtein:WP_001082319.1, RefSeq:WP_001082319.1, SO:0001217, UniParc:UPI0000061CB6, UniRef:UniRef100_Q8GJ11, UniRef:UniRef50_Q8GJ11, UniRef:UniRef90_Q8GJ11
+contig_2	cds	10571	11386	-	AELPDF_044	sul2	sulfonamide-resistant dihydropteroate synthase Sul2	COG:COG0294, COG:H, EC:2.5.1.15, KEGG:K18824, NCBIProtein:WP_001043265.1, RefSeq:WP_001043265.1, SO:0001217, UniParc:UPI00000D1397, UniRef:UniRef100_B7JCH4, UniRef:UniRef50_B3H353, UniRef:UniRef90_E3VLA2
+contig_2	cds	11913	12311	+	AELPDF_045		hypothetical protein	
+contig_2	cds	12532	13239	-	AELPDF_046	repA	Regulatory protein RepA	COG:COG3598, COG:L, GO:0005524, GO:0006276, RefSeq:WP_000880559.1, SO:0001217, UniParc:UPI00005051F7, UniRef:UniRef100_P20356, UniRef:UniRef50_P20356, UniRef:UniRef90_P20356
+contig_3	cds	125	541	-	AELPDF_047	tetD	Transposon Tn10 TetD protein	COG:COG2207, COG:K, GO:0003700, GO:0043565, RefSeq:WP_000275180.1, SO:0001217, UniParc:UPI00000BEFBF, UniRef:UniRef100_Q6QR69, UniRef:UniRef50_P28816, UniRef:UniRef90_P28816
+contig_3	cds	554	1222	+	AELPDF_048	tetC	tetracyline resistance-associated transcriptional repressor TetC	COG:COG1309, COG:K, GO:0003677, SO:0001217, UniParc:UPI00000B7027, UniRef:UniRef100_Q6QR70, UniRef:UniRef50_P28815, UniRef:UniRef90_P28815
+contig_3	cds	1335	2540	-	AELPDF_049	tet(B)	tetracycline efflux MFS transporter Tet(B)	COG:COG2814, COG:G, GO:0005886, GO:0008493, GO:0015297, GO:0015904, GO:0016020, GO:0022857, GO:0046677, GO:0055085, KEGG:K08151, NCBIProtein:WP_001089072.1, RefSeq:WP_001089072.1, SO:0001217, UniParc:UPI0000000805, UniRef:UniRef100_P02980, UniRef:UniRef50_P02980, UniRef:UniRef90_P02980
+contig_3	cds	2622	3245	+	AELPDF_050	tetR(B)	tetracycline resistance transcriptional repressor TetR(B)	BlastRules:WP_000088605, COG:COG1309, COG:K, GO:0000976, GO:0003700, GO:0045892, GO:0046677, GO:0046872, KEGG:K18476, RefSeq:WP_000088605.1, SO:0001217, UniParc:UPI0000000D97, UniRef:UniRef100_P04483, UniRef:UniRef50_P0ACT4, UniRef:UniRef90_P04483
+contig_3	cds	3223	3909	-	AELPDF_051	arsR	Transcriptional regulator	COG:COG0640, COG:K, RefSeq:WP_001284954.1, SO:0001217, UniParc:UPI00000BEFC6, UniRef:UniRef100_Q1A2K6, UniRef:UniRef50_Q1A2K6, UniRef:UniRef90_Q1A2K6
+contig_3	cds	3917	4303	-	AELPDF_052	aCTx2	ACT domain-containing protein	COG:COG4747, COG:R, RefSeq:WP_000460651.1, SO:0001217, UniParc:UPI00000D139B, UniRef:UniRef100_B1VCF2, UniRef:UniRef50_K8AJ79, UniRef:UniRef90_B1VCF2
+contig_3	cds	4296	4616	-	AELPDF_053	hmoA	Antibiotic biosynthesis monooxygenase	COG:COG2329, COG:H, RefSeq:WP_000562370.1, SO:0001217, UniParc:UPI00000DA0D3, UniRef:UniRef100_Q1A2K8, UniRef:UniRef50_Q1A2K8, UniRef:UniRef90_Q1A2K8
+contig_4	cds	118	1065	+	AELPDF_054	tnp	IS30 family ISAeca1 transposase	COG:COG2826, COG:X, GO:0004803, IS:ISAeca1, RefSeq:WP_012564931.1, SO:0001217, UniParc:UPI00002555E1, UniRef:UniRef100_A0A729RVT0, UniRef:UniRef50_A0A432W514, UniRef:UniRef90_A0A6M4YFY5
+contig_4	cds	1228	1869	+	AELPDF_055	catA2	type A-2 chloramphenicol O-acetyltransferase CatII	COG:COG4845, COG:V, EC:2.3.1.28, GO:0008811, GO:0046677, KEGG:K19271, NCBIProtein:WP_011751353.1, RefSeq:WP_011751353.1, SO:0001217, UniParc:UPI0000055EA0, UniRef:UniRef100_Q8RQP2, UniRef:UniRef50_P00484, UniRef:UniRef90_P22615
+contig_4	cds	2184	2390	-	AELPDF_056		DUF3265 domain-containing protein	SO:0001217, UniParc:UPI0001602612, UniRef:UniRef100_A9EE82, UniRef:UniRef50_A9EE82, UniRef:UniRef90_A9EE82
+contig_5	ncRNA	1087	1156	+	AELPDF_057	RNA-OUT	RNA-OUT	RFAM:RF00240, SO:0000655
+contig_6	cds	68	1000	+	AELPDF_058	tnp	IS5 family ISKpn13 transposase	COG:COG3039, COG:X, GO:0004803, IS:ISKpn13, RefSeq:WP_004235553.1, SO:0001217, UniParc:UPI00004036B9, UniRef:UniRef100_A0A2P9E4A7, UniRef:UniRef50_A0A6S4T5S8, UniRef:UniRef90_A0A2P9E4A7

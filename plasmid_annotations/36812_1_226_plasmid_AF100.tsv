@@ -1,0 +1,40 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	487	735	-	KBKNLP_001	tnpA	Transposase TnpA	SO:0001217, UniParc:UPI0002FFDA70, UniRef:UniRef100_A0A7M1HXL5, UniRef:UniRef50_A0A7M1HXL5, UniRef:UniRef90_A0A7M1HXL5
+contig_1	cds	745	1365	-	KBKNLP_002		hypothetical protein	SO:0001217, UniParc:UPI00025141EA, UniRef:UniRef100_A0A7M1HWR0, UniRef:UniRef50_A0A7M1HWR0, UniRef:UniRef90_A0A7M1HWR0
+contig_1	cds	1338	1547	-	KBKNLP_003		hypothetical protein	
+contig_1	cds	1504	1740	-	KBKNLP_004		hypothetical protein	SO:0001217, UniParc:UPI00062CA60C, UniRef:UniRef100_A0A514C834, UniRef:UniRef50_A0A514C834, UniRef:UniRef90_A0A514C834
+contig_1	cds	1777	2187	-	KBKNLP_005		hypothetical protein	
+contig_1	cds	2389	3123	-	KBKNLP_006		hypothetical protein	SO:0001217, UniRef:UniRef50_F1YWJ3
+contig_1	cds	3178	3312	+	KBKNLP_007		hypothetical protein	PFAM:PF01526.23
+contig_1	cds	3488	3844	+	KBKNLP_008		hypothetical protein	RefSeq:WP_047922052.1, SO:0001217, UniParc:UPI00064CA139, UniRef:UniRef100_A0A1B0WSC8, UniRef:UniRef50_A0A377IYK1, UniRef:UniRef90_A4N4U3
+contig_1	cds	3871	5367	-	KBKNLP_009	traG	TraG N-terminal Proteobacteria domain-containing protein	RefSeq:WP_040975703.1, SO:0001217, UniParc:UPI000595A0EB, UniRef:UniRef100_A0A1B0WPY2, UniRef:UniRef50_A0AAX3ISN8, UniRef:UniRef90_A0A1B0WPY2
+contig_1	cds	5376	5699	-	KBKNLP_010		Hemophilus-specific protein	RefSeq:WP_005667837.1, SO:0001217, UniParc:UPI00014FC43B, UniRef:UniRef100_A0A1B0WQU9, UniRef:UniRef50_A0A1V3IET7, UniRef:UniRef90_A0A377IZG3
+contig_1	cds	5709	6152	-	KBKNLP_011		DUF5655 domain-containing protein	RefSeq:WP_005687593.1, SO:0001217, UniParc:UPI0001A3F744, UniRef:UniRef100_A0A377IZ23, UniRef:UniRef50_A0A377IZ23, UniRef:UniRef90_A0A377IZ23
+contig_1	cds	6124	8994	-	KBKNLP_012		conjugative transfer ATPase	GO:0005524, RefSeq:WP_058230494.1, SO:0001217, UniParc:UPI000655A75A, UniRef:UniRef100_A0A1B0WUH9, UniRef:UniRef50_A0A380U2T4, UniRef:UniRef90_A4N4U7
+contig_1	cds	9010	9417	-	KBKNLP_013		Conjugative transfer region lipoprotein	RefSeq:WP_005653518.1, SO:0001217, UniParc:UPI00004036C8, UniRef:UniRef100_A0A1B0WTP9, UniRef:UniRef50_A0A1V3J6D6, UniRef:UniRef90_A0A1B0WTP9
+contig_1	cds	9427	10827	-	KBKNLP_014		Conj_TIGR03752: integrating conjugative element protein	RefSeq:WP_005687589.1, SO:0001217, UniParc:UPI00004036C7, UniRef:UniRef100_A0A1B0WPF6, UniRef:UniRef50_Q7VMN9, UniRef:UniRef90_A0A5C6GZ50
+contig_1	cds	10838	11707	-	KBKNLP_015		Integrating conjugative element protein, PFL_4704 family	RefSeq:WP_047922050.1, SO:0001217, UniParc:UPI00064C56A9, UniRef:UniRef100_A0A377IYV6, UniRef:UniRef50_Q7VMN8, UniRef:UniRef90_A0A2X1RNF7
+contig_1	cds	11707	12351	-	KBKNLP_016		PFL_4703 family integrating conjugative element protein	RefSeq:WP_047922049.1, SO:0001217, UniParc:UPI00064CBCED, UniRef:UniRef100_A0A377IYM0, UniRef:UniRef50_Q7VMN7, UniRef:UniRef90_A0A377IYM0
+contig_1	cds	12363	12734	-	KBKNLP_017		Conjugative transfer region protein	RefSeq:WP_011271844.1, SO:0001217, UniParc:UPI000039AD64, UniRef:UniRef100_A0A377IYQ5, UniRef:UniRef50_Q7VMN6, UniRef:UniRef90_A0A377IYQ5
+contig_1	cds	12754	13155	-	KBKNLP_018		Integrating conjugative element membrane protein, PFL_4702 family	RefSeq:WP_005653541.1, SO:0001217, UniParc:UPI00004036C3, UniRef:UniRef100_A0A377IYK9, UniRef:UniRef50_Q7VMN5, UniRef:UniRef90_A0A377IYK9
+contig_1	cds	13175	13420	-	KBKNLP_019		DUF3262 domain-containing protein	RefSeq:WP_005750915.1, SO:0001217, UniParc:UPI00027B1737, UniRef:UniRef100_A0A377J0R6, UniRef:UniRef50_A0A1V3KWH3, UniRef:UniRef90_A4N4V6
+contig_1	cds	13424	13744	-	KBKNLP_020		RAQPRD family integrative conjugative element protein	RefSeq:WP_053007201.1, SO:0001217, UniParc:UPI00065A21A0, UniRef:UniRef100_A0A377IZH2, UniRef:UniRef50_A0A0A2ZZH9, UniRef:UniRef90_A0A369Z1Z2
+contig_1	cds	13905	14591	-	KBKNLP_021		Integrating conjugative element membrane protein, PFL_4697 family	RefSeq:WP_012564939.1, SO:0001217, UniParc:UPI00004036C1, UniRef:UniRef100_A0A377IZ32, UniRef:UniRef50_Q7VMN3, UniRef:UniRef90_A0A377IZ32
+contig_1	cds	14591	14926	-	KBKNLP_022		Hemophilus-specific protein	RefSeq:WP_005687581.1, SO:0001217, UniParc:UPI0001A3F73F, UniRef:UniRef100_A0A377J0G4, UniRef:UniRef50_A0A377J0G4, UniRef:UniRef90_A0A377J0G4
+contig_1	cds	14910	17159	-	KBKNLP_023	traD	type IV conjugative transfer system coupling protein TraD	KEGG:K12071, RefSeq:WP_047922048.1, SO:0001217, UniParc:UPI00064C754E, UniRef:UniRef100_A0A377IYN4, UniRef:UniRef50_A0A5B8SQX9, UniRef:UniRef90_A0A9N8NA81
+contig_1	cds	17156	17662	-	KBKNLP_024		Integrating conjugative element protein	RefSeq:WP_011271841.1, SO:0001217, UniParc:UPI000039AD5D, UniRef:UniRef100_A0A377IYX6, UniRef:UniRef50_Q6J5E5, UniRef:UniRef90_Q6J5E5
+contig_1	cds	17678	18436	-	KBKNLP_025		Transglycosylase SLT domain-containing protein	RefSeq:WP_049370068.1, SO:0001217, UniParc:UPI00066A90C3, UniRef:UniRef100_A0A369Z679, UniRef:UniRef50_A0A4S2Q3H1, UniRef:UniRef90_A0A369Z679
+contig_1	cds	18415	19155	-	KBKNLP_026		Conj_TIGR03759: integrating conjugative element protein	RefSeq:WP_012564936.1, SO:0001217, UniParc:UPI00004036BE, UniRef:UniRef100_A0A377IYM9, UniRef:UniRef50_W0R2U5, UniRef:UniRef90_A0A5C6GZ40
+contig_1	cds	19159	19788	-	KBKNLP_027	virB7	Type IV secretion system putative lipoprotein virB7	RefSeq:WP_012564935.1, SO:0001217, UniParc:UPI00004036BD, UniRef:UniRef100_A0A377IYR1, UniRef:UniRef50_A0A377IYR1, UniRef:UniRef90_A0A377IYR1
+contig_1	cds	19887	20561	-	KBKNLP_028	traX	Conjugal transfer protein TraX	SO:0001217, UniRef:UniRef50_A0A1V3JSG4, UniRef:UniRef90_A0A369Z6X9
+contig_1	cds	20709	20912	-	KBKNLP_029		hypothetical protein	RefSeq:WP_047922046.1, SO:0001217, UniParc:UPI00064C53C9, UniRef:UniRef100_A0A1B0WP18, UniRef:UniRef50_A0A377J0S9, UniRef:UniRef90_A0A377J0S9
+contig_1	ncRNA	21048	21117	-	KBKNLP_030	RNA-OUT	RNA-OUT	RFAM:RF00240, SO:0000655
+contig_2	cds	86	292	+	KBKNLP_031		DUF3265 domain-containing protein	SO:0001217, UniParc:UPI0001602612, UniRef:UniRef100_A9EE82, UniRef:UniRef50_A9EE82, UniRef:UniRef90_A9EE82
+contig_2	cds	607	1248	-	KBKNLP_032	catA2	type A-2 chloramphenicol O-acetyltransferase CatII	COG:COG4845, COG:V, EC:2.3.1.28, GO:0008811, GO:0046677, KEGG:K19271, NCBIProtein:WP_011751353.1, RefSeq:WP_011751353.1, SO:0001217, UniParc:UPI0000055EA0, UniRef:UniRef100_Q8RQP2, UniRef:UniRef50_P00484, UniRef:UniRef90_P22615
+contig_2	cds	1411	2358	-	KBKNLP_033	tnp	IS30 family ISAeca1 transposase	COG:COG2826, COG:X, GO:0004803, IS:ISAeca1, RefSeq:WP_012564931.1, SO:0001217, UniParc:UPI00002555E1, UniRef:UniRef100_A0A729RVT0, UniRef:UniRef50_A0A432W514, UniRef:UniRef90_A0A6M4YFY5
+contig_3	cds	68	1000	+	KBKNLP_034	tnp	IS5 family ISKpn13 transposase	COG:COG3039, COG:X, GO:0004803, IS:ISKpn13, RefSeq:WP_004235553.1, SO:0001217, UniParc:UPI00004036B9, UniRef:UniRef100_A0A2P9E4A7, UniRef:UniRef50_A0A6S4T5S8, UniRef:UniRef90_A0A2P9E4A7

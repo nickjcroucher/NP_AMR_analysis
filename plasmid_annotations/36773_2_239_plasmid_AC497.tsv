@@ -1,0 +1,57 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	77	484	-	ABNIDD_001		hypothetical protein	SO:0001217, UniRef:UniRef50_Q7VPC5
+contig_1	cds	530	796	-	ABNIDD_002		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A377JKY9, UniRef:UniRef90_A0A377JKY9
+contig_1	cds	942	1391	-	ABNIDD_003		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0001BA154C, UniRef:UniRef90_UPI0001BA154C
+contig_1	cds	1522	3591	-	ABNIDD_004		zincin-like metallopeptidase domain-containing protein	SO:0001217, UniRef:UniRef50_UPI000CE80431
+contig_1	cds	3621	3809	-	ABNIDD_005		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000CE8F794, UniRef:UniRef90_UPI00022BFC86
+contig_1	cds	3877	4368	-	ABNIDD_006		hypothetical protein	
+contig_1	cds	4419	5255	-	ABNIDD_007		hypothetical protein	
+contig_1	cds	5283	6602	-	ABNIDD_008		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000CE8D352, UniRef:UniRef90_UPI00022BFC88
+contig_1	cds	6613	6855	-	ABNIDD_009		hypothetical protein	RefSeq:WP_005541759.1, SO:0001217, UniParc:UPI0001BA1548, UniRef:UniRef100_UPI0001BA1548, UniRef:UniRef50_UPI0001BA1548, UniRef:UniRef90_UPI0001BA1548
+contig_1	cds	7026	7523	+	ABNIDD_010		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000CE8F7A6
+contig_1	cds	7523	8809	+	ABNIDD_011		relaxase/mobilization nuclease domain-containing protein	SO:0001217, UniRef:UniRef50_UPI001F377C49
+contig_1	cds	8816	9172	-	ABNIDD_012		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC8E, UniRef:UniRef90_UPI00022BFC8E
+contig_1	cds	9338	9532	-	ABNIDD_013		hypothetical protein	
+contig_1	cds	9626	9838	-	ABNIDD_014		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC8F, UniRef:UniRef90_UPI00022BFC8F
+contig_1	cds	9840	10457	-	ABNIDD_015	parA	ParA family protein	SO:0001217, UniRef:UniRef50_UPI000CE8F98C, UniRef:UniRef90_UPI00022BFE5B
+contig_1	cds	10466	10621	-	ABNIDD_016		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0001BA1542, UniRef:UniRef90_UPI0001BA1542
+contig_1	cds	10889	11125	+	ABNIDD_017		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC91, UniRef:UniRef90_UPI00022BFC91
+contig_1	cds	11173	11577	-	ABNIDD_018		single-stranded DNA-binding protein	SO:0001217, UniRef:UniRef50_UPI000CE848F2, UniRef:UniRef90_UPI0006A740F3
+contig_1	cds	11613	11810	-	ABNIDD_019		hypothetical protein	RefSeq:WP_005540133.1, SO:0001217, UniParc:UPI0001BA153F, UniRef:UniRef100_UPI0001BA153F, UniRef:UniRef50_UPI0001BA153F, UniRef:UniRef90_UPI0001BA153F
+contig_1	cds	11811	12122	-	ABNIDD_020		hypothetical protein	SO:0001217, UniParc:UPI0028EE7BA9, UniRef:UniRef100_UPI0028EE7BA9, UniRef:UniRef50_UPI0001BA153E, UniRef:UniRef90_UPI0001BA153E
+contig_1	cds	12142	14424	-	ABNIDD_021		type IA DNA topoisomerase	EC:5.6.2.1, KEGG:K03169, SO:0001217, UniRef:UniRef50_Q8VRC4, UniRef:UniRef90_UPI0006A71386
+contig_1	cds	14439	15167	-	ABNIDD_022		Zeta toxin domain-containing protein	SO:0001217, UniRef:UniRef50_F4HFL2
+contig_1	cds	15174	15467	-	ABNIDD_023		hypothetical protein	SO:0001217, UniRef:UniRef50_F4HFL1
+contig_1	cds	15470	15709	-	ABNIDD_024		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC19, UniRef:UniRef90_UPI00022BFC19
+contig_1	cds	15819	16391	-	ABNIDD_025		recombinase family protein	KEGG:K14060, SO:0001217, UniRef:UniRef50_UPI0013F4518C, UniRef:UniRef90_UPI0006A6CF31
+contig_1	cds	16406	16666	-	ABNIDD_026		hypothetical protein	RefSeq:WP_005540138.1, SO:0001217, UniParc:UPI0001BA153A, UniRef:UniRef100_UPI0001BA153A, UniRef:UniRef50_UPI0001BA153A, UniRef:UniRef90_UPI0001BA153A
+contig_1	cds	17049	17360	-	ABNIDD_027		hypothetical protein	RefSeq:WP_233116820.1, SO:0001217, UniParc:UPI001E5D1758, UniRef:UniRef100_UPI001E5D1758, UniRef:UniRef50_UPI001E5D1758, UniRef:UniRef90_UPI001E5D1758
+contig_1	cds	17375	17731	-	ABNIDD_028		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00014FC6F5, UniRef:UniRef90_UPI00014FC6F5
+contig_1	cds	17754	18038	-	ABNIDD_029		hypothetical protein	RefSeq:WP_049365694.1, SO:0001217, UniParc:UPI00066D611D, UniRef:UniRef100_UPI00066D611D, UniRef:UniRef50_A0A1T0AXA2, UniRef:UniRef90_UPI0018A5E390
+contig_1	cds	18063	18296	-	ABNIDD_030		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0011D9F193, UniRef:UniRef90_UPI0035146CFA
+contig_1	cds	18293	18610	-	ABNIDD_031		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI001E5D1758
+contig_1	cds	18652	18918	-	ABNIDD_032		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A377IYJ2, UniRef:UniRef90_A0A377IYJ2
+contig_1	cds	18947	19132	-	ABNIDD_033	rhuM	Virulence RhuM family protein	SO:0001217, UniRef:UniRef50_A0A4R2NBH6, UniRef:UniRef90_UPI000D01264A
+contig_1	cds	19292	19864	-	ABNIDD_034		TrbM/KikA/MpfK family conjugal transfer protein	SO:0001217, UniRef:UniRef50_UPI0001BA1538, UniRef:UniRef90_UPI0001BA1538
+contig_1	cds	19873	20196	-	ABNIDD_035		TrbM/KikA/MpfK family conjugal transfer protein	SO:0001217, UniRef:UniRef50_UPI0001BA1537, UniRef:UniRef90_UPI0001BA1537
+contig_1	cds	20208	20627	-	ABNIDD_036		cag pathogenicity island Cag12 family protein	SO:0001217, UniRef:UniRef50_UPI000CE8FE43, UniRef:UniRef90_UPI00022BFC1D
+contig_1	cds	20640	22541	-	ABNIDD_037		Type IV secretory system conjugative DNA transfer family protein	SO:0001217, UniRef:UniRef50_A0A496N2U7, UniRef:UniRef90_A0A496N2U7
+contig_1	cds	22534	22914	-	ABNIDD_038		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A496N2V0, UniRef:UniRef90_A0A496N2V0
+contig_1	cds	22925	23959	-	ABNIDD_039	virB11	P-type DNA transfer ATPase VirB11	EC:7.4.2.8, GO:0043684, GO:0044097, KEGG:K03205, SO:0001217, UniRef:UniRef50_A0A496N376, UniRef:UniRef90_A0A496N376
+contig_1	cds	24023	25207	-	ABNIDD_040		TrbI/VirB10 family protein	KEGG:K03195, SO:0001217, UniRef:UniRef50_A0A496N4X2, UniRef:UniRef90_A0A496N4X2
+contig_1	cds	25219	26106	-	ABNIDD_041	virB9	P-type conjugative transfer protein VirB9	KEGG:K03204, SO:0001217, UniRef:UniRef50_A0A1B9N1G0, UniRef:UniRef90_UPI0001BA152C
+contig_1	cds	26118	26825	-	ABNIDD_042		type IV secretion system protein	KEGG:K03203, SO:0001217, UniRef:UniRef50_UPI001F11C4C3, UniRef:UniRef90_UPI0001BA152B
+contig_1	cds	26829	27008	-	ABNIDD_043		lipoprotein	SO:0001217, UniRef:UniRef50_UPI0001BA152A, UniRef:UniRef90_UPI0001BA152A
+contig_1	cds	27025	28017	-	ABNIDD_044		hypothetical protein	
+contig_1	cds	28062	28283	-	ABNIDD_045	eexN	EexN family lipoprotein	SO:0001217, UniRef:UniRef50_UPI000E5684EA
+contig_1	cds	28285	29022	-	ABNIDD_046		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A496NA76
+contig_1	cds	29108	31891	-	ABNIDD_047	virB4	VirB4 family type IV secretion/conjugal transfer ATPase	EC:7.4.2.8, KEGG:K03199, SO:0001217, UniRef:UniRef50_A0A1B9N1H2, UniRef:UniRef90_UPI001E586CA6
+contig_1	cds	32031	32363	-	ABNIDD_048		TrbC/VirB2 family protein	KEGG:K03197, SO:0001217, UniRef:UniRef50_UPI00022BFC27, UniRef:UniRef90_UPI0001BA1525
+contig_1	cds	32376	33038	-	ABNIDD_049		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_UPI000A99AD90, UniRef:UniRef90_UPI00022BFC28
+contig_1	cds	33038	33226	-	ABNIDD_050		type II toxin-antitoxin system RelB/DinJ family antitoxin	RefSeq:WP_005541360.1, SO:0001217, UniParc:UPI0001BA1523, UniRef:UniRef100_UPI0001BA1523, UniRef:UniRef50_UPI0001BA1523, UniRef:UniRef90_UPI0001BA1523
+contig_1	cds	33410	34387	-	ABNIDD_051		replication initiation protein	SO:0001217, UniRef:UniRef50_UPI000CE8EB63, UniRef:UniRef90_UPI00051919FD

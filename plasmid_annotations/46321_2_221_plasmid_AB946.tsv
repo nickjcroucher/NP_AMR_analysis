@@ -1,0 +1,12 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	1	993	+	GAPPCC_01		(5' truncated) Replicase A	SO:0001217, UniRef:UniRef50_I2A693, UniRef:UniRef90_I2A693
+contig_1	cds	1029	1118	+	GAPPCC_02		hypothetical protein	
+contig_1	cds	1257	2117	-	GAPPCC_03	blaTEM-1	broad-spectrum class A beta-lactamase TEM-1	COG:COG2367, COG:V, EC:3.5.2.6, GO:0008800, GO:0030655, GO:0046677, KEGG:K18698, NCBIProtein:WP_000027057.1, RefSeq:WP_000027057.1, SO:0001217, UniParc:UPI00000000E4, UniRef:UniRef100_P62593, UniRef:UniRef50_P62593, UniRef:UniRef90_P62593
+contig_1	cds	2354	2911	-	GAPPCC_04	tnpR	Transposon Tn1331 resolvase	COG:COG1961, COG:L, GO:0000150, GO:0003677, GO:0015074, KEGG:K14060, SO:0001217, UniRef:UniRef50_P21424, UniRef:UniRef90_P21424
+contig_1	cds	2916	3206	+	GAPPCC_05		Transposase	SO:0001217, UniRef:UniRef50_A0A6H1PZ16, UniRef:UniRef90_A0A1Y1CR76
+contig_1	cds	3375	4646	+	GAPPCC_06	mobV	MobV family relaxase	GO:0003677, GO:0006310, SO:0001217, UniRef:UniRef50_A0A1V3LD05, UniRef:UniRef90_I2A690

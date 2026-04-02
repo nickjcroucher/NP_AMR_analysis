@@ -1,0 +1,17 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	498	1091	+	IPFPOL_001	tetC	tetracyline resistance-associated transcriptional repressor TetC	COG:COG1309, COG:K, GO:0003677, RefSeq:WP_000428546.1, SO:0001217, UniParc:UPI00000BD818, UniRef:UniRef100_Q6QR70, UniRef:UniRef50_P28815, UniRef:UniRef90_P28815
+contig_1	cds	1204	2409	-	IPFPOL_002	tet(B)	tetracycline efflux MFS transporter Tet(B)	COG:COG2814, COG:G, GO:0005886, GO:0008493, GO:0015297, GO:0015904, GO:0016020, GO:0022857, GO:0046677, GO:0055085, KEGG:K08151, NCBIProtein:WP_001089072.1, RefSeq:WP_001089072.1, SO:0001217, UniParc:UPI0000000805, UniRef:UniRef100_P02980, UniRef:UniRef50_P02980, UniRef:UniRef90_P02980
+contig_1	cds	2491	3114	+	IPFPOL_003	tetR(B)	tetracycline resistance transcriptional repressor TetR(B)	BlastRules:WP_000088605, COG:COG1309, COG:K, GO:0000976, GO:0003700, GO:0045892, GO:0046677, GO:0046872, KEGG:K18476, RefSeq:WP_000088605.1, SO:0001217, UniParc:UPI0000000D97, UniRef:UniRef100_P04483, UniRef:UniRef50_P0ACT4, UniRef:UniRef90_P04483
+contig_1	cds	3092	3715	-	IPFPOL_004	arsR	Transcriptional regulator	COG:COG0640, COG:K, RefSeq:WP_001280391.1, SO:0001217, UniParc:UPI00017617C0, UniRef:UniRef100_Q1A2K6, UniRef:UniRef50_Q1A2K6, UniRef:UniRef90_Q1A2K6
+contig_1	cds	3786	4172	-	IPFPOL_005	aCTx2	ACT domain-containing protein	COG:COG4747, COG:R, RefSeq:WP_000460651.1, SO:0001217, UniParc:UPI00000D139B, UniRef:UniRef100_B1VCF2, UniRef:UniRef50_K8AJ79, UniRef:UniRef90_B1VCF2
+contig_1	cds	4165	4485	-	IPFPOL_006	hmoA	Antibiotic biosynthesis monooxygenase	COG:COG2329, COG:H, RefSeq:WP_000562370.1, SO:0001217, UniParc:UPI00000DA0D3, UniRef:UniRef100_Q1A2K8, UniRef:UniRef50_Q1A2K8, UniRef:UniRef90_Q1A2K8
+contig_1	cds	4729	5589	-	IPFPOL_007	blaTEM-2	broad-spectrum class A beta-lactamase TEM-2	NCBIProtein:WP_011645017.1, RefSeq:WP_011645017.1, SO:0001217, UniParc:UPI0000001590, UniRef:UniRef100_Q0H0C0, UniRef:UniRef90_Q48406
+contig_1	cds	5630	6187	-	IPFPOL_008	tnpR	Transposon Tn1331 resolvase	COG:COG1961, COG:L, GO:0000150, GO:0003677, GO:0015074, KEGG:K14060, RefSeq:WP_001217881.1, SO:0001217, UniParc:UPI00000001D0, UniRef:UniRef100_P0ADI2, UniRef:UniRef50_P21424, UniRef:UniRef90_P21424
+contig_1	cds	6350	9355	+	IPFPOL_009	tnpA	Tn3 family transposase	COG:COG4644, COG:X, GO:0003677, GO:0004803, GO:0006313, RefSeq:WP_001143757.1, SO:0001217, UniParc:UPI00000AF22C, UniRef:UniRef100_Q0H0C2, UniRef:UniRef50_P03008, UniRef:UniRef90_P03008
+contig_1	cds	9741	10946	+	IPFPOL_010	gltS	sodium/glutamate symporter	COG:COG0786, COG:E, GO:0015501, GO:0015813, GO:0016020, KEGG:K03312, RefSeq:WP_000599533.1, SO:0001217, UniParc:UPI00000BEFCA, UniRef:UniRef100_Q1A2K9, UniRef:UniRef50_P45240, UniRef:UniRef90_A0A1I3N8G0
+contig_2	cds	17	1225	-	IPFPOL_011	tnp	IS4 family IS10R transposase	GO:0004803, IS:IS10R, SO:0001217, UniRef:UniRef50_Q53371, UniRef:UniRef90_Q53371
