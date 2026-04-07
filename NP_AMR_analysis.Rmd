@@ -41,6 +41,7 @@ require(TreeSummarizedExperiment)
 require(SummarizedExperiment)
 require(dendextend)
 require(ggdendro)
+require(umap)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
