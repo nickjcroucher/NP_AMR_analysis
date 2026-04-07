@@ -1774,6 +1774,7 @@ We plot the overall size distribution of the plasmids:
 # For checking no QC failures are analysed
 expected_hflu <- Hflu_filter$npg_run_id
 expected_mcat <- Mcat_filter$npg_run_id
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
 
 # Load up sizes
 plasmid_sizes_df <-
