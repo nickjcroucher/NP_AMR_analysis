@@ -2047,7 +2047,30 @@ Hflu_microreact_df %<>%
 ### Plot plasmid distribution across cohorts
 
 TO DO
+```{r plot heatmap of plasmid distribution across cohort}
+library(viridis)
+plasmid_counts <- plasmid_reclustering_df %>%
+  group_by(Cohort, Species, plasmid_name) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(Cohort, Species) %>%
+  mutate(total_plasmid = sum(n),
+         percent_plasmids = 100 *n / total_plasmid) %>%
+  ungroup()
 
+ggplot(plasmid_counts, 
+       aes(x = Cohort, y = plasmid_name, fill = percent_plasmids)) + 
+  geom_tile(color = "grey85", linewidth = 0.3) + 
+  scale_fill_viridis(option = "magma", direction = 1) + 
+  facet_wrap(~ Species, scales = "free_y")+ 
+  theme_bw(base_size = 12) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 9),
+    strip.text = element_text(size = 13, face = "bold"),
+    panel.grid = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA))+ 
+  labs(title = "Plasmids Distribution Across Cohorts", x = "Cohort", y = "Plasmid", fill = "percent of plasmids")
+                          
+```
 ### Association between plasmids and resistance in *H. influenzae*
 
 ```{r calculate the proportion of resistance and plasmids H.influenzae}
