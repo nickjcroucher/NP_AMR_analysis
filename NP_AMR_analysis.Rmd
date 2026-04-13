@@ -1638,6 +1638,24 @@ ggplot(amr_comparison_df,
 ## Add plot of serotype distribution across locations
 
 TO DO
+```{r plot bargraph for serotype of H.influenzae}
+Hflu_serotype_percent <- Hflu_microreact_df %>% 
+  filter(!is.na(serotype)) %>%
+  group_by(Cohort, serotype) %>%
+  summarise(n = n(), .group = "drop") %>%
+  group_by(Cohort) %>%
+  mutate(total = sum(n), 
+         percent_serotype = (n / total) * 100)
+  
+ggplot(Hflu_serotype_percent, 
+       aes(x = serotype, y = Cohort, fill = percent_serotype )) + 
+  geom_tile(color = "blue") + 
+  scale_fill_gradient(low = "lightyellow", high = "red") + 
+  theme(axis.text.x = element_text(angle = 45, hjust =1), 
+        panel.grid = element_blank()) + 
+  labs(title = "Serotype Distribution of H.influenzae", x = "Location", y = "Serotype")
+
+```
 
 ## Plasmid clustering and phylogeny analysis
 
