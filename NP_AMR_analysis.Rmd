@@ -1642,10 +1642,12 @@ TO DO
 Hflu_serotype_percent <- Hflu_microreact_df %>% 
   filter(!is.na(serotype)) %>%
   group_by(Cohort, serotype) %>%
-  summarise(n = n(), .group = "drop") %>%
-  group_by(Cohort) %>%
-  mutate(total = sum(n), 
-         percent_serotype = (n / total) * 100)
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(serotype) %>%
+  mutate(
+    total = sum(n),
+    percent_serotype = (n / total) * 100) %>% 
+  ungroup()
   
 ggplot(Hflu_serotype_percent, 
        aes(x = serotype, y = Cohort, fill = percent_serotype )) + 
@@ -1653,7 +1655,7 @@ ggplot(Hflu_serotype_percent,
   scale_fill_gradient(low = "lightyellow", high = "red") + 
   theme(axis.text.x = element_text(angle = 45, hjust =1), 
         panel.grid = element_blank()) + 
-  labs(title = "Serotype Distribution of H.influenzae", x = "Location", y = "Serotype")
+  labs(title = "Serotype Distribution of H.influenzae", x = "Serotypes", y = "Locations")
 
 ```
 
@@ -2054,7 +2056,7 @@ plasmid_counts <- plasmid_reclustering_df %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(Cohort, Species) %>%
   mutate(total_plasmid = sum(n),
-         percent_plasmids = 100 *n / total_plasmid) %>%
+         percent_plasmids = 100 * n / total_plasmid) %>%
   ungroup()
 
 ggplot(plasmid_counts, 
@@ -2065,7 +2067,7 @@ ggplot(plasmid_counts,
   theme_bw(base_size = 12) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.text.y = element_text(size = 9),
-    strip.text = element_text(size = 13, face = "bold"),
+    strip.text = element_text(size = 11, face = "bold"),
     panel.grid = element_blank(),
     panel.border = element_rect(color = "black", fill = NA))+ 
   labs(title = "Plasmids Distribution Across Cohorts", x = "Cohort", y = "Plasmid", fill = "percent of plasmids")
@@ -2251,6 +2253,31 @@ Microreact visualisations are available from:
 ### Compare *H. influenzae* strain frequencies between locations
 
 TO DO
+```{r calculate strains frequencies of H.influenzae then plot the frequency}
+Hflu_strains <- Hflu_microreact_df %>%
+  group_by(id, 
+           Cohort, 
+           Cluster) %>%
+  summarise(strains_count = n_distinct(id), 
+            .groups = "drop") %>%
+  arrange(Cohort)
+
+Hflu_strains_freq <- Hflu_strains %>%
+  group_by(Cohort) %>% 
+  mutate(Frequency = (strains_count / sum(strains_count) *100))
+
+ggplot(Hflu_strains_freq, 
+       aes(x = Cluster, 
+           y = Frequency, 
+           fill = Cohort)) + 
+  geom_bar(stat = "identity", 
+           position = "stack") + 
+  theme_minimal() + 
+  labs(title = "H. influenzae strain frequencies\nby cohort", 
+       x = "Cluster", 
+       y = "Frequency", 
+       fill = "Cohort")
+```
 
 ### Compare strain frequencies between locations
 
