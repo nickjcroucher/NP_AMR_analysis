@@ -1942,7 +1942,7 @@ large_clusters <- cluster_sizes |> dplyr::filter(n >  25) |> dplyr::pull(merged_
 # --- Cluster centroids for ggrepel labels ---
 cluster_centroids <-
   plasmid_reclustering_df |>
-  dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |>
+  dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |> 
   dplyr::group_by(merged_cluster,new_plasmid_name) |>
   dplyr::summarise(
     tsne1D = mean(tsne1D),
@@ -1958,22 +1958,22 @@ cluster_centroids <-
     # Magnitude scales with true cluster radius + fixed buffer
     nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
     nudge_y = sign(tsne2D) * (radius + 2)
-  )
+    )
+cluster_centroids
 
 # --- Plot ---
 ggplot(
-  plasmid_reclustering_df |>
+  plasmid_reclustering_df |> 
     dplyr::filter(
-      !is.na(tsne1D), !is.na(tsne2D),
+      !is.na(tsne1D), !is.na(tsne2D), 
       !is.infinite(tsne1D), !is.infinite(tsne2D)
-    ),
-  aes(
-    x      = tsne1D,
-    y      = tsne2D,
-    colour = Species,
-    shape  = Cohort
-  )
-) +
+      ), 
+  aes(x = tsne1D, 
+      y = tsne2D, 
+      colour = Species, 
+      shape = Cohort
+      )
+  ) +
   # Ellipses for small clusters - NO label aesthetic
   stat_ellipse(
     data = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
@@ -1986,38 +1986,37 @@ ggplot(
   ) + 
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
-                                      !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
-    colour    = "black",
+    data = \(x) dplyr::filter(x, merged_cluster %in% large_clusters & 
+                                     !is.na(merged_cluster)), 
+    aes(group = new_plasmid_name), 
+    expand = 0.015, 
+    alpha = 0.15, 
+    colour = "black", 
     concavity = 10
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
   ggrepel::geom_label_repel(
-    data = cluster_centroids,
+    data = cluster_centroids, 
     aes(
-      x     = tsne1D,
-      y     = tsne2D,
+      x = tsne1D, 
+      y = tsne2D, 
       label = new_plasmid_name
-    ),
-    inherit.aes        = FALSE,
-    colour             = "black",
-    size               = 3,
-    fontface           = "bold",
-    fill               = alpha("white", 0.7),
-    label.size         = 0.2,
-    point.padding      = unit(1, "lines"),
-    box.padding        = unit(0.5, "lines"),
-    nudge_x            = cluster_centroids$nudge_x*0.5 * sign(cluster_centroids$tsne1D),
-    nudge_y            = cluster_centroids$nudge_y*0.5 * sign(cluster_centroids$tsne2D),
-    max.overlaps       = Inf,
-    min.segment.length = 0,
-    segment.size       = 0.3,
-    segment.colour     = NA     # <-- hide segments if drawn
-  ) +
+      ), 
+    inherit.aes = FALSE, 
+    colour = "black", 
+    size = 3, 
+    fontface = "bold", 
+    fill = alpha("white", 0.7), 
+    label.size = 0.2, 
+    point.padding = unit(1, "lines"), 
+    box.padding = unit(0.5, "lines"), 
+    nudge_x = cluster_centroids$nudge_x*0.5 * sign(cluster_centroids$tsne1D), 
+    nudge_y = cluster_centroids$nudge_y*0.5 * sign(cluster_centroids$tsne2D), 
+    max.overlaps = Inf,
+    min.segment.length = 0, 
+    segment.size = 0.3, 
+    segment.colour = NA) + # <-- hide segments if drawn
   scale_colour_manual(values = species_palette)
 
 ```
@@ -2131,22 +2130,41 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 We select the plasmids from the plasmid_reclustering_df to analize in the Bakta tool, then we plot the sequence by gggenes function.
 
 ```{r select the plasmids to analize in Bakta}
+set.seed(1) 
 plasmid_reclustering_df %>% 
   dplyr::select(Sample_Name,new_plasmid_name) %>% 
   dplyr::group_by(new_plasmid_name) %>% 
   dplyr::slice_sample(n = 1)
+
 ```
 
 ### Plasmids in *M. catarrhalis*
 
-#### pAC411, pAB778, and pAG261
+#### pAC411
 
 ```{r import group of plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool}
 
-plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
-plot_plasmid_function("46358_2_78_plasmid_AC411.tsv", title_str = "pAC411")
-plot_plasmid_function("46358_2_175_plasmid_AC411.tsv", title_str = "pAC411")
-plot_plasmid_function("46358_2_360_plasmid_AC411.tsv", title_str = "pAC411")
+library(cowplot)
+cowplot::plot_grid(
+  plotlist = list(
+    plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_78_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_175_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_360_plasmid_AC411.tsv", title_str = "pAC411")
+  ),
+  nrow = 2,
+  ncol = 2
+)
+
+
+```
+
+Sunheng interprets the plasmids.
+
+#### pAB778, and pAG261
+
+``` {r Other plasmids}
+
 plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
 plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
 plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261")
@@ -2155,6 +2173,7 @@ plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261")
 plot_plasmid_function("47195_1_185_plasmid_AG261.tsv", title_str = "pAG261")
 plot_plasmid_function("46472_2_179_plasmid_AG261.tsv", title_str = "pAG261")
 plot_plasmid_function("46321_2_278_plasmid_AG261.tsv", title_str = "pAG261")
+
 
 ```
 
