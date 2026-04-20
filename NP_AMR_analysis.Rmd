@@ -1942,7 +1942,7 @@ large_clusters <- cluster_sizes |> dplyr::filter(n >  25) |> dplyr::pull(merged_
 # --- Cluster centroids for ggrepel labels ---
 cluster_centroids <-
   plasmid_reclustering_df |>
-  dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |> 
+  dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |>
   dplyr::group_by(merged_cluster,new_plasmid_name) |>
   dplyr::summarise(
     tsne1D = mean(tsne1D),
@@ -1958,66 +1958,65 @@ cluster_centroids <-
     # Magnitude scales with true cluster radius + fixed buffer
     nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
     nudge_y = sign(tsne2D) * (radius + 2)
-    )
-cluster_centroids
+  )
 
 # --- Plot ---
 ggplot(
-  plasmid_reclustering_df |> 
+  plasmid_reclustering_df |>
     dplyr::filter(
-      !is.na(tsne1D), !is.na(tsne2D), 
+      !is.na(tsne1D), !is.na(tsne2D),
       !is.infinite(tsne1D), !is.infinite(tsne2D)
-      ), 
-  aes(x = tsne1D, 
-      y = tsne2D, 
-      colour = Species, 
-      shape = Cohort
-      )
-  ) +
+    ),
+  aes(
+    x      = tsne1D,
+    y      = tsne2D,
+    colour = Species,
+    shape  = Cohort
+  )
+) +
   # Ellipses for small clusters - NO label aesthetic
-  stat_ellipse(
-    data = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
+  ggforce::geom_mark_ellipse(
+    data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
                                       !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),    
-    geom = "polygon",
-    alpha = 0.2,
-    level = 0.95,
+    aes(group = new_plasmid_name),
+    expand    = 0.015,
+    alpha     = 0.15,
     colour    = "black"
-  ) + 
+  ) +
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
-    data = \(x) dplyr::filter(x, merged_cluster %in% large_clusters & 
-                                     !is.na(merged_cluster)), 
-    aes(group = new_plasmid_name), 
-    expand = 0.015, 
-    alpha = 0.15, 
-    colour = "black", 
+    data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
+                                      !is.na(merged_cluster)),
+    aes(group = new_plasmid_name),
+    expand    = 0.015,
+    alpha     = 0.15,
+    colour    = "black",
     concavity = 10
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
   ggrepel::geom_label_repel(
-    data = cluster_centroids, 
+    data = cluster_centroids,
     aes(
-      x = tsne1D, 
-      y = tsne2D, 
+      x     = tsne1D,
+      y     = tsne2D,
       label = new_plasmid_name
-      ), 
-    inherit.aes = FALSE, 
-    colour = "black", 
-    size = 3, 
-    fontface = "bold", 
-    fill = alpha("white", 0.7), 
-    label.size = 0.2, 
-    point.padding = unit(1, "lines"), 
-    box.padding = unit(0.5, "lines"), 
-    nudge_x = cluster_centroids$nudge_x*0.5 * sign(cluster_centroids$tsne1D), 
-    nudge_y = cluster_centroids$nudge_y*0.5 * sign(cluster_centroids$tsne2D), 
-    max.overlaps = Inf,
-    min.segment.length = 0, 
-    segment.size = 0.3, 
-    segment.colour = NA) + # <-- hide segments if drawn
-  scale_colour_manual(values = species_palette)
+    ),
+    inherit.aes        = FALSE,
+    colour             = "black",
+    size               = 3,
+    fontface           = "bold",
+    fill               = alpha("white", 0.7),
+    label.size         = 0.2,
+    point.padding      = unit(1, "lines"),
+    box.padding        = unit(0.5, "lines"),
+    max.overlaps       = Inf,
+    min.segment.length = 0,
+    segment.size       = 0.3,
+    segment.colour     = NA,
+    position = ggrepel::position_nudge_repel(
+    x = cluster_centroids$nudge_x * 0.5,
+    y = cluster_centroids$nudge_y * 0.5))
 
 ```
 
