@@ -2158,24 +2158,27 @@ cowplot::plot_grid(
   ncol = 2
 )
 
-
 ```
 
 Sunheng interprets the plasmids.
 
-#### pAB778, and pAG261
+#### pAB778
 
-``` {r Other plasmids}
-
+``` {r AB778 plasmids group}
 plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
 plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
-plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261")
-plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261")
-plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261")
-plot_plasmid_function("47195_1_185_plasmid_AG261.tsv", title_str = "pAG261")
-plot_plasmid_function("46472_2_179_plasmid_AG261.tsv", title_str = "pAG261")
-plot_plasmid_function("46321_2_278_plasmid_AG261.tsv", title_str = "pAG261")
 
+```
+
+#### pAG261
+
+```{r import all plasmids of AG261 from bakta tool analysis and plot the genes}
+plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
+plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
+plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
+plot_plasmid_function("", title_str = "pAG261_11")
+plot_plasmid_function("", title_str = "pAG261_10")
+plot_plasmid_function("", title_str = "pAG261_9")
 
 ```
 
@@ -2187,43 +2190,117 @@ Use `plasmid_reclustering_df` to find representatives for annotation:
 For each one, search the dataframe, then use the "sample_name" column to find the right annotation (note you may have to replace the # character with an underscore).
 
 ### Plasmids in *H. influenzae*
+Import each H. influenzae plasmids group of all tsv files from plasmid_annotations after analised by Bakta tool
 
-#### pAE169, pAC497, pAF100, pAE025, pAF098, pAB946, pAB947, pAB621, and pnovel
-
-```{r import plasmid group of all tsv files from plamsid_annotations after analized by Bakta tool}
-
-plot_plasmid_function("36773_2_35_plasmid_AE169.tsv", title_str = "pAE169_1")
-plot_plasmid_function("36773_2_239_plasmid_AC497.tsv", title_str = "pAC497_1")
-plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
-plot_plasmid_function("46358_2_52_plasmid_AC497.tsv", title_str = "pAC497_3")
+#### pAF100_1
+```{r plot gggenes of plasmid AF100}
 plot_plasmid_function("36774_2_244_plasmid_AF100.tsv", title_str = "pAF100_1")
-plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_2")
-plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_3")
-plot_plasmid_function("36982_2_124_plasmid_AF100.tsv", title_str = "pAF100_4")
-plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_5")
-plot_plasmid_function("36983_1_333_plasmid_AF100.tsv", title_str = "pAF100_6")
-plot_plasmid_function("36985_1_44_plasmid_AF100.tsv", title_str = "pAF100_7")
-plot_plasmid_function("46358_2_63_plasmid_AF100.tsv", title_str = "pAF100_8")
-plot_plasmid_function("46358_2_81_plasmid_AF100.tsv", title_str = "pAF100_9")
-plot_plasmid_function("46358_2_312_plasmid_AF100.tsv", title_str = "pAF100_10")
-plot_plasmid_function("46472_2_222_plasmid_AF100.tsv", title_str = "pAF100_11")
-plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025_1")
-plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025_2")
-plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025_3")
-plot_plasmid_function("46358_2_92_plasmid_AE025.tsv", title_str = "pAE025_4")
-plot_plasmid_function("46321_2_163_plasmid_AE025.tsv", title_str = "pAE025_5")
-plot_plasmid_function("36985_1_354_plasmid_AE025.tsv", title_str = "pAE025_6")
-plot_plasmid_function("36984_2_130_plasmid_AE025.tsv", title_str = "pAE025_7")
-plot_plasmid_function("36983_1_178_plasmid_AE025.tsv", title_str = "pAE025_8")
-plot_plasmid_function("36812_1_12_plasmid_AF098.tsv", title_str = "pAF098_1")
-plot_plasmid_function("46358_2_275_plasmid_AB946.tsv", title_str = "pAB946_1")
-plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_2")
-plot_plasmid_function("46358_2_99_plasmid_AB947.tsv", title_str = "pAB947_1")
-plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621_1")
-plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621_2")
-plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pnovel_1")
-plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d5.tsv", title_str = "pnovel_2")
+```
 
+#### pAF100_5
+```{r}
+plot_plasmid_function("36982_2_124_plasmid_AF100.tsv", title_str = "pAF100_5")
+```
+
+#### pAF100_6
+```{r}
+plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_6")
+
+```
+
+#### pAF100_7
+```{r}
+plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_7")
+```
+
+#### pAF100_8
+```{r}
+plot_plasmid_function("36983_1_333_plasmid_AF100.tsv", title_str = "pAF100_8")
+```
+
+#### pAF100_16
+```{r}
+plot_plasmid_function("46358_2_81_plasmid_AF100.tsv", title_str = "pAF100_16")
+```
+
+#### pAF100_19
+```{r}
+plot_plasmid_function("46358_2_63_plasmid_AF100.tsv", title_str = "pAF100_19")
+```
+
+#### pAF100_23
+```{r}
+plot_plasmid_function("46472_2_222_plasmid_AF100.tsv", title_str = "pAF100_23")
+```
+
+#### pAF100_25
+```{r}
+plot_plasmid_function("36985_1_44_plasmid_AF100.tsv", title_str = "pAF100_25")
+```
+
+#### pAF100_26
+```{r}
+plot_plasmid_function("46358_2_312_plasmid_AF100.tsv", title_str = "pAF100_26")
+```
+
+#### pAF100_28
+```{r }
+plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_28")
+
+```
+
+#### pAF098_3
+```{r}
+plot_plasmid_function("36812_1_12_plasmid_AF098.tsv", title_str = "pAF098_3")
+```
+
+#### AF098_29
+```{r}
+
+```
+
+#### pAB946
+```{r}
+plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pAB946")
+```
+
+#### pAB946_30
+```{r}
+plot_plasmid_function("46358_2_275_plasmid_AB946.tsv", title_str = "pAB946_30")
+```
+
+#### pAB946_27
+```{r}
+plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
+```
+
+#### pAE025
+```{r}
+plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46358_2_92_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("46321_2_163_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36985_1_354_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36984_2_130_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36983_1_178_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d5.tsv", title_str = "pAE025")
+```
+
+#### pAB621
+```{r}
+plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
+plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
+```
+
+#### pAC497_18
+```{r}
+plot_plasmid_function("46358_2_52_plasmid_AC497.tsv", title_str = "pAC497_18")
+```
+
+### pAC497_2
+```{r}
+plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
 ```
 
 Use `plasmid_reclustering_df` to find representatives for annotation:
