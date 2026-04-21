@@ -1,9 +1,0 @@
-# Annotated with Bakta
-# Software: v1.12.0
-# Database: v6.0, full
-# DOI: 10.1099/mgen.0.000685
-# URL: github.com/oschwengers/bakta
-#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
-contig_1	cds	2	712	-	OFNKJE_01		(3' truncated) replication initiation protein	SO:0001217, UniRef:UniRef50_A0A369ZQX0, UniRef:UniRef90_UPI000D01ADC1
-contig_1	cds	1718	1945	-	OFNKJE_02		Phage protein	SO:0001217, UniRef:UniRef50_A0A502LKR3, UniRef:UniRef90_A0A369ZLP4
-contig_1	cds	1993	2271	-	OFNKJE_03		(5' truncated) hypothetical protein	SO:0001217, UniRef:UniRef50_UPI001FAF2802

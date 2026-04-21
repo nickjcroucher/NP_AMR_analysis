@@ -1,9 +1,0 @@
-# Annotated with Bakta
-# Software: v1.12.0
-# Database: v6.0, full
-# DOI: 10.1099/mgen.0.000685
-# URL: github.com/oschwengers/bakta
-#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
-contig_1	ncRNA	1082	1151	+	JHMGKN_01	RNA-OUT	RNA-OUT	RFAM:RF00240, SO:0000655
-contig_1	cds	1225	1839	-	JHMGKN_02		recombinase family protein	KEGG:K14060, SO:0001217, UniRef:UniRef50_A0A6P4J2E9, UniRef:UniRef90_UPI0010ACB702
-contig_1	cds	1965	4850	+	JHMGKN_03		Tn3 family transposase	COG:COG4644, COG:X, GO:0004803, SO:0001217, UniRef:UniRef50_K9D0U3, UniRef:UniRef90_A0A9W4QEU4
