@@ -2176,11 +2176,13 @@ plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
 plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
 plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
 plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
-plot_plasmid_function("", title_str = "pAG261_11")
-plot_plasmid_function("", title_str = "pAG261_10")
-plot_plasmid_function("", title_str = "pAG261_9")
-
 ```
+
+#### pAG261_11
+
+#### pAG261_10
+
+#### pAG261_9
 
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
@@ -2270,12 +2272,12 @@ plot_plasmid_function("46358_2_275_plasmid_AB946.tsv", title_str = "pAB946_30")
 ```
 
 #### pAB946_27
-```{r}
+```{r plot gggenes of AB946 plasmids}
 plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
 ```
 
 #### pAE025
-```{r}
+```{r plot gggenes of AE025 plasmids}
 plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
