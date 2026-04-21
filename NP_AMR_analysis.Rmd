@@ -1891,8 +1891,8 @@ ggplot(dist_df,
 
 
 ``` {r Decide on clustering of plasmids, echo = TRUE}
-
 # Merge nearby plasmids through single linkage clustering with the new threshold
+
 plasmid_reclustering_df <- merge_clusters_by_distance(
   df                     = plasmid_clustering_df,
   dist_df                = dist_df,
@@ -1932,6 +1932,7 @@ plasmid_reclustering_df <- merge_clusters_by_distance(
   dplyr::select(-n_clusters_in_group, -all_novel_in_cluster, -representative_name)
 
 # Plotting groups after merging
+
 cluster_sizes <- plasmid_reclustering_df |>
   dplyr::count(merged_cluster)
 
@@ -1960,6 +1961,7 @@ cluster_centroids <-
   )
 
 # --- Plot ---
+
 ggplot(
   plasmid_reclustering_df |>
     dplyr::filter(
@@ -1974,6 +1976,7 @@ ggplot(
   )
 ) +
   # Ellipses for small clusters - NO label aesthetic
+  
   ggforce::geom_mark_ellipse(
     data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
                                       !is.na(merged_cluster)),
@@ -1994,6 +1997,7 @@ ggplot(
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
+  
   ggrepel::geom_label_repel(
     data = cluster_centroids,
     aes(
