@@ -2,17 +2,11 @@ name: Check NP_AMR_analysis Rmd knitting
 
 on:
   push:
-    branches: 
-      - main
-      - SK_plasmid
     paths:
       - "NP_AMR_analysis.Rmd"
       - ".github/workflows/check-knit.yml"
       - "**/*.R"          # optional: rerun when helper scripts change
   pull_request:
-    branches: 
-      - main
-      - SK_plasmid
     paths:
       - "NP_AMR_analysis.Rmd"
       - ".github/workflows/check-knit.yml"
@@ -34,7 +28,7 @@ jobs:
         run: |
           sudo apt-get update
           # Add any system libs your packages need, e.g.
-          # sudo apt-get install -y libxml2-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev libfreetype6-dev libpng-dev libiff5-dev libjpeg-dev
+          # sudo apt-get install -y libxml2-dev libcurl4-openssl-dev libssl-dev
 
       - name: Install package dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
