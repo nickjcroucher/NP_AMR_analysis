@@ -1891,8 +1891,45 @@ ggplot(dist_df,
 
 
 ``` {r Decide on clustering of plasmids, echo = TRUE}
-# Merge nearby plasmids through single linkage clustering with the new threshold
 
+#############
+# Functions #
+#############
+
+
+
+# Helper to add tiny jitter to near-singular clusters
+jitter_singular_clusters <- function(df, threshold = 0.1) {
+  df |>
+   dplyr::group_by(new_plasmid_name) |>
+   dplyr::mutate(
+     range_x = max(tsne1D, na.rm = TRUE) - min(tsne1D, na.rm = TRUE),
+     range_y = max(tsne2D, na.rm = TRUE) - min(tsne2D, na.rm = TRUE),
+     # Add tiny jitter only to clusters where points are nearly identical
+     tsne1D  = dplyr::if_else(
+       range_x < threshold,
+       tsne1D + rnorm(dplyr::n(), 0, threshold),
+       tsne1D
+     ),
+     tsne2D  = dplyr::if_else(
+       range_y < threshold,
+       tsne2D + rnorm(dplyr::n(), 0, threshold),
+       tsne2D
+     )
+   ) |>
+   dplyr::select(-range_x, -range_y) |>
+   dplyr::ungroup()
+}
+
+
+
+############
+# Analysis #
+############
+
+
+
+# Merge nearby plasmids through single linkage clustering with the new threshold
 plasmid_reclustering_df <- merge_clusters_by_distance(
   df                     = plasmid_clustering_df,
   dist_df                = dist_df,
@@ -1902,42 +1939,73 @@ plasmid_reclustering_df <- merge_clusters_by_distance(
   dplyr::mutate(merged_cluster = as.character(merged_cluster))|>
   dplyr::group_by(plasmid_name) |>
   dplyr::mutate(
-    n_clusters_in_group = dplyr::n_distinct(merged_cluster, na.rm = TRUE)
+   n_clusters_in_group = dplyr::n_distinct(merged_cluster, na.rm = TRUE)
   ) |>
   dplyr::ungroup() |>
   dplyr::group_by(merged_cluster) |>
   dplyr::mutate(
-    all_novel_in_cluster = all(grepl("^plasmid_novel_", plasmid_name)),
-    representative_name  = dplyr::case_when(
-      all_novel_in_cluster ~ "plasmid_novel",
-      TRUE                 ~ dplyr::first(plasmid_name[!grepl("^plasmid_novel_", plasmid_name)])
-    )
+   all_novel_in_cluster = all(grepl("^plasmid_novel_", plasmid_name)),
+   representative_name  = dplyr::case_when(
+     all_novel_in_cluster ~ "plasmid_novel",
+     TRUE                 ~ dplyr::first(plasmid_name[!grepl("^plasmid_novel_", plasmid_name)])
+   )
   ) |>
   dplyr::ungroup() |>
   dplyr::mutate(
-    new_plasmid_name = dplyr::case_when(
-      # Unassigned plasmids get NA
-      is.na(merged_cluster)    ~ NA_character_,
-      # All novel in cluster - use plasmid_novel prefix with cluster number appended
-      all_novel_in_cluster     ~ paste0("plasmid_novel_", merged_cluster),  # <-- cluster number appended
-      # Single cluster for this plasmid_name - keep representative name as-is
-      n_clusters_in_group == 1 ~ representative_name,
-      # Split across multiple clusters - append sub-cluster index
-      TRUE                     ~ paste0(
-        representative_name, "_",
-        as.integer(factor(merged_cluster))
-      )
-    )
+   new_plasmid_name = dplyr::case_when(
+     # Unassigned plasmids get NA
+     is.na(merged_cluster)    ~ NA_character_,
+     # All novel in cluster - use plasmid_novel prefix with cluster number appended
+     all_novel_in_cluster     ~ paste0("plasmid_novel_", merged_cluster),  # <-- cluster number appended
+     # Single cluster for this plasmid_name - keep representative name as-is
+     n_clusters_in_group == 1 ~ representative_name,
+     # Split across multiple clusters - append sub-cluster index
+     TRUE                     ~ paste0(
+       representative_name, "_",
+       as.integer(factor(merged_cluster))
+     )
+   )
   ) |>
   dplyr::select(-n_clusters_in_group, -all_novel_in_cluster, -representative_name)
 
+
+
+cluster_stats <- plasmid_reclustering_df |>
+  dplyr::filter(
+   !is.na(new_plasmid_name),
+   !is.na(tsne1D), !is.na(tsne2D),
+   !is.infinite(tsne1D), !is.infinite(tsne2D)
+  ) |>
+  dplyr::group_by(new_plasmid_name) |>
+  dplyr::summarise(
+   n = dplyr::n(),
+   range_tsne1D = max(tsne1D) - min(tsne1D),
+   range_tsne2D = max(tsne2D) - min(tsne2D),.groups = "drop"
+  )
+
+
+
 # Plotting groups after merging
+radius_threshold <- 1
+small_clusters <- cluster_stats |>
+  dplyr::filter(
+   n <= 6 |
+   range_tsne1D <= radius_threshold |
+   range_tsne2D <= radius_threshold
+  ) |>
+  dplyr::pull(new_plasmid_name)
 
-cluster_sizes <- plasmid_reclustering_df |>
-  dplyr::count(merged_cluster)
 
-small_clusters <- cluster_sizes |> dplyr::filter(n <= 25) |> dplyr::pull(merged_cluster)
-large_clusters <- cluster_sizes |> dplyr::filter(n >  25) |> dplyr::pull(merged_cluster)
+
+large_clusters <- cluster_stats |>
+  dplyr::filter(
+   !(n <= 6 |
+     range_tsne1D <= radius_threshold |
+     range_tsne2D <= radius_threshold)
+  ) |>
+  dplyr::pull(new_plasmid_name)
+
+
 
 # --- Cluster centroids for ggrepel labels ---
 cluster_centroids <-
@@ -1945,81 +2013,99 @@ cluster_centroids <-
   dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |>
   dplyr::group_by(merged_cluster,new_plasmid_name) |>
   dplyr::summarise(
-    tsne1D = mean(tsne1D),
-    tsne2D = mean(tsne2D),
-    # True radius: max Euclidean distance from centroid to any point in cluster
-    radius = max(sqrt(
-      (tsne1D - mean(tsne1D))^2 +
-      (tsne2D - mean(tsne2D))^2
-    )),.groups = "drop"
+   tsne1D = mean(tsne1D),
+   tsne2D = mean(tsne2D),
+   # True radius: max Euclidean distance from centroid to any point in cluster
+   radius = max(sqrt(
+     (tsne1D - mean(tsne1D))^2 +
+     (tsne2D - mean(tsne2D))^2
+   )),.groups = "drop"
   ) |>
   dplyr::mutate(
-    # Nudge direction is determined by centroid position relative to plot origin
-    # Magnitude scales with true cluster radius + fixed buffer
-    nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
-    nudge_y = sign(tsne2D) * (radius + 2)
+   # Nudge direction is determined by centroid position relative to plot origin
+   # Magnitude scales with true cluster radius + fixed buffer
+   nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
+   nudge_y = sign(tsne2D) * (radius + 2)
   )
 
-# --- Plot ---
+
+
+# Pre-process plot data
+plot_df <- plasmid_reclustering_df |>
+  dplyr::filter(
+   !is.na(tsne1D), !is.na(tsne2D),
+   !is.infinite(tsne1D), !is.infinite(tsne2D)
+  ) |>
+  jitter_singular_clusters()
+
+
+
+########
+# Plot #
+########
+
+
 
 ggplot(
-  plasmid_reclustering_df |>
-    dplyr::filter(
-      !is.na(tsne1D), !is.na(tsne2D),
-      !is.infinite(tsne1D), !is.infinite(tsne2D)
-    ),
+  plot_df |>
+   dplyr::filter(
+     !is.na(tsne1D), !is.na(tsne2D),
+     !is.infinite(tsne1D), !is.infinite(tsne2D)
+   ),
   aes(
-    x      = tsne1D,
-    y      = tsne2D,
-    colour = Species,
-    shape  = Cohort
+   x      = tsne1D,
+   y      = tsne2D,
+   colour = Species,
+   shape  = Cohort
   )
 ) +
   # Ellipses for small clusters - NO label aesthetic
-  
   ggforce::geom_mark_ellipse(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
-                                      !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
-    colour    = "black"
+   data      = \(x) dplyr::filter(x, new_plasmid_name %in% small_clusters &
+                                     !is.na(merged_cluster)),
+   aes(group = new_plasmid_name),
+   expand    = 0.015,
+   alpha     = 0.15,
+   colour    = "black"
   ) +
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
-                                      !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
-    colour    = "black",
-    concavity = 10
+   data      = \(x) dplyr::filter(x, new_plasmid_name %in% large_clusters &
+                                     !is.na(merged_cluster)),
+   aes(group = new_plasmid_name),
+   expand    = 0.015,
+   alpha     = 0.15,
+   colour    = "black",
+   concavity = 10
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
-  
-  ggrepel::geom_label_repel(
-    data = cluster_centroids,
-    aes(
-      x     = tsne1D,
-      y     = tsne2D,
-      label = new_plasmid_name
-    ),
-    inherit.aes        = FALSE,
-    colour             = "black",
-    size               = 3,
-    fontface           = "bold",
-    fill               = alpha("white", 0.7),
-    label.size         = 0.2,
-    point.padding      = unit(1, "lines"),
-    box.padding        = unit(0.5, "lines"),
-    max.overlaps       = Inf,
-    min.segment.length = 0,
-    segment.size       = 0.3,
-    segment.colour     = NA,
-    position = ggrepel::position_nudge_repel(
-    x = cluster_centroids$nudge_x * 0.5,
-    y = cluster_centroids$nudge_y * 0.5))
+ggrepel::geom_label_repel(
+  data = cluster_centroids |>
+   dplyr::mutate(new_plasmid_name = gsub("plasmid_", "", new_plasmid_name)),
+  aes(
+   x     = tsne1D,
+   y     = tsne2D,
+   label = new_plasmid_name
+  ),
+  inherit.aes        = FALSE,
+  colour             = "black",
+  size               = 3,
+  fontface           = "bold",
+  fill               = alpha("white", 0.7),
+  label.size         = 0.2,
+  point.padding      = unit(0.1, "lines"),
+  box.padding        = unit(0.15, "lines"),
+  max.overlaps       = Inf,
+  min.segment.length = 0,
+  segment.size       = 0.15,
+  segment.colour     = "grey50",
+  force              = 0.2,
+  force_pull         = 1,
+  nudge_x            = cluster_centroids$nudge_x * 1,
+  nudge_y            = cluster_centroids$nudge_y * 1
+) +
+  scale_colour_manual(values = species_palette)
 
 ```
 
@@ -2165,16 +2251,54 @@ Sunheng interprets the plasmids.
 #### pAB778
 
 ``` {r AB778 plasmids group}
-plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
-plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
 
+    plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620305_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4620313_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4620314_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620368_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620398_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620498_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620737_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4621272_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621275_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621323_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621386_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621633_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621825_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4621893_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622000_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622033_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622058_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622079_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622251_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622301_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622459_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622778_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA4622860_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA5130741_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA5130757_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA5130792_plasmid_AB778.tsv", title_str = "pAB778") 
+    plot_plasmid_function("SAMEA5130825_plasmid_AB778.tsv", title_str = "pAB778")
 ```
 
-#### pAG261
+#### pAG261_20
 
 ```{r import all plasmids of AG261 from bakta tool analysis and plot the genes}
 plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
+```
+
+#### pAG261_17
+```{r}
 plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
+```
+
+#### p
+```{r}
 plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
 ```
 
@@ -2211,6 +2335,7 @@ plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_6")
 ```
 
 #### pAF100_7
+
 ```{r}
 plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_7")
 ```
