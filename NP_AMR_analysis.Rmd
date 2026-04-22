@@ -1882,8 +1882,40 @@ ggplot(dist_df,
 
 ```
 
+### Plot plasmid clustering
 
 ``` {r Decide on clustering of plasmids}
+
+#############
+# Functions #
+#############
+
+# Helper to add tiny jitter to near-singular clusters
+jitter_singular_clusters <- function(df, threshold = 0.1) {
+  df |>
+    dplyr::group_by(new_plasmid_name) |>
+    dplyr::mutate(
+      range_x = max(tsne1D, na.rm = TRUE) - min(tsne1D, na.rm = TRUE),
+      range_y = max(tsne2D, na.rm = TRUE) - min(tsne2D, na.rm = TRUE),
+      # Add tiny jitter only to clusters where points are nearly identical
+      tsne1D  = dplyr::if_else(
+        range_x < threshold,
+        tsne1D + rnorm(dplyr::n(), 0, threshold),
+        tsne1D
+      ),
+      tsne2D  = dplyr::if_else(
+        range_y < threshold,
+        tsne2D + rnorm(dplyr::n(), 0, threshold),
+        tsne2D
+      )
+    ) |>
+    dplyr::select(-range_x, -range_y) |>
+    dplyr::ungroup()
+}
+
+############
+# Analysis #
+############
 
 # Merge nearby plasmids through single linkage clustering with the new threshold
 plasmid_reclustering_df <- merge_clusters_by_distance(
@@ -1924,12 +1956,37 @@ plasmid_reclustering_df <- merge_clusters_by_distance(
   ) |>
   dplyr::select(-n_clusters_in_group, -all_novel_in_cluster, -representative_name)
 
-# Plotting groups after merging
-cluster_sizes <- plasmid_reclustering_df |>
-  dplyr::count(merged_cluster)
+cluster_stats <- plasmid_reclustering_df |>
+  dplyr::filter(
+    !is.na(new_plasmid_name),
+    !is.na(tsne1D), !is.na(tsne2D),
+    !is.infinite(tsne1D), !is.infinite(tsne2D)
+  ) |>
+  dplyr::group_by(new_plasmid_name) |>
+  dplyr::summarise(
+    n = dplyr::n(),
+    range_tsne1D = max(tsne1D) - min(tsne1D),
+    range_tsne2D = max(tsne2D) - min(tsne2D),.groups = "drop"
+  )
 
-small_clusters <- cluster_sizes |> dplyr::filter(n <= 25) |> dplyr::pull(merged_cluster)
-large_clusters <- cluster_sizes |> dplyr::filter(n >  25) |> dplyr::pull(merged_cluster)
+# Plotting groups after merging
+radius_threshold <- 1
+small_clusters <- cluster_stats |>
+  dplyr::filter(
+    n <= 6 |
+    range_tsne1D <= radius_threshold |
+    range_tsne2D <= radius_threshold
+  ) |>
+  dplyr::pull(new_plasmid_name)
+
+large_clusters <- cluster_stats |>
+  dplyr::filter(
+    !(n <= 6 |
+      range_tsne1D <= radius_threshold |
+      range_tsne2D <= radius_threshold)
+  ) |>
+  dplyr::pull(new_plasmid_name)
+
 
 # --- Cluster centroids for ggrepel labels ---
 cluster_centroids <-
@@ -1952,9 +2009,20 @@ cluster_centroids <-
     nudge_y = sign(tsne2D) * (radius + 2)
   )
 
-# --- Plot ---
+# Pre-process plot data
+plot_df <- plasmid_reclustering_df |>
+  dplyr::filter(
+    !is.na(tsne1D), !is.na(tsne2D),
+    !is.infinite(tsne1D), !is.infinite(tsne2D)
+  ) |>
+  jitter_singular_clusters()
+
+########
+# Plot #
+########
+
 ggplot(
-  plasmid_reclustering_df |>
+  plot_df |>
     dplyr::filter(
       !is.na(tsne1D), !is.na(tsne2D),
       !is.infinite(tsne1D), !is.infinite(tsne2D)
@@ -1968,7 +2036,7 @@ ggplot(
 ) +
   # Ellipses for small clusters - NO label aesthetic
   ggforce::geom_mark_ellipse(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% small_clusters &
+    data      = \(x) dplyr::filter(x, new_plasmid_name %in% small_clusters &
                                       !is.na(merged_cluster)),
     aes(group = new_plasmid_name),
     expand    = 0.015,
@@ -1977,7 +2045,7 @@ ggplot(
   ) +
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
-    data      = \(x) dplyr::filter(x, merged_cluster %in% large_clusters &
+    data      = \(x) dplyr::filter(x, new_plasmid_name %in% large_clusters &
                                       !is.na(merged_cluster)),
     aes(group = new_plasmid_name),
     expand    = 0.015,
@@ -1987,28 +2055,31 @@ ggplot(
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
-  ggrepel::geom_label_repel(
-    data = cluster_centroids,
-    aes(
-      x     = tsne1D,
-      y     = tsne2D,
-      label = new_plasmid_name
-    ),
-    inherit.aes        = FALSE,
-    colour             = "black",
-    size               = 3,
-    fontface           = "bold",
-    fill               = alpha("white", 0.7),
-    label.size         = 0.2,
-    point.padding      = unit(1, "lines"),
-    box.padding        = unit(0.5, "lines"),
-    nudge_x            = cluster_centroids$nudge_x*0.5 * sign(cluster_centroids$tsne1D),
-    nudge_y            = cluster_centroids$nudge_y*0.5 * sign(cluster_centroids$tsne2D),
-    max.overlaps       = Inf,
-    min.segment.length = 0,
-    segment.size       = 0.3,
-    segment.colour     = NA     # <-- hide segments if drawn
-  ) +
+ggrepel::geom_label_repel(
+  data = label_data |>
+    dplyr::mutate(new_plasmid_name = gsub("plasmid_", "", new_plasmid_name)),
+  aes(
+    x     = tsne1D,
+    y     = tsne2D,
+    label = new_plasmid_name
+  ),
+  inherit.aes        = FALSE,
+  colour             = "black",
+  size               = 3,
+  fontface           = "bold",
+  fill               = alpha("white", 0.7),
+  label.size         = 0.2,
+  point.padding      = unit(0.1, "lines"),
+  box.padding        = unit(0.15, "lines"),
+  max.overlaps       = Inf,
+  min.segment.length = 0,
+  segment.size       = 0.15,
+  segment.colour     = "grey50",
+  force              = 0.2,
+  force_pull         = 1,
+  nudge_x            = cluster_centroids$nudge_x * 1,
+  nudge_y            = cluster_centroids$nudge_y * 1
+) +
   scale_colour_manual(values = species_palette)
 
 ```
