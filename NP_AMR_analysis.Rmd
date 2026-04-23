@@ -2260,39 +2260,8 @@ Sunheng interprets the plasmids.
 
 #### pAB778
 ``` {r AB778 plasmids group}
+plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
 
-    plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778") # used
-    plot_plasmid_function("SAMEA4620305_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4620313_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4620314_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620368_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620398_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620498_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620737_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4621272_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621275_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621323_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621386_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621633_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621825_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4621893_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622000_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622033_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622058_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622079_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622251_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622301_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622459_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622778_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA4622860_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA5130741_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA5130757_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA5130792_plasmid_AB778.tsv", title_str = "pAB778") 
-    plot_plasmid_function("SAMEA5130825_plasmid_AB778.tsv", title_str = "pAB778")
 ```
 
 #### pAG261_20
@@ -2322,7 +2291,7 @@ plot_plasmid_function("46321_2#278_plasmid_AG261.tsv", title_str = "pAG261_10")
 
 #### pAG261_9
 ```{r}
-plot_plasmid_function("46321_1#343_plasmid_AG261.tsv", title_str = "pAG261_9") # used
+plot_plasmid_function("46321_1#343_plasmid_AG261.tsv", title_str = "pAG261_9")
 plot_plasmid_function("46321_1#115_plasmid_AG261.tsv", title_str = "pAG261_9")
 plot_plasmid_function("46736_1#152_plasmid_AG261.tsv", title_str = "pAG261_9")
 plot_plasmid_function("47195_1#132_plasmid_AG261.tsv", title_str = "pAG261_9")
@@ -2422,7 +2391,7 @@ plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
 
 #### pAE025
 ```{r plot gggenes of AE025 plasmids}
-plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025") # Used
+plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("46358_2_92_plasmid_AE025.tsv", title_str = "pAE025")
@@ -2435,8 +2404,8 @@ plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d
 
 #### pAB621
 ```{r plot AB621 plasmid by gggenes}
+plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
 plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
-plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621") # used 
 ```
 
 #### pAC497_18
