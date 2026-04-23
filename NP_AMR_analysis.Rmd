@@ -2217,6 +2217,17 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ## Analysis of plasmid gene content
 We select the plasmids from the plasmid_reclustering_df to analize in the Bakta tool, then we plot the sequence by gggenes function.
 
+```{r Get representative plasmid sequences}
+
+plasmid_representatives_df <-
+  plasmid_reclustering_df %>% 
+   dplyr::group_by(new_plasmid_name) %>% 
+   dplyr::slice_max(order_by = size, n = 1, with_ties = FALSE) %>% 
+   dplyr::select(Sample_Name,new_plasmid_name)
+
+plasmid_representatives_df
+```
+
 ```{r select the plasmids to analize in Bakta}
 set.seed(1) 
 plasmid_reclustering_df %>% 
@@ -2229,8 +2240,7 @@ plasmid_reclustering_df %>%
 ### Plasmids in *M. catarrhalis*
 
 #### pAC411
-
-```{r import group of plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool}
+```{r import group of AC411 plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool by gggenes}
 
 library(cowplot)
 cowplot::plot_grid(
@@ -2249,12 +2259,11 @@ cowplot::plot_grid(
 Sunheng interprets the plasmids.
 
 #### pAB778
-
 ``` {r AB778 plasmids group}
 
     plot_plasmid_function("SAMEA4621613_plasmid_AB778.tsv", title_str = "pAB778")
     plot_plasmid_function("SAMEA4622826_plasmid_AB778.tsv", title_str = "pAB778")
-    plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
+    plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778") # used
     plot_plasmid_function("SAMEA4620305_plasmid_AB778.tsv", title_str = "pAB778") 
     plot_plasmid_function("SAMEA4620313_plasmid_AB778.tsv", title_str = "pAB778") 
     plot_plasmid_function("SAMEA4620314_plasmid_AB778.tsv", title_str = "pAB778")
@@ -2287,27 +2296,37 @@ Sunheng interprets the plasmids.
 ```
 
 #### pAG261_20
-
-```{r import all plasmids of AG261 from bakta tool analysis and plot the genes}
+```{r import AG261_20 plasmid from bakta tool analysis and plot by gggenes}
 plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
 ```
 
 #### pAG261_17
-```{r}
+```{r plot gggenes of selected AG261_17 plasmid}
 plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
 ```
 
-#### p
-```{r}
+#### pAG261_14
+```{r plot the selected AG261_14 plasmid by gggenes}
 plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
 ```
 
 #### pAG261_11
+```{r plot AG261_11 plasmid by gggenes}
+plot_plasmid_function("46321_1#151_plasmid_AG261.tsv", title_str = "pAG261_11")
+```
 
 #### pAG261_10
+```{r plot AG261_10 plasmid by gggenes}
+plot_plasmid_function("46321_2#278_plasmid_AG261.tsv", title_str = "pAG261_10")
+```
 
 #### pAG261_9
-
+```{r}
+plot_plasmid_function("46321_1#343_plasmid_AG261.tsv", title_str = "pAG261_9") # used
+plot_plasmid_function("46321_1#115_plasmid_AG261.tsv", title_str = "pAG261_9")
+plot_plasmid_function("46736_1#152_plasmid_AG261.tsv", title_str = "pAG261_9")
+plot_plasmid_function("47195_1#132_plasmid_AG261.tsv", title_str = "pAG261_9")
+```
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
 [1] "plasmid_AG261_9"  "plasmid_AG261_10" "plasmid_AG261_11" "plasmid_AB778"    "plasmid_AG261_14" "plasmid_AC411"   
@@ -2319,81 +2338,81 @@ For each one, search the dataframe, then use the "sample_name" column to find th
 Import each H. influenzae plasmids group of all tsv files from plasmid_annotations after analised by Bakta tool
 
 #### pAF100_1
-```{r plot gggenes of plasmid AF100}
+```{r plot gggenes for AF100_1 plasmid}
 plot_plasmid_function("36774_2_244_plasmid_AF100.tsv", title_str = "pAF100_1")
 ```
 
 #### pAF100_5
-```{r}
+```{r plot gggenes for AF100_5 plasmid}
 plot_plasmid_function("36982_2_124_plasmid_AF100.tsv", title_str = "pAF100_5")
 ```
 
 #### pAF100_6
-```{r}
+```{r plot AF100_6 plasmid by gggenes}
 plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_6")
 
 ```
 
 #### pAF100_7
-
-```{r}
+```{r use AF100_7 plasmid to plot by gggenes}
 plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_7")
 ```
 
 #### pAF100_8
-```{r}
+```{r use AF100_8 to plot by gggenes}
 plot_plasmid_function("36983_1_333_plasmid_AF100.tsv", title_str = "pAF100_8")
 ```
 
 #### pAF100_16
-```{r}
+```{r plot gggenes for AF100_16}
 plot_plasmid_function("46358_2_81_plasmid_AF100.tsv", title_str = "pAF100_16")
 ```
 
 #### pAF100_19
-```{r}
+```{r plot AF_100_19 by gggenes}
 plot_plasmid_function("46358_2_63_plasmid_AF100.tsv", title_str = "pAF100_19")
 ```
 
 #### pAF100_23
-```{r}
+```{r plot AF100_23 plasmid by gggenes}
 plot_plasmid_function("46472_2_222_plasmid_AF100.tsv", title_str = "pAF100_23")
 ```
 
 #### pAF100_25
-```{r}
+```{r plot AF100_25 by gggenes}
 plot_plasmid_function("36985_1_44_plasmid_AF100.tsv", title_str = "pAF100_25")
 ```
 
 #### pAF100_26
-```{r}
+```{r plot AF100_26 plasmid by gggenes}
 plot_plasmid_function("46358_2_312_plasmid_AF100.tsv", title_str = "pAF100_26")
 ```
 
 #### pAF100_28
-```{r }
+```{r plot gggenes for AF100_28 plasmid}
 plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_28")
-
 ```
 
 #### pAF098_3
-```{r}
+```{r plot AF098_3 plasmid by gggenes}
 plot_plasmid_function("36812_1_12_plasmid_AF098.tsv", title_str = "pAF098_3")
 ```
 
 #### AF098_29
 ```{r}
-
+plot_plasmid_function("36774_1#134_plasmid_AF098.tsv", title_str = "pAF098_29")
 ```
 
 #### pAB946
-```{r}
+```{r plot AB946 plasmid by gggenes}
 plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pAB946")
+
 ```
 
 #### pAB946_30
-```{r}
-plot_plasmid_function("46358_2_275_plasmid_AB946.tsv", title_str = "pAB946_30")
+```{r plot gggenes for AB946_30 plasmid}
+plot_plasmid_function("36812_1#183_plasmid_AB946.tsv", title_str = "pAB946_30")
+
 ```
 
 #### pAB946_27
@@ -2403,7 +2422,7 @@ plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
 
 #### pAE025
 ```{r plot gggenes of AE025 plasmids}
-plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
+plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025") # Used
 plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
 plot_plasmid_function("46358_2_92_plasmid_AE025.tsv", title_str = "pAE025")
@@ -2415,18 +2434,18 @@ plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d
 ```
 
 #### pAB621
-```{r}
+```{r plot AB621 plasmid by gggenes}
 plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
-plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
+plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621") # used 
 ```
 
 #### pAC497_18
-```{r}
+```{r plot AC497_18 by gggenes}
 plot_plasmid_function("46358_2_52_plasmid_AC497.tsv", title_str = "pAC497_18")
 ```
 
-### pAC497_2
-```{r}
+#### pAC497_2
+```{r plot AC497_2 by gggenes}
 plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
 ```
 
@@ -2524,7 +2543,6 @@ p <- plot_mcat_cluster_pairs_two_species(
 p
 
 ```
-
 
 ## Compare gene frequencies across locations
 
