@@ -2261,7 +2261,7 @@ Sunheng interprets the plasmids.
 #### pAB778
 The new result strengthens the interpretation of this plasmid as mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. Together with the previously noted mobilization/replication functions and the bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
 
-``` {r AB778 plasmids group}
+``` {r plot AB778 plasmids by ggggenes after ran bakta}
 plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
 
 ```
