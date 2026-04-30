@@ -1,0 +1,11 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	3	635	-	NJHFNL_01		(3' truncated) replication initiation protein	SO:0001217, UniRef:UniRef50_A0A369ZQX0, UniRef:UniRef90_UPI000D01ADC1
+contig_1	cds	1425	1628	-	NJHFNL_02		hypothetical protein	PFAM:PF24749.2, SO:0001217, UniRef:UniRef50_A0A369ZPG7, UniRef:UniRef90_A0A369ZPG7
+contig_1	cds	1635	2132	-	NJHFNL_03	copG	CopG family transcriptional regulator	RefSeq:WP_015060114.1, SO:0001217, UniParc:UPI00025EB486, UniRef:UniRef100_A0A369ZP09, UniRef:UniRef50_A0A1B8PF41, UniRef:UniRef90_A0A369ZP09
+contig_1	cds	2387	2626	-	NJHFNL_04		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1A7QBA4
+contig_1	cds	2638	2973	-	NJHFNL_05		(5' truncated) hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1V3L0U7

@@ -2240,6 +2240,8 @@ plasmid_reclustering_df %>%
 ### Plasmids in *M. catarrhalis*
 
 #### pAC411
+These InterProScan results from 46321_1_275_plasmid_AC411 plasmid indicate that this sequence is primarily a mobile DNA element rather than a metabolic or defense plasmid module. It encodes a site-specific recombinase/resolvase with a catalytic resolvase domain and DNA-binding helix-turn-helix region, together with a large Tn3-like transposase carrying the characteristic DDE transposase domain, which is typical of transposons that mediate DNA rearrangement and movement. Overall, the sequence most likely functions in transposition, recombination, and genomic/plasmid rearrangement, enabling the mobilization or stabilization of associated genetic cargo rather than directly encoding a specialized physiological trait.
+
 ```{r import group of AC411 plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool by gggenes}
 
 library(cowplot)
@@ -2261,9 +2263,8 @@ Sunheng interprets the plasmids.
 #### pAB778
 The new result strengthens the interpretation of this plasmid as mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. Together with the previously noted mobilization/replication functions and the bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
 
-``` {r plot AB778 plasmids by ggggenes after ran bakta}
+``` {r Plot AB778 plasmids by gggenes after ran bakta}
 plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
-
 ```
 
 #### pAG261_20
@@ -2284,12 +2285,14 @@ plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
 
 #### pAG261_14
 This plasmid likely functions primarily in gene regulation and plasmid maintenance, as it encodes an H-NS family nucleoid-associated protein, a DNA-binding factor that can compact DNA and transcriptionally silence or modulate expression of plasmid-borne genes. The presence of an H-NS-like protein suggests the plasmid may help control its own transcriptional burden and improve compatibility with the host by repressing potentially deleterious or horizontally acquired sequences. Overall, this is most consistent with a small regulatory/maintenance plasmid, although additional genes would be needed to define any specialized accessory function.
+
 ```{r plot the selected AG261_14 plasmid by gggenes}
 plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
 ```
 
 #### pAG261_11
 This additional protein remains a small hypothetical protein with no clearly assignable conserved InterPro domain, so by itself it does not define a specific plasmid phenotype. However, in the context of the previously identified TraB/VirB10 family protein, the plasmid is still best interpreted as having a mobilization/conjugation-associated role, likely contributing to horizontal transfer while also carrying small accessory proteins of unknown function. Overall, this sequence most likely represents a transfer-related plasmid or plasmid fragment rather than a purely cryptic replicon.
+
 ```{r plot AG261_11 plasmid by gggenes}
 plot_plasmid_function("46321_1#151_plasmid_AG261.tsv", title_str = "pAG261_11")
 ```
@@ -2304,7 +2307,7 @@ plot_plasmid_function("46321_2#278_plasmid_AG261.tsv", title_str = "pAG261_10")
 #### pAG261_9
 This plasmid likely carries a conjugation or type IV secretion-related function, because FHGPLB_001 is a TraB/VirB10 family protein, a hallmark component of mating-pair formation/type IV secretion systems involved in DNA transfer between bacteria. That strongly suggests the sequence is not merely cryptic but instead may contribute to plasmid transmissibility or assembly of a conjugative transfer apparatus. Overall, the plasmid is best described as a mobilization/conjugation-associated plasmid that may facilitate horizontal gene transfer.
 
-```{r}
+```{r plot the selected AG261 plasmid by gggenes}
 plot_plasmid_function("46321_1#343_plasmid_AG261.tsv", title_str = "pAG261_9")
 #plot_plasmid_function("46321_1#115_plasmid_AG261.tsv", title_str = "pAG261_9")
 #plot_plasmid_function("46736_1#152_plasmid_AG261.tsv", title_str = "pAG261_9")
@@ -2321,55 +2324,66 @@ For each one, search the dataframe, then use the "sample_name" column to find th
 Import each H. influenzae plasmids group of all tsv files from plasmid_annotations after analised by Bakta tool
 
 #### pAF100_1
+This sequence still encodes only a small conserved hypothetical protein with no detectable InterPro domain, so it does not provide evidence for a specific plasmid-associated function. Because there are likewise no signatures here for replication, mobilization, resistance, toxin production, or secretion, the element is best described as a poorly characterized cryptic plasmid or plasmid fragment. Overall, its biological role remains unknown, beyond carrying a recurrent small hypothetical protein found on related sequences.
+
 ```{r plot gggenes for AF100_1 plasmid}
 plot_plasmid_function("36774_2_244_plasmid_AF100.tsv", title_str = "pAF100_1")
 ```
 
 #### pAF100_5
+This plasmid still appears to be poorly characterized, but the new protein is larger than the other hypothetical ORFs and is rich in basic, likely nucleic-acid-interacting residues, which suggests a possible DNA- or RNA-binding accessory role. Because no conserved InterPro domain is identified, however, there is still no strong evidence for a defined function such as replication, mobilization, resistance, secretion, or toxin production. Overall, the sequence is best described as a cryptic plasmid or plasmid fragment encoding uncharacterized accessory proteins, one of which may participate in nucleic-acid-associated regulation or maintenance.
+
 ```{r plot gggenes for AF100_5 plasmid}
 plot_plasmid_function("36982_2_124_plasmid_AF100.tsv", title_str = "pAF100_5")
 ```
 
 #### pAF100_6
+This plasmid-associated sequence now most likely represents a mobile genetic element, because it encodes TnpA transposase, the hallmark enzyme for DNA transposition. That suggests the sequence is involved in movement, rearrangement, or insertion of DNA rather than in a dedicated metabolic or host-adaptation function. Overall, it is best described as a transposon-like plasmid fragment or mobile element whose primary biological role is genetic mobility.
+
 ```{r plot AF100_6 plasmid by gggenes}
 plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_6")
 
 ```
 
 #### pAF100_7
+This result does not support the annotation of trnH as a genuine tRNA-His, because the provided sequence is a short hydrophobic peptide rather than a structured non-coding tRNA. Instead, it most likely represents a small membrane-associated hypothetical protein, but there is still no conserved InterPro domain to assign a specific function. Overall, the plasmid remains best described as a poorly characterized cryptic plasmid or plasmid fragment with limited functional signal beyond small uncharacterized coding sequences.
+
 ```{r use AF100_7 plasmid to plot by gggenes}
 plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_7")
 ```
 
 #### pAF100_8
 This plasmid likely contains a replication-control module, because RepA is annotated here as a regulatory protein rather than a catalytic replication initiator, suggesting a role in controlling plasmid copy number or expression of replication genes. That points to a function in plasmid maintenance and stable inheritance, helping regulate the replicon within the host cell. Overall, this sequence is best described as a maintenance-oriented cryptic plasmid centered on replication regulation rather than specialized adaptive cargo.
-```{r use AF100_8 to plot by gggenes}
+
+```{r use AF100_8 plasmid name to plot by gggenes}
 plot_plasmid_function("36983_1_333_plasmid_AF100.tsv", title_str = "pAF100_8")
 ```
 
 #### pAF100_16
 This additional protein is again a small hypothetical protein with no detectable conserved InterPro domain, and it is identical in sequence to the previously noted short uncharacterized protein, suggesting a recurring but still unresolved small-protein family on related plasmids. Because there is still no domain evidence for replication, mobilization, resistance, toxin production, or other specialized machinery, the sequence is best interpreted as a cryptic and poorly characterized plasmid/plasmid fragment. Overall, its biological role remains unknown, beyond encoding one or more small conserved hypothetical proteins.
 
-```{r plot gggenes for AF100_16}
+```{r plot gggenes for AF100_16 new plasmid name}
 plot_plasmid_function("46358_2_81_plasmid_AF100.tsv", title_str = "pAF100_16")
 ```
 
 #### pAF100_19
 This plasmid encodes a small hydrophobic membrane protein with multiple predicted transmembrane segments, indicating that at least part of its function is likely membrane-associated rather than purely soluble. However, because there are still no conserved InterPro domains pointing to replication, mobilization, resistance, secretion, or toxin systems, the overall sequence remains best described as a poorly characterized cryptic plasmid or plasmid fragment carrying small hypothetical proteins, including a probable membrane component. Overall, its biological role is still uncertain, though it may encode a simple host-interaction or membrane-associated accessory function.
 
-```{r plot AF_100_19 by gggenes}
+```{r plot AF_100_19 new plasmid name by gggenes}
 plot_plasmid_function("46358_2_63_plasmid_AF100.tsv", title_str = "pAF100_19")
 ```
 
 #### pAF100_23
 This result still supports only a small hypothetical protein with no recognizable conserved InterPro domain, so it does not allow a confident functional assignment for the plasmid. The sequence therefore remains best described as a cryptic or poorly characterized plasmid/plasmid fragment, lacking clear evidence for replication, mobilization, resistance, toxin production, or other specialized cargo. Overall, its biological role is currently uncertain and would need comparative genomics or experimental validation to resolve.
-```{r plot AF100_23 plasmid by gggenes}
+
+```{r plot new AF100_23 plasmid by gggenes}
 plot_plasmid_function("46472_2_222_plasmid_AF100.tsv", title_str = "pAF100_23")
 ```
 
 #### pAF100_25
 This plasmid may encode an accessory small-molecule modification function, because hmoA is annotated as an antibiotic biosynthesis monooxygenase, suggesting a role in oxidative tailoring of a bioactive compound or related metabolite. In the absence of broader pathway genes, however, it is difficult to infer a complete biosynthetic system, so the most cautious interpretation is that this plasmid carries a specialized accessory enzyme rather than a full metabolic cassette. Overall, the sequence is best described as a small accessory plasmid/plasmid fragment with potential secondary-metabolism-related function, though the precise biological role remains uncertain.
-```{r plot AF100_25 by gggenes}
+
+```{r plot AF100_25 plasmid name by gggenes}
 plot_plasmid_function("36985_1_44_plasmid_AF100.tsv", title_str = "pAF100_25")
 ```
 
@@ -2381,42 +2395,53 @@ plot_plasmid_function("46358_2_312_plasmid_AF100.tsv", title_str = "pAF100_26")
 ```
 
 #### pAF100_28
+This sequence is best interpreted as a mobile genetic element, because it encodes TnpA transposase, the key enzyme that catalyzes DNA transposition. Its primary biological role is therefore likely genetic mobility and rearrangement, enabling movement of the element within or between plasmids and chromosomes. Overall, this appears to be a transposon-like plasmid fragment rather than a plasmid carrying a clearly defined metabolic or host-adaptive system.
+
 ```{r plot gggenes for AF100_28 plasmid}
 plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_28")
 ```
 
 #### pAF098_3
+This plasmid likely contributes to tetracycline resistance regulation, because it encodes TetC, a tetracycline resistance-associated transcriptional repressor that would typically control expression of a linked tetracycline resistance determinant. Even if the effector resistance gene is not shown here, the presence of TetC strongly suggests participation in a tetracycline-responsive resistance module rather than a purely cryptic plasmid function. Overall, this sequence is best interpreted as a resistance-associated plasmid or plasmid fragment involved in the control of tetracycline resistance genes.
+
 ```{r plot AF098_3 plasmid by gggenes}
 plot_plasmid_function("36812_1_12_plasmid_AF098.tsv", title_str = "pAF098_3")
 ```
 
 #### AF098_29
-```{r}
+This plasmid may encode a specialized accessory metabolic function, because hmoA is annotated as an antibiotic biosynthesis monooxygenase, consistent with an oxidative enzyme involved in modification of a small bioactive compound. However, because no additional pathway components are evident here, the sequence does not support a complete biosynthetic system and is better interpreted as carrying a single accessory enzyme rather than a full metabolite-production module. Overall, this appears to be a small accessory plasmid or plasmid fragment with a possible role in secondary-metabolite modification, although the exact biological function remains uncertain.
+
+```{r plot new AF098_29 plasmid name by gggenes}
 plot_plasmid_function("36774_1#134_plasmid_AF098.tsv", title_str = "pAF098_29")
 ```
 
 #### pAB946
-```{r plot AB946 plasmid by gggenes}
+This result still supports only a small hypothetical protein with no recognizable conserved InterPro domain, so it does not permit a confident assignment of biological function. In the absence of replication, mobilization, resistance, secretion, or toxin-associated signatures, the sequence is best interpreted as a poorly characterized cryptic plasmid or plasmid fragment encoding an uncharacterized small protein. Overall, its biological role remains uncertain and will require comparative or experimental follow-up.
+
+```{r plot new AB946 plasmid name by gggenes}
 plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pAB946")
 
 ```
 
 #### pAB946_30
-```{r plot gggenes for AB946_30 plasmid}
+With only a single predicted protein containing DUF7695 and no additional conserved replication, mobilization, resistance, toxin, or metabolic domains, this plasmid remains functionally uncharacterized based on current InterProScan evidence. The sequence most likely encodes a small hypothetical protein of unknown role, and there is not enough domain information to infer a confident biological function for the plasmid as a whole. Overall, this appears to be a cryptic plasmid or plasmid fragment whose biological significance will require comparative genomics or experimental validation.
+
+```{r plot gggenes for new AB946_30 plasmid name}
 plot_plasmid_function("36812_1#183_plasmid_AB946.tsv", title_str = "pAB946_30")
 
 ```
 
 #### pAB946_27
 This sequence is best interpreted as a replication-focused plasmid, because GAPPCC_01 is a Replicase A–type replication initiation protein consistent with autonomous plasmid replication. Since no additional InterPro-supported functions are evident here for mobilization, resistance, toxin production, or specialized metabolism, the plasmid most likely serves primarily as a self-maintaining cryptic replicon. Overall, its main biological role is likely plasmid replication and stable persistence in the host bacterium.
-```{r plot gggenes of AB946 plasmids}
+
+```{r plot gggenes of new AB946 plasmid}
 plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
 ```
 
 #### pAE025
 This additional sequence still supports only a hypothetical protein with no confidently assignable conserved InterPro domain, so it does not provide strong new evidence for a specific plasmid function. Based on the currently available annotations, the plasmid remains best described as a poorly characterized or cryptic replicon/plasmid fragment, with insufficient domain support to infer roles such as conjugation, resistance, toxin production, or specialized metabolism. Overall, its biological function is still uncertain and likely requires comparison to related plasmids or experimental follow-up.
 
-```{r plot gggenes of AE025 plasmids}
+```{r plot gggenes of new AE025 plasmid name}
 plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
@@ -2429,22 +2454,25 @@ plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 ```
 
 #### pAB621
+This plasmid clearly carries an antibiotic resistance determinant, because it encodes blaROB-1, a broad-spectrum class A beta-lactamase that would be expected to inactivate beta-lactam antibiotics such as penicillins and related compounds. The sequence is therefore best interpreted as a resistance plasmid or resistance-associated plasmid fragment whose primary adaptive role is to confer beta-lactam resistance to its host bacterium. Overall, this plasmid likely contributes to the maintenance and potential dissemination of clinically relevant antimicrobial resistance.
+
 ```{r plot AB621 plasmid by gggenes}
 plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
-plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
+#plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
 ```
 
 #### pAC497_18
 This plasmid is most consistent with a small autonomous replicon, because NMLFHK_001 is a clear replication initiation protein that would support plasmid DNA replication and maintenance in the host. In the absence of additional InterPro-supported genes for conjugation, resistance, toxin production, secretion, or other adaptive cargo, the sequence is best interpreted as a minimal maintenance plasmid whose principal role is self-replication and stable inheritance. Overall, it appears to be a cryptic plasmid centered on replication rather than specialized accessory functions.
-```{r plot AC497_18 by gggenes}
+
+```{r plot AC497_18 plasmid by gggenes}
 plot_plasmid_function("46358_2_52_plasmid_AC497.tsv", title_str = "pAC497_18")
 ```
 
 #### pAC497_2
 
-Based on blast the amino acid of and the interpro of classification protein of familiies are detected RelB antitoxin and antitoxin Dinj are the 
+Based on blast the amino acid of and the interpro of classification protein of familiies are detected this plasmid is best interpreted as a small autonomous replicon, because KHCFFA_001 is a clear replication initiation protein that would support plasmid DNA replication and persistence in the host. With no additional evidence here for mobilization, resistance, toxin systems, or specialized metabolism, the sequence most likely functions mainly in self-replication and stable inheritance rather than in host adaptation. Overall, it appears to be a cryptic maintenance plasmid centered on replication.
 
-```{r plot AC497_2 by gggenes}
+```{r plot AC497_2 plasmid by gggenes}
 plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
 ```
 

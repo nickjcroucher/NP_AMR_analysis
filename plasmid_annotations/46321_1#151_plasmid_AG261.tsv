@@ -1,0 +1,57 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	120	398	-	NOKICF_001		hypothetical protein	
+contig_1	cds	415	750	+	NOKICF_002		hypothetical protein	
+contig_1	cds	750	1862	+	NOKICF_003		F pilus assembly Type-IV secretion system for plasmid transfer	SO:0001217, UniRef:UniRef50_A0A378QE76, UniRef:UniRef90_UPI00128CCBD7
+contig_1	cds	1837	4446	+	NOKICF_004	traC	type IV secretion system protein TraC	KEGG:K12063, RefSeq:WP_120649634.1, SO:0001217, UniParc:UPI000EA9632C, UniRef:UniRef100_UPI000EA9632C, UniRef:UniRef50_A0A378QCP4, UniRef:UniRef90_UPI00128B2DD6
+contig_1	cds	4446	4928	+	NOKICF_005	trbI	Type-F conjugative transfer system protein TrbI	RefSeq:WP_120649633.1, SO:0001217, UniParc:UPI000EA8DB72, UniRef:UniRef100_UPI000EA8DB72, UniRef:UniRef50_A0A378QCE1, UniRef:UniRef90_UPI00128D3469
+contig_1	cds	5044	5478	+	NOKICF_006		Signal peptidase I	SO:0001217, UniRef:UniRef50_A0A378QCE3
+contig_1	cds	5468	6112	+	NOKICF_007	traW	type-F conjugative transfer system protein TraW	KEGG:K12061, RefSeq:WP_120649631.1, SO:0001217, UniParc:UPI000EA87727, UniRef:UniRef100_UPI000EA87727, UniRef:UniRef50_A0A378QCU5, UniRef:UniRef90_UPI000EA87727
+contig_1	cds	6109	7116	+	NOKICF_008	traU	conjugal transfer pilus assembly protein TraU	KEGG:K12060, RefSeq:WP_152704727.1, SO:0001217, UniParc:UPI00128DA93C, UniRef:UniRef100_UPI00128DA93C, UniRef:UniRef50_A0A6L4YKZ3, UniRef:UniRef90_A0A378QCD7
+contig_1	cds	7125	7832	+	NOKICF_009	trbC	type-F conjugative transfer system pilin assembly protein TrbC	RefSeq:WP_081570091.1, SO:0001217, UniParc:UPI0009D9FE27, UniRef:UniRef100_UPI0009D9FE27, UniRef:UniRef50_A0A378QDL0, UniRef:UniRef90_UPI0009D9FE27
+contig_1	cds	7835	9985	+	NOKICF_010	traN	conjugal transfer protein TraN	KEGG:K12058, RefSeq:WP_152704728.1, SO:0001217, UniParc:UPI00128C07AD, UniRef:UniRef100_UPI00128C07AD, UniRef:UniRef50_A0A378QCZ7, UniRef:UniRef90_UPI00128C84E7
+contig_1	cds	9975	10856	+	NOKICF_011	traF	conjugal transfer protein TraF	KEGG:K12057, SO:0001217, UniRef:UniRef50_A0A378QDG9, UniRef:UniRef90_UPI00128C7662
+contig_1	cds	10867	11196	+	NOKICF_012		hypothetical protein	RefSeq:WP_081570089.1, SO:0001217, UniParc:UPI0009C2F8A6, UniRef:UniRef100_UPI0009C2F8A6, UniRef:UniRef50_UPI00128D3BBC, UniRef:UniRef90_UPI00128D3BBC
+contig_1	cds	11196	12599	+	NOKICF_013	traH	conjugal transfer protein TraH	KEGG:K12072, SO:0001217, UniRef:UniRef50_A0A378QE85, UniRef:UniRef90_UPI0009C1FF39
+contig_1	cds	12994	13314	-	NOKICF_014		hypothetical protein	
+contig_1	cds	13387	13641	-	NOKICF_015		hypothetical protein	
+contig_1	cds	14095	14484	-	NOKICF_016		hypothetical protein	
+contig_1	cds	14762	15448	+	NOKICF_017		hypothetical protein	
+contig_1	cds	15535	15957	+	NOKICF_018		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QCF0, UniRef:UniRef90_UPI00128E483B
+contig_1	cds	15992	16243	-	NOKICF_019		hypothetical protein	RefSeq:WP_081570085.1, SO:0001217, UniParc:UPI0009C28A85, UniRef:UniRef100_UPI0009C28A85, UniRef:UniRef50_UPI00128C6FD8, UniRef:UniRef90_UPI0009C28A85
+contig_1	cds	16352	16873	+	NOKICF_020		hypothetical protein	RefSeq:WP_081570084.1, SO:0001217, UniParc:UPI0009C23ACE, UniRef:UniRef100_UPI0009C23ACE, UniRef:UniRef50_A0A198UN78, UniRef:UniRef90_UPI000EA8FB37
+contig_1	cds	16962	17570	-	NOKICF_021		recombinase family protein	KEGG:K14060, RefSeq:WP_152704731.1, SO:0001217, UniParc:UPI00128CE07C, UniRef:UniRef100_UPI00128CE07C, UniRef:UniRef50_A0A1B8QAC9, UniRef:UniRef90_UPI00128E4EF1
+contig_1	cds	17809	17946	-	NOKICF_022		hypothetical protein	
+contig_1	cds	17946	20810	-	NOKICF_023	mobF	MobF family relaxase	GO:0003677, SO:0001217, UniRef:UniRef50_A0A378QGZ7, UniRef:UniRef90_UPI00128E362C
+contig_1	cds	20826	22616	-	NOKICF_024		type IV secretion system DNA-binding domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QE95, UniRef:UniRef90_UPI00128DEE6A
+contig_1	cds	22619	22945	-	NOKICF_025		hypothetical protein	RefSeq:WP_152699131.1, SO:0001217, UniParc:UPI00128AFCC9, UniRef:UniRef100_UPI00128AFCC9, UniRef:UniRef50_A0A378QCR7, UniRef:UniRef90_UPI00128AFCC9
+contig_1	cds	23634	23930	+	NOKICF_026		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00128E79AD, UniRef:UniRef90_UPI00128E79AD
+contig_1	cds	24677	24979	+	NOKICF_027		hypothetical protein	RefSeq:WP_152699134.1, SO:0001217, UniParc:UPI00128C7E6E, UniRef:UniRef100_UPI00128C7E6E, UniRef:UniRef50_UPI00128C7E6E, UniRef:UniRef90_UPI00128C7E6E
+contig_1	cds	25834	26355	-	NOKICF_028		DUF551 domain-containing protein	RefSeq:WP_194161959.1, SO:0001217, UniParc:UPI001883FA0B, UniRef:UniRef100_UPI001883FA0B, UniRef:UniRef50_UPI001883FA0B, UniRef:UniRef90_UPI001883FA0B
+contig_1	cds	26370	26837	-	NOKICF_029		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00128B1962, UniRef:UniRef90_UPI00128B1962
+contig_1	cds	26851	26946	-	NOKICF_030		hypothetical protein	
+contig_1	cds	27439	27612	-	NOKICF_031		hypothetical protein	
+contig_1	cds	27709	27906	-	NOKICF_032		hypothetical protein	RefSeq:WP_152699138.1, SO:0001217, UniParc:UPI00128B931B, UniRef:UniRef100_UPI00128B931B, UniRef:UniRef50_A0A378QCM3, UniRef:UniRef90_UPI00128B931B
+contig_1	cds	28028	28360	-	NOKICF_033		hypothetical protein	RefSeq:WP_152699139.1, SO:0001217, UniParc:UPI00128B3F93, UniRef:UniRef100_UPI00128B3F93, UniRef:UniRef50_A0A378QH08, UniRef:UniRef90_UPI00128B3F93
+contig_1	cds	28422	28964	-	NOKICF_034		antirestriction protein	RefSeq:WP_152704734.1, SO:0001217, UniParc:UPI00128AEF00, UniRef:UniRef100_UPI00128AEF00, UniRef:UniRef50_A0A378QCC6, UniRef:UniRef90_UPI00128BC19D
+contig_1	cds	29339	29503	-	NOKICF_035		hypothetical protein	RefSeq:WP_194161960.1, SO:0001217, UniParc:UPI001884393C, UniRef:UniRef100_UPI001884393C, UniRef:UniRef50_UPI001884393C, UniRef:UniRef90_UPI001884393C
+contig_1	cds	29536	29877	-	NOKICF_036		type II toxin-antitoxin system PemK/MazF family toxin	RefSeq:WP_152699141.1, SO:0001217, UniParc:UPI00128C93B7, UniRef:UniRef100_UPI00128C93B7, UniRef:UniRef50_A0A329KFG4, UniRef:UniRef90_UPI000668E37F
+contig_1	cds	29871	30104	-	NOKICF_037		AbrB/MazE/SpoVT family DNA-binding domain-containing protein	RefSeq:WP_152704735.1, SO:0001217, UniParc:UPI00128B8D3D, UniRef:UniRef100_UPI00128B8D3D, UniRef:UniRef50_UPI000B2E5FE9, UniRef:UniRef90_UPI000B2E5FE9
+contig_1	cds	30197	31579	-	NOKICF_038		replication initiation protein	RefSeq:WP_152699142.1, SO:0001217, UniParc:UPI00128E1AD5, UniRef:UniRef100_UPI00128E1AD5, UniRef:UniRef50_A0A378QCB5, UniRef:UniRef90_UPI00128E1AD5
+contig_1	cds	32253	32594	-	NOKICF_039		H-NS family nucleoid-associated regulatory protein	SO:0001217, UniRef:UniRef50_UPI001884599E, UniRef:UniRef90_UPI001884599E
+contig_1	cds	32743	33180	+	NOKICF_040		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A378QCX9, UniRef:UniRef90_UPI00128C717C
+contig_1	cds	33329	33658	+	NOKICF_041		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A378QDE7, UniRef:UniRef90_UPI00128CACBA
+contig_1	cds	33655	34398	+	NOKICF_042	parA	ParA family protein	KEGG:K03496, SO:0001217, UniRef:UniRef50_A0A2D2LWZ7, UniRef:UniRef90_UPI00128E8B85
+contig_1	cds	34408	35346	+	NOKICF_043		ParB/RepB/Spo0J family partition protein	KEGG:K03497, SO:0001217, UniRef:UniRef50_UPI00128CB457, UniRef:UniRef90_UPI00128CB457
+contig_1	cds	35568	36188	+	NOKICF_044		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A378QCN4, UniRef:UniRef90_UPI0018844204
+contig_1	cds	36151	36384	+	NOKICF_045		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0011C3DE89, UniRef:UniRef90_UPI00128C6358
+contig_1	cds	36467	36826	+	NOKICF_046		TrbC/VirB2 family protein	KEGG:K12069, SO:0001217, UniRef:UniRef50_A0A378QCC9, UniRef:UniRef90_UPI00128DB8AB
+contig_1	cds	36868	37158	+	NOKICF_047	traL	type IV conjugative transfer system protein TraL	KEGG:K12068, SO:0001217, UniRef:UniRef50_A0A378QCD5, UniRef:UniRef90_UPI00128E6BF3
+contig_1	cds	37163	37753	+	NOKICF_048		TraE/TraK family type IV conjugative transfer system protein	KEGG:K12067, SO:0001217, UniRef:UniRef50_A0A378QCT6, UniRef:UniRef90_UPI000EA9BDD9
+contig_1	cds	37692	38420	+	NOKICF_049	traK	type-F conjugative transfer system secretin TraK	KEGG:K12066, SO:0001217, UniRef:UniRef50_A0A378QCC4, UniRef:UniRef90_UPI000EAA46E4
+contig_1	cds	38417	39664	+	NOKICF_050		TraB/VirB10 family protein	KEGG:K12065, RefSeq:WP_152704723.1, SO:0001217, UniParc:UPI00128C7F0A, UniRef:UniRef100_UPI00128C7F0A, UniRef:UniRef50_A0A378QDK6, UniRef:UniRef90_UPI0009C20524
+contig_1	cds	39674	40153	+	NOKICF_051	dsbC	DsbC family protein	RefSeq:WP_152704724.1, SO:0001217, UniParc:UPI00128AE539, UniRef:UniRef100_UPI00128AE539, UniRef:UniRef50_A0A378QCY7, UniRef:UniRef90_UPI0009C29F2B
