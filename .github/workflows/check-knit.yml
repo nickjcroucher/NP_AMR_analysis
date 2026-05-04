@@ -46,6 +46,7 @@ jobs:
             ggforce
             ggrepel
             patchwork
+            cowplot
 
       - name: Render NP_AMR_analysis.Rmd
         run: |

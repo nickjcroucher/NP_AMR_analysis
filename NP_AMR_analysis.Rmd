@@ -21,6 +21,7 @@ require(patchwork)
 require(igraph)
 require(gggenes)
 require(readr)
+require(cowplot)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -2240,11 +2241,11 @@ plasmid_reclustering_df %>%
 ### Plasmids in *M. catarrhalis*
 
 #### pAC411
+
 These InterProScan results from 46321_1_275_plasmid_AC411 plasmid indicate that this sequence is primarily a mobile DNA element rather than a metabolic or defense plasmid module. It encodes a site-specific recombinase/resolvase with a catalytic resolvase domain and DNA-binding helix-turn-helix region, together with a large Tn3-like transposase carrying the characteristic DDE transposase domain, which is typical of transposons that mediate DNA rearrangement and movement. Overall, the sequence most likely functions in transposition, recombination, and genomic/plasmid rearrangement, enabling the mobilization or stabilization of associated genetic cargo rather than directly encoding a specialized physiological trait.
 
 ```{r import group of AC411 plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool by gggenes}
 
-library(cowplot)
 cowplot::plot_grid(
   plotlist = list(
     plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411"),
@@ -2258,10 +2259,9 @@ cowplot::plot_grid(
 
 ```
 
-Sunheng interprets the plasmids.
-
 #### pAB778
-The new result strengthens the interpretation of this plasmid as mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. Together with the previously noted mobilization/replication functions and the bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
+
+This plasmid appears to be mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. The plasmid encodes mobilization/replication functions and a bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
 
 ``` {r Plot AB778 plasmids by gggenes after ran bakta}
 plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
