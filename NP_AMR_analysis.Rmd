@@ -2056,7 +2056,7 @@ ggplot(
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
 ggrepel::geom_label_repel(
-  data = label_data |>
+  data = cluster_centroids |>
     dplyr::mutate(new_plasmid_name = gsub("plasmid_", "", new_plasmid_name)),
   aes(
     x     = tsne1D,
@@ -2167,6 +2167,18 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ```
 
 ## Analysis of plasmid gene content
+
+``` {r Get representative plasmid sequences}
+
+plasmid_representatives_df <-
+  plasmid_reclustering_df %>% 
+    dplyr::group_by(new_plasmid_name) %>% 
+    dplyr::slice_max(order_by = size, n = 1, with_ties = FALSE) %>% 
+    dplyr::select(Sample_Name,new_plasmid_name)
+
+plasmid_representatives_df
+
+```
 
 ### Plasmids in *M. catarrhalis*
 
@@ -2488,6 +2500,7 @@ long_read_info_df <-
   read.csv("./sample_data/long_read_sequence_data.csv") %>% 
     dplyr::filter(Project %in% c("References","Moraxella passage")) %>% 
     dplyr::mutate(`Parental genotype` = word(Description, 3)) %>% 
+    dplyr::mutate(Run = dplyr::if_else(grepl("run_1",Run),1,2)) %>% 
     dplyr::left_join(sample_df %>% 
                        dplyr::filter(Description == "Single isolate") %>% 
                        dplyr::mutate(`Parental genotype` = case_when(
@@ -2504,6 +2517,7 @@ long_read_info_df <-
 The long-read data were assembled with `flye` version 2.9.2, subsampling reads to get ~120-fold coverage of the genomes:
 
 ``` {bash Assembling long-read data, eval = FALSE}
+
 rm run_1_flye.r120.*.[oe]; declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nFILES=\$(find -maxdepth 1 -type f -name 'chunk*fastq.gz' -printf '%s\t%f\n' |  cut -f2- | tr '\n' ' ')\ncat \$FILES > all.fastq.gz\nflye -t 4 --genome-size 2.0m --asm-coverage 120 --nano-raw all.fastq.gz --out-dir ${f}_r120_out\nrm all.fastq.gz\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
 bsub -n 4 -M 32000 -R 'select[mem>32000] rusage[mem=32000] span[hosts=1]' -o run_1_flye.r120.%I.o -e run_1_flye.r120.%I.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}; watch bjobs
 
@@ -2512,12 +2526,21 @@ bsub -n 4 -M 32000 -R 'select[mem>32000] rusage[mem=32000] span[hosts=1]' -o run
 
 ```
 
+We then aggregate all the assemblies in one place:
+
+``` {bash, eval = FALSE}
+
+for DIR in run_1 run_2; do cd $DIR; for SUBDIR in $(ls -d barcode*); do FILE=`ls ./$SUBDIR/*120*/assembly.fasta`; if [[ -e $FILE ]]; then cp $FILE /data/pam/team284/nc3/scratch/
+NP_AMR/data/nanopore_data/assemblies/${DIR}_${SUBDIR}.fasta; fi; done; cd ..; done
+
+```
+
 The quality of the assemblies was assessed using Quast v5.3:
 
 ``` {bash Evaluate assemblies, eval = FALSE}
 
 module load quast/5.3.0
-quast.py -o long_read_assemblies_v1 *.fa
+quast.py -o long_read_assemblies_v1 *.fasta
 
 ```
 
@@ -2552,10 +2575,7 @@ lr_assembly_stats_df <-
                   )
   ) %>% 
   tidyr::pivot_wider(names_from = Assembly,
-                     values_from = Value) %>%
-  dplyr::group_by(Barcode) %>% 
-  dplyr::slice_max(`Largest contig`) %>% 
-  dplyr::ungroup()
+                     values_from = Value)
 
 ```
 
@@ -2567,7 +2587,7 @@ long_read_sample_df <-
   long_read_info_df %>% 
     dplyr::left_join(
       lr_assembly_stats_df,
-      by = "Barcode"
+      by = c("Run","Barcode")
     )
 
 ```
