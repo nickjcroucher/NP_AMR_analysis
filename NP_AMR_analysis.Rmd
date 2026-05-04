@@ -7,22 +7,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-is_ci <- identical(Sys.getenv("CI"), "true")
 
-if (is_ci) {
-  message("CI environment detected: disabling knitr caching.")
-  knitr::opts_chunk$set(
-    echo  = FALSE,
-    cache = FALSE
-  )
-} else {
-  knitr::opts_chunk$set(
-    echo  = FALSE,
-    cache = TRUE,
-    fig.width = 8
-  )
-}
-
+knitr::opts_chunk$set(echo = TRUE)
 require(magrittr)
 require(tidyverse)
 require(stringr)
@@ -33,8 +19,8 @@ require(ggforce)
 require(ggrepel)
 require(patchwork)
 require(igraph)
-library(gggenes)
-library(readr)
+require(gggenes)
+require(readr)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -574,7 +560,7 @@ drak_info_df <-
       dplyr::left_join(
         read_csv("./sample_data/Drakenstein_accessions.csv"),
         by = c("Isolate"="run_accession")
-      )
+        )
 
 info_df <-
   dplyr::bind_rows(
@@ -589,9 +575,9 @@ info_df <-
                     sample_common_name = "Moraxella catarrhalis",
                     project = "Drakenstein",
                     sample_supplier_name = Isolate
-      ) %>% 
+                    ) %>% 
       dplyr::select(name,sample_accession_number,sample_common_name,project,sample_supplier_name)
-  )
+    )
 
 run_df <-
   dplyr::bind_rows(
@@ -599,7 +585,7 @@ run_df <-
       dplyr::select(-name),
     parse_sample_file("./sample_data/6310_runs.tsv") %>% 
       dplyr::select(-name)
-  )
+    )
 
 fn_6588 <- "./sample_data/6588_files.tsv"
 fn_6310 <- "./sample_data/6310_files.tsv"
@@ -607,19 +593,19 @@ files_df <-
   dplyr::bind_rows(
     parse_sample_file(fn_6588) %>% process_annotation_file_names(),
     parse_sample_file(fn_6310) %>% process_annotation_file_names()
-  ) %>% dplyr::left_join(
+    ) %>% dplyr::left_join(
     dplyr::bind_rows(
       parse_sample_file(fn_6588) %>% process_assembly_file_names(),
       parse_sample_file(fn_6310) %>% process_assembly_file_names()
-    ),
+      ),
     by = c("npg_run_id")
-  ) %>% dplyr::left_join(
+    ) %>% dplyr::left_join(
     dplyr::bind_rows(
       parse_sample_file(fn_6588) %>% process_qc_file_names(),
       parse_sample_file(fn_6310) %>% process_qc_file_names()
-    ),
+      ), 
     by = c("npg_run_id")
-  )
+    )
 
 epi_df <-
   dplyr::bind_rows(
@@ -651,7 +637,7 @@ epi_df <-
       dplyr::mutate(Isolate = sample_accession) %>% 
       dplyr::select(-sample_accession) %>% 
       dplyr::mutate(Description = "Single isolate")
-  ) %>% 
+    ) %>% 
   dplyr::mutate(join_col = dplyr::case_when(
     project == "6588" ~ Sample,
     Country == "South Africa" ~ Isolate,
@@ -668,7 +654,8 @@ sample_df <-
                                               npg_run_id)) %>%
     dplyr::mutate(join_col = dplyr::if_else(project == "6588",sample_donor_id,npg_run_id)) %>% 
     dplyr::left_join(epi_df, by = c("join_col")) %>% 
-    dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)) %>% 
+    dplyr::mutate(Isolate = dplyr::if_else(project == "6310",name,Isolate)
+                  ) %>% 
     dplyr::select(-join_col) %>% 
     dplyr::filter(!is.na(Country)) %>% 
     dplyr::mutate(Cohort = dplyr::if_else(Cohort == "Thailand","Maela",Cohort)) %>% 
@@ -679,7 +666,7 @@ sample_df <-
                       Cohort == "Drakenstein" ~ "Drakenstein",
                       Cohort == "United Kingdom" & Year < 2014 ~ "Hampshire (early)",
                       Cohort == "United Kingdom" & Year > 2014 ~ "Hampshire (late)"
-                    )
+                      )
                   ) %>% 
   dplyr::mutate(Year =
                   dplyr::case_when(
@@ -1510,7 +1497,7 @@ Hicap_hflu <-
 
 ## Initialise microreact epidemiological data frames
 
-```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by "npg_run_id"}
+```{r merge Mcat_SA_amr_wide and mcat_strains_sample and Mcat_Hflu_mobsuite_summary_df by npg_run_id}
 
 microreact_epi_cols <-
   c("npg_run_id","Isolate","Species","Cohort","Region","Country","Year","Description","sample_accession_number")
@@ -1650,6 +1637,26 @@ ggplot(amr_comparison_df,
 ## Add plot of serotype distribution across locations
 
 TO DO
+```{r plot bargraph for serotype of H.influenzae}
+Hflu_serotype_percent <- Hflu_microreact_df %>% 
+  filter(!is.na(serotype)) %>%
+  group_by(Cohort, serotype) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(serotype) %>%
+  mutate(
+    total = sum(n),
+    percent_serotype = (n / total) * 100) %>% 
+  ungroup()
+  
+ggplot(Hflu_serotype_percent, 
+       aes(x = serotype, y = Cohort, fill = percent_serotype )) + 
+  geom_tile(color = "blue") + 
+  scale_fill_gradient(low = "lightyellow", high = "red") + 
+  theme(axis.text.x = element_text(angle = 45, hjust =1), 
+        panel.grid = element_blank()) + 
+  labs(title = "Serotype Distribution of H.influenzae", x = "Serotypes", y = "Locations")
+
+```
 
 ## Plasmid clustering and phylogeny analysis
 
@@ -1882,40 +1889,45 @@ ggplot(dist_df,
 
 ```
 
-### Plot plasmid clustering
 
-``` {r Decide on clustering of plasmids}
+``` {r Decide on clustering of plasmids, echo = TRUE}
 
 #############
 # Functions #
 #############
 
+
+
 # Helper to add tiny jitter to near-singular clusters
 jitter_singular_clusters <- function(df, threshold = 0.1) {
   df |>
-    dplyr::group_by(new_plasmid_name) |>
-    dplyr::mutate(
-      range_x = max(tsne1D, na.rm = TRUE) - min(tsne1D, na.rm = TRUE),
-      range_y = max(tsne2D, na.rm = TRUE) - min(tsne2D, na.rm = TRUE),
-      # Add tiny jitter only to clusters where points are nearly identical
-      tsne1D  = dplyr::if_else(
-        range_x < threshold,
-        tsne1D + rnorm(dplyr::n(), 0, threshold),
-        tsne1D
-      ),
-      tsne2D  = dplyr::if_else(
-        range_y < threshold,
-        tsne2D + rnorm(dplyr::n(), 0, threshold),
-        tsne2D
-      )
-    ) |>
-    dplyr::select(-range_x, -range_y) |>
-    dplyr::ungroup()
+   dplyr::group_by(new_plasmid_name) |>
+   dplyr::mutate(
+     range_x = max(tsne1D, na.rm = TRUE) - min(tsne1D, na.rm = TRUE),
+     range_y = max(tsne2D, na.rm = TRUE) - min(tsne2D, na.rm = TRUE),
+     # Add tiny jitter only to clusters where points are nearly identical
+     tsne1D  = dplyr::if_else(
+       range_x < threshold,
+       tsne1D + rnorm(dplyr::n(), 0, threshold),
+       tsne1D
+     ),
+     tsne2D  = dplyr::if_else(
+       range_y < threshold,
+       tsne2D + rnorm(dplyr::n(), 0, threshold),
+       tsne2D
+     )
+   ) |>
+   dplyr::select(-range_x, -range_y) |>
+   dplyr::ungroup()
 }
+
+
 
 ############
 # Analysis #
 ############
+
+
 
 # Merge nearby plasmids through single linkage clustering with the new threshold
 plasmid_reclustering_df <- merge_clusters_by_distance(
@@ -1927,65 +1939,72 @@ plasmid_reclustering_df <- merge_clusters_by_distance(
   dplyr::mutate(merged_cluster = as.character(merged_cluster))|>
   dplyr::group_by(plasmid_name) |>
   dplyr::mutate(
-    n_clusters_in_group = dplyr::n_distinct(merged_cluster, na.rm = TRUE)
+   n_clusters_in_group = dplyr::n_distinct(merged_cluster, na.rm = TRUE)
   ) |>
   dplyr::ungroup() |>
   dplyr::group_by(merged_cluster) |>
   dplyr::mutate(
-    all_novel_in_cluster = all(grepl("^plasmid_novel_", plasmid_name)),
-    representative_name  = dplyr::case_when(
-      all_novel_in_cluster ~ "plasmid_novel",
-      TRUE                 ~ dplyr::first(plasmid_name[!grepl("^plasmid_novel_", plasmid_name)])
-    )
+   all_novel_in_cluster = all(grepl("^plasmid_novel_", plasmid_name)),
+   representative_name  = dplyr::case_when(
+     all_novel_in_cluster ~ "plasmid_novel",
+     TRUE                 ~ dplyr::first(plasmid_name[!grepl("^plasmid_novel_", plasmid_name)])
+   )
   ) |>
   dplyr::ungroup() |>
   dplyr::mutate(
-    new_plasmid_name = dplyr::case_when(
-      # Unassigned plasmids get NA
-      is.na(merged_cluster)    ~ NA_character_,
-      # All novel in cluster - use plasmid_novel prefix with cluster number appended
-      all_novel_in_cluster     ~ paste0("plasmid_novel_", merged_cluster),  # <-- cluster number appended
-      # Single cluster for this plasmid_name - keep representative name as-is
-      n_clusters_in_group == 1 ~ representative_name,
-      # Split across multiple clusters - append sub-cluster index
-      TRUE                     ~ paste0(
-        representative_name, "_",
-        as.integer(factor(merged_cluster))
-      )
-    )
+   new_plasmid_name = dplyr::case_when(
+     # Unassigned plasmids get NA
+     is.na(merged_cluster)    ~ NA_character_,
+     # All novel in cluster - use plasmid_novel prefix with cluster number appended
+     all_novel_in_cluster     ~ paste0("plasmid_novel_", merged_cluster),  # <-- cluster number appended
+     # Single cluster for this plasmid_name - keep representative name as-is
+     n_clusters_in_group == 1 ~ representative_name,
+     # Split across multiple clusters - append sub-cluster index
+     TRUE                     ~ paste0(
+       representative_name, "_",
+       as.integer(factor(merged_cluster))
+     )
+   )
   ) |>
   dplyr::select(-n_clusters_in_group, -all_novel_in_cluster, -representative_name)
 
+
+
 cluster_stats <- plasmid_reclustering_df |>
   dplyr::filter(
-    !is.na(new_plasmid_name),
-    !is.na(tsne1D), !is.na(tsne2D),
-    !is.infinite(tsne1D), !is.infinite(tsne2D)
+   !is.na(new_plasmid_name),
+   !is.na(tsne1D), !is.na(tsne2D),
+   !is.infinite(tsne1D), !is.infinite(tsne2D)
   ) |>
   dplyr::group_by(new_plasmid_name) |>
   dplyr::summarise(
-    n = dplyr::n(),
-    range_tsne1D = max(tsne1D) - min(tsne1D),
-    range_tsne2D = max(tsne2D) - min(tsne2D),.groups = "drop"
+   n = dplyr::n(),
+   range_tsne1D = max(tsne1D) - min(tsne1D),
+   range_tsne2D = max(tsne2D) - min(tsne2D),.groups = "drop"
   )
+
+
 
 # Plotting groups after merging
 radius_threshold <- 1
 small_clusters <- cluster_stats |>
   dplyr::filter(
-    n <= 6 |
-    range_tsne1D <= radius_threshold |
-    range_tsne2D <= radius_threshold
+   n <= 6 |
+   range_tsne1D <= radius_threshold |
+   range_tsne2D <= radius_threshold
   ) |>
   dplyr::pull(new_plasmid_name)
 
+
+
 large_clusters <- cluster_stats |>
   dplyr::filter(
-    !(n <= 6 |
-      range_tsne1D <= radius_threshold |
-      range_tsne2D <= radius_threshold)
+   !(n <= 6 |
+     range_tsne1D <= radius_threshold |
+     range_tsne2D <= radius_threshold)
   ) |>
   dplyr::pull(new_plasmid_name)
+
 
 
 # --- Cluster centroids for ggrepel labels ---
@@ -1994,74 +2013,80 @@ cluster_centroids <-
   dplyr::filter(!is.na(merged_cluster), !is.na(tsne1D), !is.na(tsne2D)) |>
   dplyr::group_by(merged_cluster,new_plasmid_name) |>
   dplyr::summarise(
-    tsne1D = mean(tsne1D),
-    tsne2D = mean(tsne2D),
-    # True radius: max Euclidean distance from centroid to any point in cluster
-    radius = max(sqrt(
-      (tsne1D - mean(tsne1D))^2 +
-      (tsne2D - mean(tsne2D))^2
-    )),.groups = "drop"
+   tsne1D = mean(tsne1D),
+   tsne2D = mean(tsne2D),
+   # True radius: max Euclidean distance from centroid to any point in cluster
+   radius = max(sqrt(
+     (tsne1D - mean(tsne1D))^2 +
+     (tsne2D - mean(tsne2D))^2
+   )),.groups = "drop"
   ) |>
   dplyr::mutate(
-    # Nudge direction is determined by centroid position relative to plot origin
-    # Magnitude scales with true cluster radius + fixed buffer
-    nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
-    nudge_y = sign(tsne2D) * (radius + 2)
+   # Nudge direction is determined by centroid position relative to plot origin
+   # Magnitude scales with true cluster radius + fixed buffer
+   nudge_x = sign(tsne1D) * (radius + 2),   # <-- adjust buffer (2) as needed
+   nudge_y = sign(tsne2D) * (radius + 2)
   )
+
+
 
 # Pre-process plot data
 plot_df <- plasmid_reclustering_df |>
   dplyr::filter(
-    !is.na(tsne1D), !is.na(tsne2D),
-    !is.infinite(tsne1D), !is.infinite(tsne2D)
+   !is.na(tsne1D), !is.na(tsne2D),
+   !is.infinite(tsne1D), !is.infinite(tsne2D)
   ) |>
   jitter_singular_clusters()
+
+
 
 ########
 # Plot #
 ########
 
+
+
 ggplot(
   plot_df |>
-    dplyr::filter(
-      !is.na(tsne1D), !is.na(tsne2D),
-      !is.infinite(tsne1D), !is.infinite(tsne2D)
-    ),
+   dplyr::filter(
+     !is.na(tsne1D), !is.na(tsne2D),
+     !is.infinite(tsne1D), !is.infinite(tsne2D)
+   ),
   aes(
-    x      = tsne1D,
-    y      = tsne2D,
-    colour = Species,
-    shape  = Cohort
+   x      = tsne1D,
+   y      = tsne2D,
+   colour = Species,
+   shape  = Cohort
   )
 ) +
   # Ellipses for small clusters - NO label aesthetic
   ggforce::geom_mark_ellipse(
-    data      = \(x) dplyr::filter(x, new_plasmid_name %in% small_clusters &
-                                      !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
-    colour    = "black"
+   data      = \(x) dplyr::filter(x, new_plasmid_name %in% small_clusters &
+                                     !is.na(merged_cluster)),
+   aes(group = new_plasmid_name),
+   expand    = 0.015,
+   alpha     = 0.15,
+   colour    = "black"
   ) +
   # Hulls for large clusters - NO label aesthetic
   ggforce::geom_mark_hull(
-    data      = \(x) dplyr::filter(x, new_plasmid_name %in% large_clusters &
-                                      !is.na(merged_cluster)),
-    aes(group = new_plasmid_name),
-    expand    = 0.015,
-    alpha     = 0.15,
-    colour    = "black",
-    concavity = 10
+   data      = \(x) dplyr::filter(x, new_plasmid_name %in% large_clusters &
+                                     !is.na(merged_cluster)),
+   aes(group = new_plasmid_name),
+   expand    = 0.015,
+   alpha     = 0.15,
+   colour    = "black",
+   concavity = 10
   ) +
   geom_point() +
   # Labels via ggrepel anchored to centroids, nudged outside cluster bounds
 ggrepel::geom_label_repel(
   data = cluster_centroids |>
-    dplyr::mutate(new_plasmid_name = gsub("plasmid_", "", new_plasmid_name)),
+   dplyr::mutate(new_plasmid_name = gsub("plasmid_", "", new_plasmid_name)),
   aes(
-    x     = tsne1D,
-    y     = tsne2D,
-    label = new_plasmid_name
+   x     = tsne1D,
+   y     = tsne2D,
+   label = new_plasmid_name
   ),
   inherit.aes        = FALSE,
   colour             = "black",
@@ -2111,7 +2136,30 @@ Hflu_microreact_df %<>%
 ### Plot plasmid distribution across cohorts
 
 TO DO
+```{r plot heatmap of plasmid distribution across cohort}
+library(viridis)
+plasmid_counts <- plasmid_reclustering_df %>%
+  group_by(Cohort, Species, plasmid_name) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(Cohort, Species) %>%
+  mutate(total_plasmid = sum(n),
+         percent_plasmids = 100 * n / total_plasmid) %>%
+  ungroup()
 
+ggplot(plasmid_counts, 
+       aes(x = Cohort, y = plasmid_name, fill = percent_plasmids)) + 
+  geom_tile(color = "grey85", linewidth = 0.3) + 
+  scale_fill_viridis(option = "magma", direction = 1) + 
+  facet_wrap(~ Species, scales = "free_y")+ 
+  theme_bw(base_size = 12) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 9),
+    strip.text = element_text(size = 11, face = "bold"),
+    panel.grid = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA))+ 
+  labs(title = "Plasmids Distribution Across Cohorts", x = "Cohort", y = "Plasmid", fill = "percent of plasmids")
+                          
+```
 ### Association between plasmids and resistance in *H. influenzae*
 
 ```{r calculate the proportion of resistance and plasmids H.influenzae}
@@ -2167,29 +2215,104 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ```
 
 ## Analysis of plasmid gene content
+We select the plasmids from the plasmid_reclustering_df to analize in the Bakta tool, then we plot the sequence by gggenes function.
 
-``` {r Get representative plasmid sequences}
+```{r Get representative plasmid sequences}
 
 plasmid_representatives_df <-
   plasmid_reclustering_df %>% 
-    dplyr::group_by(new_plasmid_name) %>% 
-    dplyr::slice_max(order_by = size, n = 1, with_ties = FALSE) %>% 
-    dplyr::select(Sample_Name,new_plasmid_name)
+   dplyr::group_by(new_plasmid_name) %>% 
+   dplyr::slice_max(order_by = size, n = 1, with_ties = FALSE) %>% 
+   dplyr::select(Sample_Name,new_plasmid_name)
 
 plasmid_representatives_df
+```
+
+```{r select the plasmids to analize in Bakta}
+set.seed(1) 
+plasmid_reclustering_df %>% 
+  dplyr::select(Sample_Name,new_plasmid_name) %>% 
+  dplyr::group_by(new_plasmid_name) %>% 
+  dplyr::slice_sample(n = 1)
 
 ```
 
 ### Plasmids in *M. catarrhalis*
 
 #### pAC411
+These InterProScan results from 46321_1_275_plasmid_AC411 plasmid indicate that this sequence is primarily a mobile DNA element rather than a metabolic or defense plasmid module. It encodes a site-specific recombinase/resolvase with a catalytic resolvase domain and DNA-binding helix-turn-helix region, together with a large Tn3-like transposase carrying the characteristic DDE transposase domain, which is typical of transposons that mediate DNA rearrangement and movement. Overall, the sequence most likely functions in transposition, recombination, and genomic/plasmid rearrangement, enabling the mobilization or stabilization of associated genetic cargo rather than directly encoding a specialized physiological trait.
 
-```{r import tsv file from Bakta_analysis_plasmids folder}
+```{r import group of AC411 plasmid tsv files from plasmid_annotations folder after analyized form Bakta tool by gggenes}
 
-plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411")
+library(cowplot)
+cowplot::plot_grid(
+  plotlist = list(
+    plot_plasmid_function("46321_1_275_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_78_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_175_plasmid_AC411.tsv", title_str = "pAC411"),
+    plot_plasmid_function("46358_2_360_plasmid_AC411.tsv", title_str = "pAC411")
+  ),
+  nrow = 2,
+  ncol = 2
+)
 
 ```
 
+Sunheng interprets the plasmids.
+
+#### pAB778
+The new result strengthens the interpretation of this plasmid as mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. Together with the previously noted mobilization/replication functions and the bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
+
+``` {r Plot AB778 plasmids by gggenes after ran bakta}
+plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
+```
+
+#### pAG261_20
+
+Based on the InterPro classification of protein families which finalized the plasmid protein and found that the sequence HAEKGJ_001 is still just a small hypothetical protein with no confidently assignable conserved InterPro domain, so it does not materially improve functional annotation of the plasmid. Based on the currently available evidence, this sequence is best described as a poorly characterized plasmid carrying mostly uninformative small proteins, with no strong domain support for a specific role such as resistance, secretion, metabolism, or mobility. Overall, it is most likely a cryptic plasmid or plasmid fragment whose biological function remains uncertain pending comparative or experimental analysis.
+
+```{r import AG261_20 plasmid from bakta tool analysis and plot by gggenes}
+plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
+```
+
+#### pAG261_17
+
+After analyzing the plasmid by bakta tool, we uploaded embl file into artemis for identify the plasmid protein and then download amino acid file for input to the InterPro through the link https://www.ebi.ac.uk/interpro/. Based on InterPro classification of protein families which finalized clearly to be a replicative plasmid, because HJCCDA_001 is a large replication initiation protein consistent with a plasmid Rep factor required for origin recognition and plasmid maintenance. In the absence of additional InterPro-supported accessory functions such as toxin, resistance, secretion, or mobilization proteins, the sequence is best interpreted as a minimal maintenance plasmid whose primary biological role is autonomous replication and stable inheritance in its bacterial host. Overall, this looks most like a cryptic plasmid centered on replication rather than specialized adaptive cargo.
+
+```{r plot gggenes of selected AG261_17 plasmid}
+plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
+```
+
+#### pAG261_14
+This plasmid likely functions primarily in gene regulation and plasmid maintenance, as it encodes an H-NS family nucleoid-associated protein, a DNA-binding factor that can compact DNA and transcriptionally silence or modulate expression of plasmid-borne genes. The presence of an H-NS-like protein suggests the plasmid may help control its own transcriptional burden and improve compatibility with the host by repressing potentially deleterious or horizontally acquired sequences. Overall, this is most consistent with a small regulatory/maintenance plasmid, although additional genes would be needed to define any specialized accessory function.
+
+```{r plot the selected AG261_14 plasmid by gggenes}
+plot_plasmid_function("SAMEA4620371_plasmid_AG261.tsv", title_str = "pAG261_14")
+```
+
+#### pAG261_11
+This additional protein remains a small hypothetical protein with no clearly assignable conserved InterPro domain, so by itself it does not define a specific plasmid phenotype. However, in the context of the previously identified TraB/VirB10 family protein, the plasmid is still best interpreted as having a mobilization/conjugation-associated role, likely contributing to horizontal transfer while also carrying small accessory proteins of unknown function. Overall, this sequence most likely represents a transfer-related plasmid or plasmid fragment rather than a purely cryptic replicon.
+
+```{r plot AG261_11 plasmid by gggenes}
+plot_plasmid_function("46321_1#151_plasmid_AG261.tsv", title_str = "pAG261_11")
+```
+
+#### pAG261_10
+This plasmid likely functions mainly in regulation and maintenance, as it encodes an H-NS family nucleoid-associated protein that typically binds DNA, influences nucleoid structure, and represses transcription of plasmid or horizontally acquired genes. Such a protein could help the plasmid minimize fitness costs to the host by silencing its own cargo and modulating gene expression after acquisition. Overall, the sequence is best interpreted as a small regulatory/maintenance plasmid or plasmid fragment, with no strong evidence here for additional specialized functions.
+
+```{r plot AG261_10 plasmid by gggenes}
+plot_plasmid_function("46321_2#278_plasmid_AG261.tsv", title_str = "pAG261_10")
+```
+
+#### pAG261_9
+This plasmid likely carries a conjugation or type IV secretion-related function, because FHGPLB_001 is a TraB/VirB10 family protein, a hallmark component of mating-pair formation/type IV secretion systems involved in DNA transfer between bacteria. That strongly suggests the sequence is not merely cryptic but instead may contribute to plasmid transmissibility or assembly of a conjugative transfer apparatus. Overall, the plasmid is best described as a mobilization/conjugation-associated plasmid that may facilitate horizontal gene transfer.
+
+```{r plot the selected AG261 plasmid by gggenes}
+plot_plasmid_function("46321_1#343_plasmid_AG261.tsv", title_str = "pAG261_9")
+#plot_plasmid_function("46321_1#115_plasmid_AG261.tsv", title_str = "pAG261_9")
+#plot_plasmid_function("46736_1#152_plasmid_AG261.tsv", title_str = "pAG261_9")
+#plot_plasmid_function("47195_1#132_plasmid_AG261.tsv", title_str = "pAG261_9")
+```
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
 [1] "plasmid_AG261_9"  "plasmid_AG261_10" "plasmid_AG261_11" "plasmid_AB778"    "plasmid_AG261_14" "plasmid_AC411"   
@@ -2198,6 +2321,160 @@ Use `plasmid_reclustering_df` to find representatives for annotation:
 For each one, search the dataframe, then use the "sample_name" column to find the right annotation (note you may have to replace the # character with an underscore).
 
 ### Plasmids in *H. influenzae*
+Import each H. influenzae plasmids group of all tsv files from plasmid_annotations after analised by Bakta tool
+
+#### pAF100_1
+This sequence still encodes only a small conserved hypothetical protein with no detectable InterPro domain, so it does not provide evidence for a specific plasmid-associated function. Because there are likewise no signatures here for replication, mobilization, resistance, toxin production, or secretion, the element is best described as a poorly characterized cryptic plasmid or plasmid fragment. Overall, its biological role remains unknown, beyond carrying a recurrent small hypothetical protein found on related sequences.
+
+```{r plot gggenes for AF100_1 plasmid}
+plot_plasmid_function("36774_2_244_plasmid_AF100.tsv", title_str = "pAF100_1")
+```
+
+#### pAF100_5
+This plasmid still appears to be poorly characterized, but the new protein is larger than the other hypothetical ORFs and is rich in basic, likely nucleic-acid-interacting residues, which suggests a possible DNA- or RNA-binding accessory role. Because no conserved InterPro domain is identified, however, there is still no strong evidence for a defined function such as replication, mobilization, resistance, secretion, or toxin production. Overall, the sequence is best described as a cryptic plasmid or plasmid fragment encoding uncharacterized accessory proteins, one of which may participate in nucleic-acid-associated regulation or maintenance.
+
+```{r plot gggenes for AF100_5 plasmid}
+plot_plasmid_function("36982_2_124_plasmid_AF100.tsv", title_str = "pAF100_5")
+```
+
+#### pAF100_6
+This plasmid-associated sequence now most likely represents a mobile genetic element, because it encodes TnpA transposase, the hallmark enzyme for DNA transposition. That suggests the sequence is involved in movement, rearrangement, or insertion of DNA rather than in a dedicated metabolic or host-adaptation function. Overall, it is best described as a transposon-like plasmid fragment or mobile element whose primary biological role is genetic mobility.
+
+```{r plot AF100_6 plasmid by gggenes}
+plot_plasmid_function("36812_2_245_plasmid_AF100.tsv", title_str = "pAF100_6")
+
+```
+
+#### pAF100_7
+This result does not support the annotation of trnH as a genuine tRNA-His, because the provided sequence is a short hydrophobic peptide rather than a structured non-coding tRNA. Instead, it most likely represents a small membrane-associated hypothetical protein, but there is still no conserved InterPro domain to assign a specific function. Overall, the plasmid remains best described as a poorly characterized cryptic plasmid or plasmid fragment with limited functional signal beyond small uncharacterized coding sequences.
+
+```{r use AF100_7 plasmid to plot by gggenes}
+plot_plasmid_function("36982_2_156_plasmid_AF100.tsv", title_str = "pAF100_7")
+```
+
+#### pAF100_8
+This plasmid likely contains a replication-control module, because RepA is annotated here as a regulatory protein rather than a catalytic replication initiator, suggesting a role in controlling plasmid copy number or expression of replication genes. That points to a function in plasmid maintenance and stable inheritance, helping regulate the replicon within the host cell. Overall, this sequence is best described as a maintenance-oriented cryptic plasmid centered on replication regulation rather than specialized adaptive cargo.
+
+```{r use AF100_8 plasmid name to plot by gggenes}
+plot_plasmid_function("36983_1_333_plasmid_AF100.tsv", title_str = "pAF100_8")
+```
+
+#### pAF100_16
+This additional protein is again a small hypothetical protein with no detectable conserved InterPro domain, and it is identical in sequence to the previously noted short uncharacterized protein, suggesting a recurring but still unresolved small-protein family on related plasmids. Because there is still no domain evidence for replication, mobilization, resistance, toxin production, or other specialized machinery, the sequence is best interpreted as a cryptic and poorly characterized plasmid/plasmid fragment. Overall, its biological role remains unknown, beyond encoding one or more small conserved hypothetical proteins.
+
+```{r plot gggenes for AF100_16 new plasmid name}
+plot_plasmid_function("46358_2_81_plasmid_AF100.tsv", title_str = "pAF100_16")
+```
+
+#### pAF100_19
+This plasmid encodes a small hydrophobic membrane protein with multiple predicted transmembrane segments, indicating that at least part of its function is likely membrane-associated rather than purely soluble. However, because there are still no conserved InterPro domains pointing to replication, mobilization, resistance, secretion, or toxin systems, the overall sequence remains best described as a poorly characterized cryptic plasmid or plasmid fragment carrying small hypothetical proteins, including a probable membrane component. Overall, its biological role is still uncertain, though it may encode a simple host-interaction or membrane-associated accessory function.
+
+```{r plot AF_100_19 new plasmid name by gggenes}
+plot_plasmid_function("46358_2_63_plasmid_AF100.tsv", title_str = "pAF100_19")
+```
+
+#### pAF100_23
+This result still supports only a small hypothetical protein with no recognizable conserved InterPro domain, so it does not allow a confident functional assignment for the plasmid. The sequence therefore remains best described as a cryptic or poorly characterized plasmid/plasmid fragment, lacking clear evidence for replication, mobilization, resistance, toxin production, or other specialized cargo. Overall, its biological role is currently uncertain and would need comparative genomics or experimental validation to resolve.
+
+```{r plot new AF100_23 plasmid by gggenes}
+plot_plasmid_function("46472_2_222_plasmid_AF100.tsv", title_str = "pAF100_23")
+```
+
+#### pAF100_25
+This plasmid may encode an accessory small-molecule modification function, because hmoA is annotated as an antibiotic biosynthesis monooxygenase, suggesting a role in oxidative tailoring of a bioactive compound or related metabolite. In the absence of broader pathway genes, however, it is difficult to infer a complete biosynthetic system, so the most cautious interpretation is that this plasmid carries a specialized accessory enzyme rather than a full metabolic cassette. Overall, the sequence is best described as a small accessory plasmid/plasmid fragment with potential secondary-metabolism-related function, though the precise biological role remains uncertain.
+
+```{r plot AF100_25 plasmid name by gggenes}
+plot_plasmid_function("36985_1_44_plasmid_AF100.tsv", title_str = "pAF100_25")
+```
+
+#### pAF100_26
+This InterProScan-style result still does not identify a conserved domain, but the protein is a small, highly basic hypothetical protein enriched in lysine and arginine, which is suggestive of a possible nucleic-acid-binding or DNA-associated role. However, without recognizable replication, mobilization, resistance, secretion, or toxin-related domains, the plasmid is still best described as a poorly characterized cryptic plasmid or plasmid fragment. Overall, its biological function remains uncertain, with only tentative evidence for a small DNA-binding accessory protein.
+
+```{r plot AF100_26 plasmid by gggenes}
+plot_plasmid_function("46358_2_312_plasmid_AF100.tsv", title_str = "pAF100_26")
+```
+
+#### pAF100_28
+This sequence is best interpreted as a mobile genetic element, because it encodes TnpA transposase, the key enzyme that catalyzes DNA transposition. Its primary biological role is therefore likely genetic mobility and rearrangement, enabling movement of the element within or between plasmids and chromosomes. Overall, this appears to be a transposon-like plasmid fragment rather than a plasmid carrying a clearly defined metabolic or host-adaptive system.
+
+```{r plot gggenes for AF100_28 plasmid}
+plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_28")
+```
+
+#### pAF098_3
+This plasmid likely contributes to tetracycline resistance regulation, because it encodes TetC, a tetracycline resistance-associated transcriptional repressor that would typically control expression of a linked tetracycline resistance determinant. Even if the effector resistance gene is not shown here, the presence of TetC strongly suggests participation in a tetracycline-responsive resistance module rather than a purely cryptic plasmid function. Overall, this sequence is best interpreted as a resistance-associated plasmid or plasmid fragment involved in the control of tetracycline resistance genes.
+
+```{r plot AF098_3 plasmid by gggenes}
+plot_plasmid_function("36812_1_12_plasmid_AF098.tsv", title_str = "pAF098_3")
+```
+
+#### AF098_29
+This plasmid may encode a specialized accessory metabolic function, because hmoA is annotated as an antibiotic biosynthesis monooxygenase, consistent with an oxidative enzyme involved in modification of a small bioactive compound. However, because no additional pathway components are evident here, the sequence does not support a complete biosynthetic system and is better interpreted as carrying a single accessory enzyme rather than a full metabolite-production module. Overall, this appears to be a small accessory plasmid or plasmid fragment with a possible role in secondary-metabolite modification, although the exact biological function remains uncertain.
+
+```{r plot new AF098_29 plasmid name by gggenes}
+plot_plasmid_function("36774_1#134_plasmid_AF098.tsv", title_str = "pAF098_29")
+```
+
+#### pAB946
+This result still supports only a small hypothetical protein with no recognizable conserved InterPro domain, so it does not permit a confident assignment of biological function. In the absence of replication, mobilization, resistance, secretion, or toxin-associated signatures, the sequence is best interpreted as a poorly characterized cryptic plasmid or plasmid fragment encoding an uncharacterized small protein. Overall, its biological role remains uncertain and will require comparative or experimental follow-up.
+
+```{r plot new AB946 plasmid name by gggenes}
+plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pAB946")
+
+```
+
+#### pAB946_30
+With only a single predicted protein containing DUF7695 and no additional conserved replication, mobilization, resistance, toxin, or metabolic domains, this plasmid remains functionally uncharacterized based on current InterProScan evidence. The sequence most likely encodes a small hypothetical protein of unknown role, and there is not enough domain information to infer a confident biological function for the plasmid as a whole. Overall, this appears to be a cryptic plasmid or plasmid fragment whose biological significance will require comparative genomics or experimental validation.
+
+```{r plot gggenes for new AB946_30 plasmid name}
+plot_plasmid_function("36812_1#183_plasmid_AB946.tsv", title_str = "pAB946_30")
+
+```
+
+#### pAB946_27
+This sequence is best interpreted as a replication-focused plasmid, because GAPPCC_01 is a Replicase A–type replication initiation protein consistent with autonomous plasmid replication. Since no additional InterPro-supported functions are evident here for mobilization, resistance, toxin production, or specialized metabolism, the plasmid most likely serves primarily as a self-maintaining cryptic replicon. Overall, its main biological role is likely plasmid replication and stable persistence in the host bacterium.
+
+```{r plot gggenes of new AB946 plasmid}
+plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
+```
+
+#### pAE025
+This additional sequence still supports only a hypothetical protein with no confidently assignable conserved InterPro domain, so it does not provide strong new evidence for a specific plasmid function. Based on the currently available annotations, the plasmid remains best described as a poorly characterized or cryptic replicon/plasmid fragment, with insufficient domain support to infer roles such as conjugation, resistance, toxin production, or specialized metabolism. Overall, its biological function is still uncertain and likely requires comparison to related plasmids or experimental follow-up.
+
+```{r plot gggenes of new AE025 plasmid name}
+plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("46358_2_92_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("46321_2_163_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("36985_1_354_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("36984_2_130_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("36983_1_178_plasmid_AE025.tsv", title_str = "pAE025")
+#plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d5.tsv", title_str = "pAE025")
+```
+
+#### pAB621
+This plasmid clearly carries an antibiotic resistance determinant, because it encodes blaROB-1, a broad-spectrum class A beta-lactamase that would be expected to inactivate beta-lactam antibiotics such as penicillins and related compounds. The sequence is therefore best interpreted as a resistance plasmid or resistance-associated plasmid fragment whose primary adaptive role is to confer beta-lactam resistance to its host bacterium. Overall, this plasmid likely contributes to the maintenance and potential dissemination of clinically relevant antimicrobial resistance.
+
+```{r plot AB621 plasmid by gggenes}
+plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
+#plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
+```
+
+#### pAC497_18
+This plasmid is most consistent with a small autonomous replicon, because NMLFHK_001 is a clear replication initiation protein that would support plasmid DNA replication and maintenance in the host. In the absence of additional InterPro-supported genes for conjugation, resistance, toxin production, secretion, or other adaptive cargo, the sequence is best interpreted as a minimal maintenance plasmid whose principal role is self-replication and stable inheritance. Overall, it appears to be a cryptic plasmid centered on replication rather than specialized accessory functions.
+
+```{r plot AC497_18 plasmid by gggenes}
+plot_plasmid_function("46358_2_52_plasmid_AC497.tsv", title_str = "pAC497_18")
+```
+
+#### pAC497_2
+
+Based on blast the amino acid of and the interpro of classification protein of familiies are detected this plasmid is best interpreted as a small autonomous replicon, because KHCFFA_001 is a clear replication initiation protein that would support plasmid DNA replication and persistence in the host. With no additional evidence here for mobilization, resistance, toxin systems, or specialized metabolism, the sequence most likely functions mainly in self-replication and stable inheritance rather than in host adaptation. Overall, it appears to be a cryptic maintenance plasmid centered on replication.
+
+```{r plot AC497_2 plasmid by gggenes}
+plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
+```
 
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
@@ -2247,6 +2524,31 @@ Microreact visualisations are available from:
 ### Compare *H. influenzae* strain frequencies between locations
 
 TO DO
+```{r calculate strains frequencies of H.influenzae then plot the frequency}
+Hflu_strains <- Hflu_microreact_df %>%
+  group_by(id, 
+           Cohort, 
+           Cluster) %>%
+  summarise(strains_count = n_distinct(id), 
+            .groups = "drop") %>%
+  arrange(Cohort)
+
+Hflu_strains_freq <- Hflu_strains %>%
+  group_by(Cohort) %>% 
+  mutate(Frequency = (strains_count / sum(strains_count) *100))
+
+ggplot(Hflu_strains_freq, 
+       aes(x = Cluster, 
+           y = Frequency, 
+           fill = Cohort)) + 
+  geom_bar(stat = "identity", 
+           position = "stack") + 
+  theme_minimal() + 
+  labs(title = "H. influenzae strain frequencies\nby cohort", 
+       x = "Cluster", 
+       y = "Frequency", 
+       fill = "Cohort")
+```
 
 ### Compare strain frequencies between locations
 
@@ -2268,7 +2570,6 @@ p <- plot_mcat_cluster_pairs_two_species(
 p
 
 ```
-
 
 ## Compare gene frequencies across locations
 
@@ -2484,6 +2785,16 @@ for INDEX in {01..96}; do mkdir -p barcode${INDEX}; for C in $(ls -d ./5hmc_5mc_
 
 ## Assembling long-read data
 
+``` {bash Assembling long-read data, eval = FALSE}
+
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_1_flye.%I.rerun.o -e run_1_flye.%I.rerun.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}
+
+declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_2/$f\nmodule load flye/2.9.2--py310h590eda1_0\nflye -t 4 --genome-size 2.0m --nano-hq *fastq.gz --out-dir ${f}_rr_out\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
+bsub -n 4 -M 16000 -R 'select[mem>16000] rusage[mem=16000] span[hosts=1]' -o run_2_flye.%I.rerun.o -e run_2_flye.%I.rerun.e -J flye_job_2[1-96] ./flye_job.\${LSB_JOBINDEX}
+
+```
+
 ## Long-read sequencing of representative isolates
 
 These were chosen as:
@@ -2496,121 +2807,16 @@ These were chosen as:
 
 ``` {r Representative sequence information}
 
-long_read_info_df <-
-  read.csv("./sample_data/long_read_sequence_data.csv") %>% 
-    dplyr::filter(Project %in% c("References","Moraxella passage")) %>% 
-    dplyr::mutate(`Parental genotype` = word(Description, 3)) %>% 
-    dplyr::mutate(Run = dplyr::if_else(grepl("run_1",Run),1,2)) %>% 
-    dplyr::left_join(sample_df %>% 
-                       dplyr::filter(Description == "Single isolate") %>% 
-                       dplyr::mutate(`Parental genotype` = case_when(
-                          str_detect(Isolate, "_") ~ str_extract(Isolate, "^[^_]+"),
-                          TRUE ~ Isolate
-                        )) %>%
-                      dplyr::select(`Parental genotype`,npg_run_id),
-                     relationship = 'many-to-many',
-                     by = 'Parental genotype'
-                     )
-
-```
-
-The long-read data were assembled with `flye` version 2.9.2, subsampling reads to get ~120-fold coverage of the genomes:
-
-``` {bash Assembling long-read data, eval = FALSE}
-
-rm run_1_flye.r120.*.[oe]; declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_1/$f\nmodule load flye/2.9.2--py310h590eda1_0\nFILES=\$(find -maxdepth 1 -type f -name 'chunk*fastq.gz' -printf '%s\t%f\n' |  cut -f2- | tr '\n' ' ')\ncat \$FILES > all.fastq.gz\nflye -t 4 --genome-size 2.0m --asm-coverage 120 --nano-raw all.fastq.gz --out-dir ${f}_r120_out\nrm all.fastq.gz\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
-bsub -n 4 -M 32000 -R 'select[mem>32000] rusage[mem=32000] span[hosts=1]' -o run_1_flye.r120.%I.o -e run_1_flye.r120.%I.e -J flye_job[1-96] ./flye_job.\${LSB_JOBINDEX}; watch bjobs
-
-rm run_2_flye.r120.*.[oe]; declare -i N; N=1; for f in $(ls -d barcode*); do echo -en "cd /data/pam/team284/nc3/scratch/NP_AMR/data/nanopore_data/run_2/$f\nmodule load flye/2.9.2--py310h590eda1_0\nFILES=\$(find -maxdepth 1 -type f -name 'chunk*fastq.gz' -printf '%s\t%f\n' |  cut -f2- | tr '\n' ' ')\ncat \$FILES > all.fastq.gz\nflye -t 4 --genome-size 2.0m --asm-coverage 120 --nano-raw all.fastq.gz --out-dir ${f}_r120_out\nrm all.fastq.gz\n" > flye_job.$N; chmod +x ./flye_job.$N; N=($N+1); done
-bsub -n 4 -M 32000 -R 'select[mem>32000] rusage[mem=32000] span[hosts=1]' -o run_2_flye.r120.%I.o -e run_2_flye.r120.%I.e -J flye_job_2[1-96] ./flye_job.\${LSB_JOBINDEX}; watch bjobs
-
-```
-
-We then aggregate all the assemblies in one place:
-
-``` {bash, eval = FALSE}
-
-for DIR in run_1 run_2; do cd $DIR; for SUBDIR in $(ls -d barcode*); do FILE=`ls ./$SUBDIR/*120*/assembly.fasta`; if [[ -e $FILE ]]; then cp $FILE /data/pam/team284/nc3/scratch/
-NP_AMR/data/nanopore_data/assemblies/${DIR}_${SUBDIR}.fasta; fi; done; cd ..; done
-
-```
-
-The quality of the assemblies was assessed using Quast v5.3:
-
-``` {bash Evaluate assemblies, eval = FALSE}
-
-module load quast/5.3.0
-quast.py -o long_read_assemblies_v1 *.fasta
-
-```
-
-These genomes were assembled across two Promethion runs - the best assembly was selected across the two runs:
-
-``` {r Long read assembly QC}
-
-lr_assembly_stats_df <-
-  read.table(file = "./sample_data/NP_AMR_long_read_assembly_stats.tsv",
-             comment.char = "",
-             check.names = FALSE,
-             sep = "\t",
-             header = TRUE) %>% 
-  tidyr::pivot_longer(cols = -Assembly,names_to = "Dataset", values_to = "Value") %>% 
-  dplyr::filter(Assembly %in% c("Largest contig","# contigs")) %>% 
-  dplyr::mutate(
-    Run = dplyr::if_else(grepl("run_1",Dataset),1,2),
-    Barcode = str_split_i(Dataset, "_", i = 3)
-  ) %>% 
-  dplyr::mutate(
-    BarcodeNumeric = as.numeric(
-      as.character(
-        gsub("barcode","",Barcode)
-      )
-    )
-  ) %>% 
-  dplyr::mutate(Assembly =
-                  dplyr::if_else(
-                    Assembly == "# contigs",
-                    "n_contigs",
-                    "Largest contig"
-                  )
-  ) %>% 
-  tidyr::pivot_wider(names_from = Assembly,
-                     values_from = Value)
-
-```
-
-We can then associate the long-read assemblies with the sample information:
-
-``` {r Combine long read assemblies with sample data}
-
 long_read_sample_df <-
-  long_read_info_df %>% 
-    dplyr::left_join(
-      lr_assembly_stats_df,
-      by = c("Run","Barcode")
-    )
+  read.csv("sample_data/long_read_sequence_data.csv")
 
 ```
 
 ## Methylation analyses from long-read data
 
-We can load the code needed for methylation analysis: `microbemod/1.0.3`.
-
 Is the sharing of plasmids between species limited by RMS?
 
-``` {r Do any samples have this methylase}
-
-# Methylase: group_2030.
-non_specific_methylase_carriers <-
-  Hinflu_gene_preabsence %>% 
-    dplyr::filter(Gene == "group_2030" & CDS != "") %>% 
-    dplyr::pull(npg_run_id)
-
-long_read_non_specific_methylase_carriers <-
-  long_read_sample_df %>%
-    dplyr::filter(npg_run_id %in% non_specific_methylase_carriers)
-
-```
+Methylase: group_2030.
 
 ## Passage analysis from long-read data
 

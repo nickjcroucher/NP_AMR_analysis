@@ -1,0 +1,50 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	108	1085	+	KHCFFA_001		replication initiation protein	SO:0001217, UniRef:UniRef50_UPI000CE8EB63, UniRef:UniRef90_UPI001E4F31C3
+contig_1	cds	1269	1457	+	KHCFFA_002		type II toxin-antitoxin system RelB/DinJ family antitoxin	RefSeq:WP_005541360.1, SO:0001217, UniParc:UPI0001BA1523, UniRef:UniRef100_UPI0001BA1523, UniRef:UniRef50_UPI0001BA1523, UniRef:UniRef90_UPI0001BA1523
+contig_1	cds	1457	2119	+	KHCFFA_003		lytic transglycosylase domain-containing protein	SO:0001217, UniRef:UniRef50_UPI000A99AD90, UniRef:UniRef90_UPI00022BFC28
+contig_1	cds	2132	2464	+	KHCFFA_004		TrbC/VirB2 family protein	KEGG:K03197, SO:0001217, UniRef:UniRef50_UPI00022BFC27, UniRef:UniRef90_UPI0001BA1525
+contig_1	cds	2604	5387	+	KHCFFA_005	virB4	VirB4 family type IV secretion/conjugal transfer ATPase	EC:7.4.2.8, KEGG:K03199, SO:0001217, UniRef:UniRef50_A0A1B9N1H2, UniRef:UniRef90_UPI001E586CA6
+contig_1	cds	5474	6205	+	KHCFFA_006		Type IV secretion system proteins	KEGG:K03200, SO:0001217, UniRef:UniRef50_A0A496NA76, UniRef:UniRef90_A0A496NA76
+contig_1	cds	6213	6473	+	KHCFFA_007	trbK	Entry exclusion lipoprotein TrbK	RefSeq:WP_005547044.1, SO:0001217, UniParc:UPI00022BFC24, UniRef:UniRef100_UPI00022BFC24, UniRef:UniRef50_A0A496N8I8, UniRef:UniRef90_UPI001E29C154
+contig_1	cds	6493	7401	+	KHCFFA_008		type IV secretion system protein	KEGG:K03201, SO:0001217, UniRef:UniRef50_UPI0001BA1529, UniRef:UniRef90_UPI00022BFC23
+contig_1	cds	7414	7593	+	KHCFFA_009		lipoprotein	RefSeq:WP_233116813.1, SO:0001217, UniParc:UPI001E2FEE01, UniRef:UniRef100_UPI001E2FEE01, UniRef:UniRef50_UPI0001BA152A, UniRef:UniRef90_UPI0001BA152A
+contig_1	cds	7597	8304	+	KHCFFA_010		type IV secretion system protein	KEGG:K03203, SO:0001217, UniRef:UniRef50_UPI001F11C4C3, UniRef:UniRef90_UPI0001BA152B
+contig_1	cds	8316	9203	+	KHCFFA_011	virB9	P-type conjugative transfer protein VirB9	KEGG:K03204, SO:0001217, UniRef:UniRef50_A0A1B9N1G0, UniRef:UniRef90_UPI0001BA152C
+contig_1	cds	9214	10401	+	KHCFFA_012		TrbI/VirB10 family protein	KEGG:K03195, SO:0001217, UniRef:UniRef50_A0A496N4X2, UniRef:UniRef90_A0A496N4X2
+contig_1	cds	10463	11497	+	KHCFFA_013	virB11	P-type DNA transfer ATPase VirB11	EC:7.4.2.8, GO:0043684, GO:0044097, KEGG:K03205, SO:0001217, UniRef:UniRef50_A0A496N376, UniRef:UniRef90_A0A496N376
+contig_1	cds	11494	11790	+	KHCFFA_014		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1T0AX72, UniRef:UniRef90_UPI00022BFC1F
+contig_1	cds	11793	13694	+	KHCFFA_015		Type IV secretory system conjugative DNA transfer family protein	SO:0001217, UniRef:UniRef50_A0A496N2U7, UniRef:UniRef90_A0A496N2U7
+contig_1	cds	13707	14123	+	KHCFFA_016		cag pathogenicity island Cag12 family protein	RefSeq:WP_012825262.1, SO:0001217, UniParc:UPI0001BA1536, UniRef:UniRef100_UPI0001BA1536, UniRef:UniRef50_UPI000CE8FE43, UniRef:UniRef90_UPI00022BFC1D
+contig_1	cds	14135	14458	+	KHCFFA_017		TrbM/KikA/MpfK family conjugal transfer protein	SO:0001217, UniRef:UniRef50_UPI0001BA1537, UniRef:UniRef90_UPI0001BA1537
+contig_1	cds	14467	15036	+	KHCFFA_018		TrbM/KikA/MpfK family conjugal transfer protein	SO:0001217, UniRef:UniRef50_UPI0001BA1538, UniRef:UniRef90_UPI0001BA1538
+contig_1	cds	15197	15484	+	KHCFFA_019		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A377IYJ2, UniRef:UniRef90_A0A377IYJ2
+contig_1	cds	15505	15690	+	KHCFFA_020	rhuM	Virulence RhuM family protein	SO:0001217, UniRef:UniRef50_A0A4R2NBH6, UniRef:UniRef90_UPI000D01264A
+contig_1	cds	15693	15947	+	KHCFFA_021		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A369YFV7, UniRef:UniRef90_A0A369YFV7
+contig_1	cds	15973	16233	+	KHCFFA_022		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0008A49DD1, UniRef:UniRef90_UPI0008A49DD1
+contig_1	cds	16252	16542	+	KHCFFA_023		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1T0AXA2, UniRef:UniRef90_UPI0018A5E390
+contig_1	cds	16565	16804	+	KHCFFA_024		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00051842F9, UniRef:UniRef90_UPI00051842F9
+contig_1	cds	16853	17164	+	KHCFFA_025		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI001E5D1758, UniRef:UniRef90_UPI001E5D1758
+contig_1	cds	17194	17670	+	KHCFFA_026		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000984362E, UniRef:UniRef90_UPI0010A62F52
+contig_1	cds	17690	18259	+	KHCFFA_027		recombinase family protein	KEGG:K14060, SO:0001217, UniRef:UniRef50_UPI0013F4518C, UniRef:UniRef90_UPI0006A6CF31
+contig_1	cds	18369	18605	+	KHCFFA_028		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC19, UniRef:UniRef90_UPI00022BFC19
+contig_1	cds	18643	18882	+	KHCFFA_029		Phage protein	RefSeq:WP_111354684.1, SO:0001217, UniParc:UPI000DAB5FC9, UniRef:UniRef100_A0A369ZLP4, UniRef:UniRef50_A0A502LKR3, UniRef:UniRef90_A0A369ZLP4
+contig_1	cds	18898	19722	+	KHCFFA_030		zeta toxin family protein	SO:0001217, UniRef:UniRef50_UPI0015C5E947
+contig_1	cds	19731	22016	+	KHCFFA_031		type IA DNA topoisomerase	EC:5.6.2.1, KEGG:K03169, SO:0001217, UniRef:UniRef50_Q8VRC4, UniRef:UniRef90_UPI0006A71386
+contig_1	cds	22031	22276	+	KHCFFA_032		hypothetical protein	
+contig_1	cds	22266	22670	+	KHCFFA_033		single-stranded DNA-binding protein	SO:0001217, UniRef:UniRef50_UPI000CE848F2, UniRef:UniRef90_UPI0006A740F3
+contig_1	cds	22717	22953	-	KHCFFA_034		hypothetical protein	RefSeq:WP_012825264.1, SO:0001217, UniParc:UPI0001BA1541, UniRef:UniRef100_UPI0001BA1541, UniRef:UniRef50_UPI00022BFC91, UniRef:UniRef90_UPI00022BFC91
+contig_1	cds	23229	23384	+	KHCFFA_035		hypothetical protein	RefSeq:WP_012825265.1, SO:0001217, UniParc:UPI0001BA1542, UniRef:UniRef100_UPI0001BA1542, UniRef:UniRef50_UPI0001BA1542, UniRef:UniRef90_UPI0001BA1542
+contig_1	cds	23393	24010	+	KHCFFA_036	parA	ParA family protein	SO:0001217, UniRef:UniRef50_UPI000CE8F98C, UniRef:UniRef90_UPI00022BFE5B
+contig_1	cds	24235	25512	-	KHCFFA_037		relaxase/mobilization nuclease domain-containing protein	SO:0001217, UniRef:UniRef50_UPI001F377C49
+contig_1	cds	25512	26009	-	KHCFFA_038		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000CE8F7A6
+contig_1	cds	26180	26422	+	KHCFFA_039		hypothetical protein	RefSeq:WP_005541759.1, SO:0001217, UniParc:UPI0001BA1548, UniRef:UniRef100_UPI0001BA1548, UniRef:UniRef50_UPI0001BA1548, UniRef:UniRef90_UPI0001BA1548
+contig_1	cds	26433	27752	+	KHCFFA_040		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000CE8D352, UniRef:UniRef90_UPI00022BFC88
+contig_1	cds	27819	28610	+	KHCFFA_041		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0028EC63AB
+contig_1	cds	28674	28862	+	KHCFFA_042		hypothetical protein	RefSeq:WP_005547067.1, SO:0001217, UniParc:UPI00022BFC86, UniRef:UniRef100_UPI00022BFC86, UniRef:UniRef50_UPI000CE8F794, UniRef:UniRef90_UPI00022BFC86
+contig_1	cds	28892	30940	+	KHCFFA_043		zincin-like metallopeptidase domain-containing protein	SO:0001217, UniRef:UniRef50_UPI000CE80431, UniRef:UniRef90_UPI001E586638
+contig_1	cds	31077	31508	+	KHCFFA_044		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0001BA154C

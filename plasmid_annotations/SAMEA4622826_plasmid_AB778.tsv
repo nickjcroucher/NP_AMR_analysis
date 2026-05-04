@@ -1,0 +1,19 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	120	482	+	CFJHPM_001		Bacterial mobilisation domain-containing protein	SO:0001217, UniRef:UniRef50_Q9LAL3, UniRef:UniRef90_Q9LAL3
+contig_1	cds	479	2725	+	CFJHPM_002		Mobilization protein	SO:0001217, UniRef:UniRef50_Q9LAL4, UniRef:UniRef90_Q9LAL4
+contig_1	cds	2876	3508	+	CFJHPM_003		HEPN domain-containing protein	RefSeq:WP_120652474.1, SO:0001217, UniParc:UPI000EA94C67, UniRef:UniRef100_UPI000EA94C67, UniRef:UniRef50_UPI000EA94C67, UniRef:UniRef90_UPI000EA94C67
+contig_1	cds	3946	4170	-	CFJHPM_004		Immunity factor	RefSeq:WP_003668863.1, SO:0001217, UniParc:UPI000175490A, UniRef:UniRef100_B3CJ47, UniRef:UniRef50_B3CJ47, UniRef:UniRef90_B3CJ47
+contig_1	cds	4164	4469	-	CFJHPM_005		Bacteriocin	SO:0001217, UniRef:UniRef50_B3CJ46, UniRef:UniRef90_B3CJ46
+contig_1	cds	4574	6658	-	CFJHPM_006		Peptidase domain-containing ABC transporter	RefSeq:WP_003668867.1, SO:0001217, UniParc:UPI0002029AD7, UniRef:UniRef100_UPI0002029AD7, UniRef:UniRef50_E3HUG6, UniRef:UniRef90_Q9LAL5
+contig_1	cds	6729	7991	-	CFJHPM_007	mcbA	McbA	KEGG:K13408, SO:0001217, UniRef:UniRef50_C0J419, UniRef:UniRef90_C0J419
+contig_1	cds	8000	8242	-	CFJHPM_008		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A198UHE8
+contig_1	cds	8267	8383	-	CFJHPM_009		hypothetical protein	
+contig_1	cds	9036	9338	-	CFJHPM_010		Bacteriocin	SO:0001217, UniRef:UniRef50_A0A1E9VSW5, UniRef:UniRef90_A0A1E9VSW5
+contig_1	cds	9366	10526	-	CFJHPM_011		Cupin	SO:0001217, UniRef:UniRef50_A0A1E9VSN5, UniRef:UniRef90_A0A1E9VSN5
+contig_1	cds	10825	11460	+	CFJHPM_012		Abortive infection bacteriophage resistance protein	RefSeq:WP_120652484.1, SO:0001217, UniParc:UPI000EA9E65F, UniRef:UniRef100_UPI000EA9E65F, UniRef:UniRef50_L2F4N9, UniRef:UniRef90_A0A1T0A4J2
+contig_1	cds	11447	12757	-	CFJHPM_013		Initiator Rep protein WH1 domain-containing protein	SO:0001217, UniRef:UniRef50_Q9LAL2, UniRef:UniRef90_Q9LAL2

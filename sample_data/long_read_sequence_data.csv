@@ -1,119 +1,119 @@
-Sample,Isolate,Study,Run,Barcode_number,Barcode,Species,Project,Description
-SEANFDS14594523,267-P1A,6588,run_1,NB01,barcode01,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 1
-SEANFDS14594524,760-P1A,6588,run_1,NB02,barcode02,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 1
-SEANFDS14594525,799-P1A,6588,run_1,NB03,barcode03,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 1
-SEANFDS14594526,1212-P1A,6588,run_1,NB04,barcode04,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 1
-SEANFDS14594527,Mcat_8839,6588,run_1,NB05,barcode05,Moraxella catarrhalis,References,Moraxella catarrhalis 09B08839
-SEANFDS14594528,Mcat_632-3,6588,run_1,NB06,barcode06,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0632-3
-SEANFDS14594529,Hflu_0029-2,6588,run_1,NB07,barcode07,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0029-2
-SEANFDS14594531,267-P1B,6588,run_1,NB09,barcode09,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 2
-SEANFDS14594532,760-P1B,6588,run_1,NB10,barcode10,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 2
-SEANFDS14594533,799-P1B,6588,run_1,NB11,barcode11,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 2
-SEANFDS14594534,1212-P1B,6588,run_1,NB12,barcode12,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 2
-SEANFDS14594535,Mcat_10839,6588,run_1,NB13,barcode13,Moraxella catarrhalis,References,Moraxella catarrhalis 09B10839
-SEANFDS14594536,Mcat_652-3,6588,run_1,NB14,barcode14,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0652-3
-SEANFDS14594538,Hflu_1243-2,6588,run_1,NB16,barcode16,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1243-2
-SEANFDS14594539,267-P1C,6588,run_1,NB17,barcode17,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 3
-SEANFDS14594540,760-P1C,6588,run_1,NB18,barcode18,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 3
-SEANFDS14594541,799-P1C,6588,run_1,NB19,barcode19,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 3
-SEANFDS14594542,1212-P1C,6588,run_1,NB20,barcode20,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 3
-SEANFDS14594543,Mcat_11089,6588,run_1,NB21,barcode21,Moraxella catarrhalis,References,Moraxella catarrhalis 09B11089
-SEANFDS14594544,Mcat_657-3,6588,run_1,NB22,barcode22,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0657-3
-SEANFDS14594545,Hflu_0134-2,6588,run_1,NB23,barcode23,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0134-2
-SEANFDS14594546,Hflu_1262-2,6588,run_1,NB24,barcode24,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1262-2
-SEANFDS14594547,267-P1D,6588,run_1,NB25,barcode25,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 4
-SEANFDS14594548,760-P1D,6588,run_1,NB26,barcode26,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 4
-SEANFDS14594549,799-P1D,6588,run_1,NB27,barcode27,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 4
-SEANFDS14594550,1212-P1D,6588,run_1,NB28,barcode28,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 4
-SEANFDS14594551,Mcat_0045-2,6588,run_1,NB29,barcode29,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0045-2
-SEANFDS14594552,Mcat_760-2,6588,run_1,NB30,barcode30,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0760-2
-SEANFDS14594553,Hflu_0385-2,6588,run_1,NB31,barcode31,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0385-2
-SEANFDS14594554,Hflu_1403-2,6588,run_1,NB32,barcode32,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1403-2
-SEANFDS14594555,267-P2A,6588,run_1,NB33,barcode33,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 1
-SEANFDS14594556,760-P2A,6588,run_1,NB34,barcode34,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 1
-SEANFDS14594557,799-P2A,6588,run_1,NB35,barcode35,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 1
-SEANFDS14594558,1212-P2A,6588,run_1,NB36,barcode36,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 1
-SEANFDS14594559,Mcat_153-3,6588,run_1,NB37,barcode37,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0153-3
-SEANFDS14594560,Mcat_867-3,6588,run_1,NB38,barcode38,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0867-3
-SEANFDS14594561,Hflu_0632-2,6588,run_1,NB39,barcode39,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0632-2
-SEANFDS14594562,Hflu_1453-2,6588,run_1,NB40,barcode40,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1453-2
-SEANFDS14594563,267-P2B,6588,run_1,NB41,barcode41,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 2
-SEANFDS14594564,760-P2B,6588,run_1,NB42,barcode42,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 2
-SEANFDS14594565,799-P2B,6588,run_1,NB43,barcode43,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 2
-SEANFDS14594566,1212-P2B,6588,run_1,NB44,barcode44,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 2
-SEANFDS14594567,Mcat_245-2,6588,run_1,NB45,barcode45,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0245-2
-SEANFDS14594568,Mcat_901-2,6588,run_1,NB46,barcode46,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0901-2
-SEANFDS14594569,Hflu_0707-2,6588,run_1,NB47,barcode47,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0707-2
-SEANFDS14594570,Hflu_1482-2,6588,run_1,NB48,barcode48,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1482-2
-SEANFDS14594571,267-P2C,6588,run_1,NB49,barcode49,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 3
-SEANFDS14594572,760-P2C,6588,run_1,NB50,barcode50,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 3
-SEANFDS14594573,799-P2C,6588,run_1,NB51,barcode51,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 3
-SEANFDS14594574,1212-P2C,6588,run_1,NB52,barcode52,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 3
-SEANFDS14594575,Mcat_266-2,6588,run_1,NB53,barcode53,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0266-2
-SEANFDS14594576,Mcat_905-2,6588,run_1,NB54,barcode54,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0905-2
-SEANFDS14594577,Hflu_0762-2,6588,run_1,NB55,barcode55,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0762-2
-SEANFDS14594578,Hflu_1487-2,6588,run_1,NB56,barcode56,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1487-2
-SEANFDS14594579,267-P2D,6588,run_1,NB57,barcode57,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 4
-SEANFDS14594580,760-P2D,6588,run_1,NB58,barcode58,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 4
-SEANFDS14594581,799-P2D,6588,run_1,NB59,barcode59,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 4
-SEANFDS14594582,1212-P2D,6588,run_1,NB60,barcode60,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 4
-SEANFDS14594583,Mcat_398-2,6588,run_2,NB61,barcode61,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0389-2
-SEANFDS14594584,Mcat_1005-2,6588,run_2,NB62,barcode62,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1005-2
-SEANFDS14594585,Hflu_0764-2,6588,run_2,NB63,barcode63,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0764-2
-SEANFDS14594586,Hflu_1617-2,6588,run_2,NB64,barcode64,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1617-2
-SEANFDS14594587,267-P3A,6588,run_2,NB65,barcode65,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 1
-SEANFDS14594588,760-P3A,6588,run_2,NB66,barcode66,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 1
-SEANFDS14594589,799-P3A,6588,run_2,NB67,barcode67,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 1
-SEANFDS14594590,1212-P3A,6588,run_2,NB68,barcode68,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 1
-SEANFDS14594591,Mcat_462-2,6588,run_2,NB69,barcode69,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0462-2
-SEANFDS14594592,Mcat_1072-2,6588,run_2,NB70,barcode70,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1072-2
-SEANFDS14594593,Hflu_0879-2,6588,run_2,NB71,barcode71,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0879-2
-SEANFDS14594594,Hflu_1650-2,6588,run_2,NB72,barcode72,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1650-2
-SEANFDS14594595,267-P3B,6588,run_2,NB73,barcode73,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 2
-SEANFDS14594596,760-P3B,6588,run_2,NB74,barcode74,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 2
-SEANFDS14594597,799-P3B,6588,run_2,NB75,barcode75,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 2
-SEANFDS14594598,1212-P3B,6588,run_2,NB76,barcode76,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 2
-SEANFDS14594599,Mcat_482-3,6588,run_2,NB77,barcode77,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0482-3
-SEANFDS14594600,Mcat_1447-3,6588,run_2,NB78,barcode78,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1447-3
-SEANFDS14594601,Hflu_0889-2,6588,run_2,NB79,barcode79,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0889-3
-SEANFDS14594602,Hflu_1694-2,6588,run_2,NB80,barcode80,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1694-2
-SEANFDS14594603,267-P3C,6588,run_2,NB81,barcode81,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 3
-SEANFDS14594604,760-P3C,6588,run_2,NB82,barcode82,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 3
-SEANFDS14594605,799-P3C,6588,run_2,NB83,barcode83,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 3
-SEANFDS14594606,1212-P3C,6588,run_2,NB84,barcode84,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 3
-SEANFDS14594607,Mcat_522-2,6588,run_2,NB85,barcode85,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0522-2
-SEANFDS14594608,Mcat_1526-2,6588,run_2,NB86,barcode86,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1526-2
-SEANFDS14594609,Hflu_0909-2,6588,run_2,NB87,barcode87,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0909-2
-SEANFDS14594610,Hflu_1718-2,6588,run_2,NB88,barcode88,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1718-2
-SEANFDS14594611,267-P3D,6588,run_2,NB89,barcode89,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 4
-SEANFDS14594612,760-P3D,6588,run_2,NB90,barcode90,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 4
-SEANFDS14594613,799-P3D,6588,run_2,NB91,barcode91,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 4
-SEANFDS14594614,1212-P3D,6588,run_2,NB92,barcode92,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 4
-SEANFDS14594615,Hflu_1737-2,6588,run_2,NB93,barcode93,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1737-2
-SEANFDS14594616,Mcat_1540-3,6588,run_2,NB94,barcode94,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1540-3
-SEANFDS14594617,Hflu_1075-2,6588,run_2,NB95,barcode95,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1075-2
-SEANFDS14594618,Hflu_1793-2,6588,run_2,NB96,barcode96,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1793-2
-SEANFDS14594619,Spn_R6_recipient,6588,run_2,NB01,barcode01,Streptococcus pneumoniae,Streptococcal recombination,Streptococcus recombination recipient
-SEANFDS14594620,Strep_110.58R,6588,run_2,NB02,barcode02,Streptococcus pneumoniae,Streptococcal recombination,Streptococcus recombination donor
-SEANFDS14594621,Strep_SK673R,6588,run_2,NB03,barcode03,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
-SEANFDS14594622,Strep_SK23R,6588,run_2,NB04,barcode04,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
-SEANFDS14594623,Strep_SK142R,6588,run_2,NB05,barcode05,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
-SEANFDS14594624,Strep_SK95R,6588,run_2,NB06,barcode06,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
-SEANFDS14594625,Spn_R6_1i,6588,run_2,NB07,barcode07,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
-SEANFDS14594626,Spn_R6_1d,6588,run_2,NB08,barcode08,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
-SEANFDS14594627,Spn_R6_20i,6588,run_2,NB09,barcode09,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
-SEANFDS14594628,Spn_R6_20d,6588,run_2,NB10,barcode10,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
-SEANFDS14594629,08B02743_parental,6588,run_2,NB11,barcode11,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743
-SEANFDS14594630,08B02743_cured,6588,run_2,NB12,barcode12,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743 cured
-SEANFDS14594631,08B02743_prophage,6588,run_2,NB13,barcode13,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743 prophage system
-SEANFDS14594632,RMV4_prophage,6588,run_2,NB14,barcode14,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV4 prophage system
-SEANFDS14594633,RMV8_prophage,6588,run_2,NB15,barcode15,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV8 prophage system
-SEANFDS14594634,RMV8_hybrid_prophage,6588,run_2,NB16,barcode16,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV8 hybrid prophage system
-SEANFDS14594635,11930_ivr,6588,run_2,NB17,barcode17,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 11930 prophage system
-SEANFDS14594636,RMV7_manLMN_ko_1,6588,run_2,NB18,barcode18,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
-SEANFDS14594637,RMV7_manLMN_ko_2,6588,run_2,NB19,barcode19,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
-SEANFDS14594638,RMV7_manLMN_ko_3,6588,run_2,NB20,barcode20,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
-SEANFDS14594639,RMV7_manLMN_restored,6588,run_2,NB21,barcode21,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN restored
-SEANFDS14594640,RMV7_manL_ko_1,6588,run_2,NB22,barcode22,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL ko
-SEANFDS14594641,RMV7_manL_ko_2,6588,run_2,NB23,barcode23,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL ko
-SEANFDS14594642,RMV7_manL_restored,6588,run_2,NB24,barcode24,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL restored
+Sample,Isolate,Study,Barcode_number,Barcode,Species,Project,Description
+SEANFDS14594523,267-P1A,6588,NB01,barcode01,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 1
+SEANFDS14594524,760-P1A,6588,NB02,barcode02,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 1
+SEANFDS14594525,799-P1A,6588,NB03,barcode03,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 1
+SEANFDS14594526,1212-P1A,6588,NB04,barcode04,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 1
+SEANFDS14594527,Mcat_8839,6588,NB05,barcode05,Moraxella catarrhalis,References,Moraxella catarrhalis 09B08839
+SEANFDS14594528,Mcat_632-3,6588,NB06,barcode06,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0632-3
+SEANFDS14594529,Hflu_0029-2,6588,NB07,barcode07,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0029-2
+SEANFDS14594531,267-P1B,6588,NB09,barcode09,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 2
+SEANFDS14594532,760-P1B,6588,NB10,barcode10,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 2
+SEANFDS14594533,799-P1B,6588,NB11,barcode11,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 2
+SEANFDS14594534,1212-P1B,6588,NB12,barcode12,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 2
+SEANFDS14594535,Mcat_10839,6588,NB13,barcode13,Moraxella catarrhalis,References,Moraxella catarrhalis 09B10839
+SEANFDS14594536,Mcat_652-3,6588,NB14,barcode14,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0652-3
+SEANFDS14594538,Hflu_1243-2,6588,NB16,barcode16,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1243-2
+SEANFDS14594539,267-P1C,6588,NB17,barcode17,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 3
+SEANFDS14594540,760-P1C,6588,NB18,barcode18,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 3
+SEANFDS14594541,799-P1C,6588,NB19,barcode19,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 3
+SEANFDS14594542,1212-P1C,6588,NB20,barcode20,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 3
+SEANFDS14594543,Mcat_11089,6588,NB21,barcode21,Moraxella catarrhalis,References,Moraxella catarrhalis 09B11089
+SEANFDS14594544,Mcat_657-3,6588,NB22,barcode22,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0657-3
+SEANFDS14594545,Hflu_0134-2,6588,NB23,barcode23,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0134-2
+SEANFDS14594546,Hflu_1262-2,6588,NB24,barcode24,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1262-2
+SEANFDS14594547,267-P1D,6588,NB25,barcode25,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 1 colony 4
+SEANFDS14594548,760-P1D,6588,NB26,barcode26,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 1 colony 4
+SEANFDS14594549,799-P1D,6588,NB27,barcode27,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 1 colony 4
+SEANFDS14594550,1212-P1D,6588,NB28,barcode28,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 1 colony 4
+SEANFDS14594551,Mcat_0045-2,6588,NB29,barcode29,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0045-2
+SEANFDS14594552,Mcat_760-2,6588,NB30,barcode30,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0760-2
+SEANFDS14594553,Hflu_0385-2,6588,NB31,barcode31,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0385-2
+SEANFDS14594554,Hflu_1403-2,6588,NB32,barcode32,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1403-2
+SEANFDS14594555,267-P2A,6588,NB33,barcode33,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 1
+SEANFDS14594556,760-P2A,6588,NB34,barcode34,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 1
+SEANFDS14594557,799-P2A,6588,NB35,barcode35,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 1
+SEANFDS14594558,1212-P2A,6588,NB36,barcode36,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 1
+SEANFDS14594559,Mcat_153-3,6588,NB37,barcode37,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0153-3
+SEANFDS14594560,Mcat_867-3,6588,NB38,barcode38,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0867-3
+SEANFDS14594561,Hflu_0632-2,6588,NB39,barcode39,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0632-2
+SEANFDS14594562,Hflu_1453-2,6588,NB40,barcode40,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1453-2
+SEANFDS14594563,267-P2B,6588,NB41,barcode41,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 2
+SEANFDS14594564,760-P2B,6588,NB42,barcode42,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 2
+SEANFDS14594565,799-P2B,6588,NB43,barcode43,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 2
+SEANFDS14594566,1212-P2B,6588,NB44,barcode44,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 2
+SEANFDS14594567,Mcat_245-2,6588,NB45,barcode45,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0245-2
+SEANFDS14594568,Mcat_901-2,6588,NB46,barcode46,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0901-2
+SEANFDS14594569,Hflu_0707-2,6588,NB47,barcode47,Haemophilus influenzae,References,Haemophilus influenzae  PCV-C-0707-2
+SEANFDS14594570,Hflu_1482-2,6588,NB48,barcode48,Haemophilus influenzae,References,Haemophilus influenzae  PCV-C-1482-2
+SEANFDS14594571,267-P2C,6588,NB49,barcode49,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 3
+SEANFDS14594572,760-P2C,6588,NB50,barcode50,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 3
+SEANFDS14594573,799-P2C,6588,NB51,barcode51,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 3
+SEANFDS14594574,1212-P2C,6588,NB52,barcode52,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 3
+SEANFDS14594575,Mcat_266-2,6588,NB53,barcode53,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0266-2
+SEANFDS14594576,Mcat_905-2,6588,NB54,barcode54,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0905-2
+SEANFDS14594577,Hflu_0762-2,6588,NB55,barcode55,Haemophilus influenzae,References,Haemophilus influenzae  PCV-C-0762-2
+SEANFDS14594578,Hflu_1487-2,6588,NB56,barcode56,Haemophilus influenzae,References,Haemophilus influenzae  PCV-C-1487-2
+SEANFDS14594579,267-P2D,6588,NB57,barcode57,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 2 colony 4
+SEANFDS14594580,760-P2D,6588,NB58,barcode58,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 2 colony 4
+SEANFDS14594581,799-P2D,6588,NB59,barcode59,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 2 colony 4
+SEANFDS14594582,1212-P2D,6588,NB60,barcode60,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 2 colony 4
+SEANFDS14594583,Mcat_398-2,6588,NB61,barcode61,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0389-2
+SEANFDS14594584,Mcat_1005-2,6588,NB62,barcode62,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1005-2
+SEANFDS14594585,Hflu_0764-2,6588,NB63,barcode63,Haemophilus influenzae,References,Haemophilus influenzae  PCV-C-0764-2
+SEANFDS14594586,Hflu_1617-2,6588,NB64,barcode64,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1617-2
+SEANFDS14594587,267-P3A,6588,NB65,barcode65,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 1
+SEANFDS14594588,760-P3A,6588,NB66,barcode66,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 1
+SEANFDS14594589,799-P3A,6588,NB67,barcode67,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 1
+SEANFDS14594590,1212-P3A,6588,NB68,barcode68,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 1
+SEANFDS14594591,Mcat_462-2,6588,NB69,barcode69,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0462-2
+SEANFDS14594592,Mcat_1072-2,6588,NB70,barcode70,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1072-2
+SEANFDS14594593,Hflu_0879-2,6588,NB71,barcode71,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0879-2
+SEANFDS14594594,Hflu_1650-2,6588,NB72,barcode72,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1650-2
+SEANFDS14594595,267-P3B,6588,NB73,barcode73,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 2
+SEANFDS14594596,760-P3B,6588,NB74,barcode74,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 2
+SEANFDS14594597,799-P3B,6588,NB75,barcode75,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 2
+SEANFDS14594598,1212-P3B,6588,NB76,barcode76,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 2
+SEANFDS14594599,Mcat_482-3,6588,NB77,barcode77,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0482-3
+SEANFDS14594600,Mcat_1447-3,6588,NB78,barcode78,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1447-3
+SEANFDS14594601,Hflu_0889-2,6588,NB79,barcode79,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0889-3
+SEANFDS14594602,Hflu_1694-2,6588,NB80,barcode80,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1694-2
+SEANFDS14594603,267-P3C,6588,NB81,barcode81,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 3
+SEANFDS14594604,760-P3C,6588,NB82,barcode82,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 3
+SEANFDS14594605,799-P3C,6588,NB83,barcode83,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 3
+SEANFDS14594606,1212-P3C,6588,NB84,barcode84,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 3
+SEANFDS14594607,Mcat_522-2,6588,NB85,barcode85,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-0522-2
+SEANFDS14594608,Mcat_1526-2,6588,NB86,barcode86,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1526-2
+SEANFDS14594609,Hflu_0909-2,6588,NB87,barcode87,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-0909-2
+SEANFDS14594610,Hflu_1718-2,6588,NB88,barcode88,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1718-2
+SEANFDS14594611,267-P3D,6588,NB89,barcode89,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0267-2 day 3 colony 4
+SEANFDS14594612,760-P3D,6588,NB90,barcode90,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0760-2 day 3 colony 4
+SEANFDS14594613,799-P3D,6588,NB91,barcode91,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-0799-2 day 3 colony 4
+SEANFDS14594614,1212-P3D,6588,NB92,barcode92,Moraxella catarrhalis,Moraxella passage,Moraxella catarrhalis PCV-C-1212-2 day 3 colony 4
+SEANFDS14594615,Hflu_1737-2,6588,NB93,barcode93,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1737-2
+SEANFDS14594616,Mcat_1540-3,6588,NB94,barcode94,Moraxella catarrhalis,References,Moraxella catarrhalis PCV-C-1540-3
+SEANFDS14594617,Hflu_1075-2,6588,NB95,barcode95,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1075-2
+SEANFDS14594618,Hflu_1793-2,6588,NB96,barcode96,Haemophilus influenzae,References,Haemophilus influenzae PCV-C-1793-2
+SEANFDS14594619,Spn_R6_recipient,6588,NB01,barcode01,Streptococcus pneumoniae,Streptococcal recombination,Streptococcus recombination recipient
+SEANFDS14594620,Strep_110.58R,6588,NB02,barcode02,Streptococcus pneumoniae,Streptococcal recombination,Streptococcus recombination donor
+SEANFDS14594621,Strep_SK673R,6588,NB03,barcode03,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
+SEANFDS14594622,Strep_SK23R,6588,NB04,barcode04,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
+SEANFDS14594623,Strep_SK142R,6588,NB05,barcode05,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
+SEANFDS14594624,Strep_SK95R,6588,NB06,barcode06,Streptococcus,Streptococcal recombination,Streptococcus recombination donor
+SEANFDS14594625,Spn_R6_1i,6588,NB07,barcode07,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
+SEANFDS14594626,Spn_R6_1d,6588,NB08,barcode08,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
+SEANFDS14594627,Spn_R6_20i,6588,NB09,barcode09,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
+SEANFDS14594628,Spn_R6_20d,6588,NB10,barcode10,Streptococcus pneumoniae,Indel recombination,Pneumococcus recombination recipient
+SEANFDS14594629,08B02743_parental,6588,NB11,barcode11,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743
+SEANFDS14594630,08B02743_cured,6588,NB12,barcode12,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743 cured
+SEANFDS14594631,08B02743_prophage,6588,NB13,barcode13,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 08B02743 prophage system
+SEANFDS14594632,RMV4_prophage,6588,NB14,barcode14,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV4 prophage system
+SEANFDS14594633,RMV8_prophage,6588,NB15,barcode15,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV8 prophage system
+SEANFDS14594634,RMV8_hybrid_prophage,6588,NB16,barcode16,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae RMV8 hybrid prophage system
+SEANFDS14594635,11930_ivr,6588,NB17,barcode17,Streptococcus pneumoniae,Prophage recombination,Streptococcus pneumoniae 11930 prophage system
+SEANFDS14594636,RMV7_manLMN_ko_1,6588,NB18,barcode18,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
+SEANFDS14594637,RMV7_manLMN_ko_2,6588,NB19,barcode19,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
+SEANFDS14594638,RMV7_manLMN_ko_3,6588,NB20,barcode20,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN ko
+SEANFDS14594639,RMV7_manLMN_restored,6588,NB21,barcode21,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manLMN restored
+SEANFDS14594640,RMV7_manL_ko_1,6588,NB22,barcode22,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL ko
+SEANFDS14594641,RMV7_manL_ko_2,6588,NB23,barcode23,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL ko
+SEANFDS14594642,RMV7_manL_restored,6588,NB24,barcode24,Streptococcus pneumoniae,RMV7 transformation,Streptococcus pneumoniae RMV7 manL restored

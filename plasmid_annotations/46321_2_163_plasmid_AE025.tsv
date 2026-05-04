@@ -1,0 +1,47 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	197	739	+	NHJLGK_001		J domain-containing protein	SO:0001217, UniRef:UniRef50_A0A1V3J056, UniRef:UniRef90_UPI000DD48974
+contig_1	cds	829	1113	+	NHJLGK_002		DUF1456 domain-containing protein	RefSeq:WP_105896503.1, SO:0001217, UniParc:UPI000D017EA3, UniRef:UniRef100_UPI000D017EA3, UniRef:UniRef50_UPI0003ABF6F3, UniRef:UniRef90_UPI000D017EA3
+contig_1	cds	1331	1663	+	NHJLGK_003		Hemophilus-specific protein	RefSeq:WP_105896502.1, SO:0001217, UniParc:UPI000D019427, UniRef:UniRef100_UPI000D019427, UniRef:UniRef50_F4HBX7, UniRef:UniRef90_UPI000D019427
+contig_1	cds	1729	2382	+	NHJLGK_004		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D011CD8, UniRef:UniRef90_UPI000D011CD8
+contig_1	cds	2462	3118	+	NHJLGK_005	parA	ParA family protein	RefSeq:WP_112075779.1, SO:0001217, UniParc:UPI000DD3F020, UniRef:UniRef100_UPI000DD3F020, UniRef:UniRef50_A0A1V3KIX1, UniRef:UniRef90_UPI000DD3F020
+contig_1	cds	3118	3552	+	NHJLGK_006		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D018D60, UniRef:UniRef90_UPI000D018D60
+contig_1	cds	3624	3863	+	NHJLGK_007		hypothetical protein	RefSeq:WP_105896498.1, SO:0001217, UniParc:UPI000D01868D, UniRef:UniRef100_UPI000D01868D, UniRef:UniRef50_A0A1A7QBA4, UniRef:UniRef90_UPI000D01868D
+contig_1	cds	3872	4954	+	NHJLGK_008		zeta toxin family protein	EC:2.7.1.176, KEGG:K16214, SO:0001217, UniRef:UniRef50_UPI000E577196, UniRef:UniRef90_UPI000E577196
+contig_1	cds	5047	5622	-	NHJLGK_009		Resolvase/integrase-like protein	KEGG:K14060, SO:0001217, UniRef:UniRef50_A0A448PZD2, UniRef:UniRef90_A0A448PZD2
+contig_1	cds	5615	5815	-	NHJLGK_010		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D01E72B, UniRef:UniRef90_UPI000D01E72B
+contig_1	cds	6013	6246	-	NHJLGK_011		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000DD32551, UniRef:UniRef90_UPI000DD32551
+contig_1	cds	6261	6548	-	NHJLGK_012		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A377IYI6, UniRef:UniRef90_UPI001EF8B65C
+contig_1	cds	6574	7128	-	NHJLGK_013		hypothetical protein	
+contig_1	cds	7665	7787	+	NHJLGK_014		hypothetical protein	
+contig_1	cds	8005	8211	+	NHJLGK_015		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D021E66, UniRef:UniRef90_UPI000D021E66
+contig_1	cds	8309	8653	-	NHJLGK_016		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D01EC3A, UniRef:UniRef90_UPI000D01EC3A
+contig_1	cds	8656	9393	-	NHJLGK_017		hypothetical protein	RefSeq:WP_105896490.1, SO:0001217, UniParc:UPI000D01F0A0, UniRef:UniRef100_UPI000D01F0A0, UniRef:UniRef50_Q8VRB8, UniRef:UniRef90_UPI000D01F0A0
+contig_1	cds	9586	10338	-	NHJLGK_018		TraL(RP4)-like protein	SO:0001217, UniRef:UniRef50_M1EVA3, UniRef:UniRef90_Q8VRB9
+contig_1	cds	10341	10808	-	NHJLGK_019		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A9X4SJ54, UniRef:UniRef90_Q8VRC0
+contig_1	cds	11188	11535	+	NHJLGK_020		putative relaxosome component	SO:0001217, UniRef:UniRef50_Q8VRC1, UniRef:UniRef90_Q8VRC1
+contig_1	cds	11525	14866	+	NHJLGK_021		Relaxase	SO:0001217, UniRef:UniRef50_A0A9X4PDX9, UniRef:UniRef90_Q8VRC2
+contig_1	cds	15083	15565	+	NHJLGK_022		AbiQ-like protein	KEGG:K19167, RefSeq:WP_105896486.1, SO:0001217, UniParc:UPI000D01A8B1, UniRef:UniRef100_UPI000D01A8B1, UniRef:UniRef50_E8KF34, UniRef:UniRef90_Q8VRC3
+contig_1	cds	15601	17853	-	NHJLGK_023		DNA topoisomerase	EC:5.6.2.1, KEGG:K03169, SO:0001217, UniRef:UniRef50_Q8VRC4, UniRef:UniRef90_Q8VRC4
+contig_1	cds	17866	18456	-	NHJLGK_024		hypothetical protein	SO:0001217, UniRef:UniRef50_A0AAW8CH91
+contig_1	cds	18555	18980	-	NHJLGK_025		Single-stranded DNA-binding protein	SO:0001217, UniRef:UniRef50_Q8VRC5
+contig_1	cds	18964	19131	-	NHJLGK_026		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D4E1245, UniRef:UniRef90_UPI000D4E1245
+contig_1	cds	19141	19803	-	NHJLGK_027		TrbM-like protein	SO:0001217, UniRef:UniRef50_A0A1T0AX12, UniRef:UniRef90_Q8VRC6
+contig_1	cds	19814	21646	-	NHJLGK_028		TraK-like protein	EC:7.4.2.8, KEGG:K03205, SO:0001217, UniRef:UniRef50_A0A1V3IW55, UniRef:UniRef90_Q8VRC7
+contig_1	cds	21656	22714	-	NHJLGK_029	virB11	P-type DNA transfer ATPase VirB11	GO:0043684, GO:0044097, SO:0001217, UniRef:UniRef50_Q8VRC8, UniRef:UniRef90_Q8VRC8
+contig_1	cds	22729	23910	-	NHJLGK_030		type IV secretion system protein VirB10	KEGG:K03195, SO:0001217, UniRef:UniRef50_A0A1V3IWQ2, UniRef:UniRef90_UPI0023DDB8B5
+contig_1	cds	23903	24679	-	NHJLGK_031		TrbG/VirB9 family P-type conjugative transfer protein	KEGG:K03204, SO:0001217, UniRef:UniRef50_Q8VRD0, UniRef:UniRef90_UPI000D01F8B4
+contig_1	cds	24687	25469	-	NHJLGK_032		TraE/VirB8-like protein	KEGG:K03203, SO:0001217, UniRef:UniRef50_A0A9X4PC34, UniRef:UniRef90_Q8VRD1
+contig_1	cds	25651	26634	-	NHJLGK_033		type IV secretion system protein	KEGG:K03201, SO:0001217, UniRef:UniRef50_UPI0018901CA5, UniRef:UniRef90_UPI00288A40DC
+contig_1	cds	26648	27337	-	NHJLGK_034		type IV secretion system protein	KEGG:K03200, SO:0001217, UniRef:UniRef50_A0A1T0AX86, UniRef:UniRef90_UPI00288A3979
+contig_1	cds	27353	29767	-	NHJLGK_035		TraB/VirB4-like protein	SO:0001217, UniRef:UniRef50_Q8VRD5, UniRef:UniRef90_Q8VRD5
+contig_1	cds	29739	30095	-	NHJLGK_036		TraA/VirB3-like protein	RefSeq:WP_105892268.1, SO:0001217, UniParc:UPI000D015116, UniRef:UniRef100_UPI000D015116, UniRef:UniRef50_A0A1V3KKJ0, UniRef:UniRef90_Q8VRD6
+contig_1	cds	30178	30492	-	NHJLGK_037		TraC-like protein	SO:0001217, UniRef:UniRef50_Q8VRD7, UniRef:UniRef90_Q8VRD7
+contig_1	cds	30511	31194	-	NHJLGK_038		TraB-like protein	SO:0001217, UniRef:UniRef50_A0A1V3IX29, UniRef:UniRef90_Q8VRD8
+contig_1	cds	31313	31612	-	NHJLGK_039		Lipoprotein	SO:0001217, UniRef:UniRef50_A0A380U1F1
+contig_1	cds	31609	31830	-	NHJLGK_040		Repressor-like protein	SO:0001217, UniRef:UniRef50_Q8VRE0, UniRef:UniRef90_Q8VRE0
+contig_1	cds	32393	33409	+	NHJLGK_041		replication protein	SO:0001217, UniRef:UniRef50_Q8VRE1, UniRef:UniRef90_UPI000D01D112

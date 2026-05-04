@@ -1,0 +1,9 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	390	3275	-	LNLOEE_01		Tn3 family transposase	COG:COG4644, COG:X, GO:0004803, SO:0001217, UniRef:UniRef50_K9D0U3, UniRef:UniRef90_A0A9W4QEU4
+contig_1	cds	3401	4015	+	LNLOEE_02	spoIVCA	DNA-invertase hin	COG:COG1961, COG:L, KEGG:K14060, RefSeq:WP_000904906.1, SO:0001217, UniParc:UPI000050D8FD, UniRef:UniRef100_A0A0B1HY63, UniRef:UniRef50_A0A6P4J2E9, UniRef:UniRef90_A0A0B1HY63
+contig_1	ncRNA	4089	4158	-	LNLOEE_03	RNA-OUT	RNA-OUT	RFAM:RF00240, SO:0000655

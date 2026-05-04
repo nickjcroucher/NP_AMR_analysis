@@ -1,0 +1,51 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	185	1162	+	NMLFHK_001		replication initiation protein	SO:0001217, UniRef:UniRef50_UPI000CE8EB63, UniRef:UniRef90_UPI001E4F31C3
+contig_1	cds	1345	1533	+	NMLFHK_002		type II toxin-antitoxin system RelB/DinJ family antitoxin	RefSeq:WP_005541360.1, SO:0001217, UniParc:UPI0001BA1523, UniRef:UniRef100_UPI0001BA1523, UniRef:UniRef50_UPI0001BA1523, UniRef:UniRef90_UPI0001BA1523
+contig_1	cds	1533	2195	+	NMLFHK_003		lytic transglycosylase domain-containing protein	RefSeq:WP_005541361.1, SO:0001217, UniParc:UPI0001BA1524, UniRef:UniRef100_UPI0001BA1524, UniRef:UniRef50_UPI000A99AD90, UniRef:UniRef90_UPI00022BFC28
+contig_1	cds	2208	2540	+	NMLFHK_004		TrbC/VirB2 family protein	KEGG:K03197, RefSeq:WP_005541362.1, SO:0001217, UniParc:UPI0001BA1525, UniRef:UniRef100_UPI0001BA1525, UniRef:UniRef50_UPI00022BFC27, UniRef:UniRef90_UPI0001BA1525
+contig_1	cds	2690	5473	+	NMLFHK_005	virB4	VirB4 family type IV secretion/conjugal transfer ATPase	EC:7.4.2.8, KEGG:K03199, SO:0001217, UniRef:UniRef50_A0A1B9N1H2, UniRef:UniRef90_UPI001E586CA6
+contig_1	cds	5559	6290	+	NMLFHK_006		Type IV secretion system proteins	KEGG:K03200, SO:0001217, UniRef:UniRef50_A0A496NA76, UniRef:UniRef90_A0A496NA76
+contig_1	cds	6298	6558	+	NMLFHK_007	trbK	Entry exclusion lipoprotein TrbK	RefSeq:WP_252346377.1, SO:0001217, UniParc:UPI00207B6722, UniRef:UniRef100_UPI00207B6722, UniRef:UniRef50_A0A496N8I8, UniRef:UniRef90_A0A496N8I8
+contig_1	cds	6578	7486	+	NMLFHK_008		type IV secretion system protein	SO:0001217, UniRef:UniRef50_UPI0001BA1529
+contig_1	cds	7499	7678	+	NMLFHK_009		lipoprotein	RefSeq:WP_233116813.1, SO:0001217, UniParc:UPI001E2FEE01, UniRef:UniRef100_UPI001E2FEE01, UniRef:UniRef50_UPI0001BA152A, UniRef:UniRef90_UPI0001BA152A
+contig_1	cds	7682	8389	+	NMLFHK_010		type IV secretion system protein	KEGG:K03203, SO:0001217, UniRef:UniRef50_UPI001F11C4C3, UniRef:UniRef90_UPI0001BA152B
+contig_1	cds	8401	9288	+	NMLFHK_011	virB9	P-type conjugative transfer protein VirB9	KEGG:K03204, SO:0001217, UniRef:UniRef50_A0A1B9N1G0, UniRef:UniRef90_UPI0001BA152C
+contig_1	cds	9299	10483	+	NMLFHK_012		TrbI/VirB10 family protein	KEGG:K03195, SO:0001217, UniRef:UniRef50_A0A496N4X2, UniRef:UniRef90_A0A496N4X2
+contig_1	cds	10548	11582	+	NMLFHK_013	virB11	P-type DNA transfer ATPase VirB11	EC:7.4.2.8, GO:0043684, GO:0044097, KEGG:K03205, SO:0001217, UniRef:UniRef50_A0A496N376, UniRef:UniRef90_A0A496N376
+contig_1	cds	11579	11992	+	NMLFHK_014		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI000D006C23, UniRef:UniRef90_UPI001E5339A5
+contig_1	cds	12004	12384	+	NMLFHK_015		hypothetical protein	RefSeq:WP_005540144.1, SO:0001217, UniParc:UPI0001BA1534, UniRef:UniRef100_UPI0001BA1534, UniRef:UniRef50_A0A496N2V0, UniRef:UniRef90_A0A496N2V0
+contig_1	cds	12377	14278	+	NMLFHK_016		Type IV secretory system conjugative DNA transfer family protein	SO:0001217, UniRef:UniRef50_A0A496N2U7, UniRef:UniRef90_A0A496N2U7
+contig_1	cds	14291	14707	+	NMLFHK_017		cag pathogenicity island Cag12 family protein	RefSeq:WP_012825262.1, SO:0001217, UniParc:UPI0001BA1536, UniRef:UniRef100_UPI0001BA1536, UniRef:UniRef50_UPI000CE8FE43, UniRef:UniRef90_UPI00022BFC1D
+contig_1	cds	14719	15042	+	NMLFHK_018		TrbM/KikA/MpfK family conjugal transfer protein	RefSeq:WP_005540141.1, SO:0001217, UniParc:UPI0001BA1537, UniRef:UniRef100_UPI0001BA1537, UniRef:UniRef50_UPI0001BA1537, UniRef:UniRef90_UPI0001BA1537
+contig_1	cds	15051	15620	+	NMLFHK_019		TrbM/KikA/MpfK family conjugal transfer protein	RefSeq:WP_005540140.1, SO:0001217, UniParc:UPI0001BA1538, UniRef:UniRef100_UPI0001BA1538, UniRef:UniRef50_UPI0001BA1538, UniRef:UniRef90_UPI0001BA1538
+contig_1	cds	15787	16281	+	NMLFHK_020		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A2M8RV93, UniRef:UniRef90_A0A1X9ZDK6
+contig_1	cds	16353	16535	-	NMLFHK_021		hypothetical protein	
+contig_1	cds	16727	16855	+	NMLFHK_022		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A377IYR5, UniRef:UniRef90_A0A377IYR5
+contig_1	cds	16860	17144	+	NMLFHK_023		hypothetical protein	
+contig_1	cds	17157	17729	+	NMLFHK_024		recombinase family protein	KEGG:K14060, SO:0001217, UniRef:UniRef50_UPI0013F4518C, UniRef:UniRef90_UPI0006A6CF31
+contig_1	cds	17852	18091	+	NMLFHK_025		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1A7QBA4
+contig_1	cds	18100	18942	+	NMLFHK_026		zeta toxin family protein	SO:0001217, UniRef:UniRef50_UPI000E577196
+contig_1	cds	18954	21239	+	NMLFHK_027		type IA DNA topoisomerase	EC:5.6.2.1, KEGG:K03169, SO:0001217, UniRef:UniRef50_Q8VRC4, UniRef:UniRef90_UPI0006A71386
+contig_1	cds	21254	21484	+	NMLFHK_028		hypothetical protein	
+contig_1	cds	21481	21957	+	NMLFHK_029		DUF2726 domain-containing protein	SO:0001217, UniRef:UniRef50_UPI0028DC4F1A, UniRef:UniRef90_UPI00022BFC15
+contig_1	cds	22000	22404	+	NMLFHK_030		single-stranded DNA-binding protein	RefSeq:WP_012825263.1, SO:0001217, UniParc:UPI0001BA1540, UniRef:UniRef100_UPI0001BA1540, UniRef:UniRef50_UPI000CE848F2, UniRef:UniRef90_UPI0006A740F3
+contig_1	cds	22451	22687	-	NMLFHK_031		hypothetical protein	RefSeq:WP_012825264.1, SO:0001217, UniParc:UPI0001BA1541, UniRef:UniRef100_UPI0001BA1541, UniRef:UniRef50_UPI00022BFC91, UniRef:UniRef90_UPI00022BFC91
+contig_1	cds	22964	23119	+	NMLFHK_032		hypothetical protein	RefSeq:WP_012825265.1, SO:0001217, UniParc:UPI0001BA1542, UniRef:UniRef100_UPI0001BA1542, UniRef:UniRef50_UPI0001BA1542, UniRef:UniRef90_UPI0001BA1542
+contig_1	cds	23128	23745	+	NMLFHK_033	parA	ParA family protein	SO:0001217, UniRef:UniRef50_UPI000CE8F98C, UniRef:UniRef90_UPI00022BFE5B
+contig_1	cds	23747	23959	+	NMLFHK_034		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC8F, UniRef:UniRef90_UPI00022BFC8F
+contig_1	cds	24330	24686	+	NMLFHK_035		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI00022BFC8E, UniRef:UniRef90_UPI00022BFC8E
+contig_1	cds	24693	25976	-	NMLFHK_036		relaxase/mobilization nuclease domain-containing protein	SO:0001217, UniRef:UniRef50_UPI001F377C49, UniRef:UniRef90_UPI001F377C49
+contig_1	cds	25984	26484	-	NMLFHK_037	copG	CopG family transcriptional regulator	SO:0001217, UniRef:UniRef50_A0A1B8PF41, UniRef:UniRef90_UPI0001BA1547
+contig_1	cds	26665	26907	+	NMLFHK_038		hypothetical protein	RefSeq:WP_005541759.1, SO:0001217, UniParc:UPI0001BA1548, UniRef:UniRef100_UPI0001BA1548, UniRef:UniRef50_UPI0001BA1548, UniRef:UniRef90_UPI0001BA1548
+contig_1	cds	26918	28237	+	NMLFHK_039		hypothetical protein	RefSeq:WP_005541762.1, SO:0001217, UniParc:UPI0001BA1549, UniRef:UniRef100_UPI0001BA1549, UniRef:UniRef50_UPI000CE8D352, UniRef:UniRef90_UPI00022BFC88
+contig_1	cds	28262	29725	+	NMLFHK_040		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0001BA154A, UniRef:UniRef90_UPI0001BA154A
+contig_1	cds	29786	29974	+	NMLFHK_041		hypothetical protein	RefSeq:WP_005547067.1, SO:0001217, UniParc:UPI00022BFC86, UniRef:UniRef100_UPI00022BFC86, UniRef:UniRef50_UPI000CE8F794, UniRef:UniRef90_UPI00022BFC86
+contig_1	cds	30004	32052	+	NMLFHK_042		zincin-like metallopeptidase domain-containing protein	SO:0001217, UniRef:UniRef50_UPI000CE80431, UniRef:UniRef90_UPI001E586638
+contig_1	cds	32172	32621	+	NMLFHK_043		hypothetical protein	SO:0001217, UniRef:UniRef50_UPI0001BA154C, UniRef:UniRef90_UPI0001BA154C
+contig_1	cds	32758	33174	+	NMLFHK_044		hypothetical protein	SO:0001217, UniRef:UniRef50_Q7VPC5, UniRef:UniRef90_UPI001E29EC8C
+contig_1	oriV	33175	34139	?			origin of replication	

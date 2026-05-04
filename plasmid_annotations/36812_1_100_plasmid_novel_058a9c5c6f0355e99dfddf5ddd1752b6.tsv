@@ -1,0 +1,11 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	54	293	-	GLOAPC_01		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1A7QBA4
+contig_1	cds	319	507	-	GLOAPC_02		hypothetical protein	PFAM:PF24749.2, SO:0001217, UniRef:UniRef50_A0A369ZPG7, UniRef:UniRef90_UPI0012DB000A
+contig_1	cds	513	1505	-	GLOAPC_03		Replicase A	SO:0001217, UniRef:UniRef50_I2A693
+contig_1	cds	2143	2649	-	GLOAPC_04		hypothetical protein	SO:0001217, UniRef:UniRef50_A0A1B8PEY6, UniRef:UniRef90_A0A1B8PEY6
+contig_1	cds	2730	3230	-	GLOAPC_05	copG	CopG family transcriptional regulator	SO:0001217, UniRef:UniRef50_A0A1B8PF41, UniRef:UniRef90_A0A1B8PF41

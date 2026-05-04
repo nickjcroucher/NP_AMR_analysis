@@ -1,0 +1,15 @@
+# Annotated with Bakta
+# Software: v1.12.0
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	234	554	+	ANCKCK_01	hmoA	Antibiotic biosynthesis monooxygenase	COG:COG2329, COG:H, RefSeq:WP_000562370.1, SO:0001217, UniParc:UPI00000DA0D3, UniRef:UniRef100_Q1A2K8, UniRef:UniRef50_Q1A2K8, UniRef:UniRef90_Q1A2K8
+contig_1	cds	547	933	+	ANCKCK_02	aCTx2	ACT domain-containing protein	COG:COG4747, COG:R, RefSeq:WP_000460651.1, SO:0001217, UniParc:UPI00000D139B, UniRef:UniRef100_B1VCF2, UniRef:UniRef50_K8AJ79, UniRef:UniRef90_B1VCF2
+contig_1	cds	941	1627	+	ANCKCK_03	arsR	Transcriptional regulator	COG:COG0640, COG:K, RefSeq:WP_001284954.1, SO:0001217, UniParc:UPI00000BEFC6, UniRef:UniRef100_Q1A2K6, UniRef:UniRef50_Q1A2K6, UniRef:UniRef90_Q1A2K6
+contig_1	cds	1605	2228	-	ANCKCK_04	tetR(B)	tetracycline resistance transcriptional repressor TetR(B)	BlastRules:WP_000088605, COG:COG1309, COG:K, GO:0000976, GO:0003700, GO:0045892, GO:0046677, GO:0046872, KEGG:K18476, RefSeq:WP_000088605.1, SO:0001217, UniParc:UPI0000000D97, UniRef:UniRef100_P04483, UniRef:UniRef50_P0ACT4, UniRef:UniRef90_P04483
+contig_1	cds	2310	3515	+	ANCKCK_05	tet(B)	tetracycline efflux MFS transporter Tet(B)	COG:COG2814, COG:G, GO:0005886, GO:0008493, GO:0015297, GO:0015904, GO:0016020, GO:0022857, GO:0046677, GO:0055085, KEGG:K08151, NCBIProtein:WP_002244796.1, RefSeq:WP_002244796.1, SO:0001217, UniParc:UPI00000BCA74, UniRef:UniRef100_X5EN66, UniRef:UniRef50_P02980, UniRef:UniRef90_P02980
+contig_1	cds	3628	4296	-	ANCKCK_06	tetC	tetracyline resistance-associated transcriptional repressor TetC	COG:COG1309, COG:K, GO:0003677, SO:0001217, UniParc:UPI00000B7027, UniRef:UniRef100_Q6QR70, UniRef:UniRef50_P28815, UniRef:UniRef90_P28815
+contig_1	cds	4309	4725	+	ANCKCK_07	tetD	Transposon Tn10 TetD protein	COG:COG2207, COG:K, GO:0003700, GO:0043565, RefSeq:WP_000275180.1, SO:0001217, UniParc:UPI00000BEFBF, UniRef:UniRef100_Q6QR69, UniRef:UniRef50_P28816, UniRef:UniRef90_P28816
+contig_2	cds	118	1065	+	ANCKCK_08	tnp	IS30 family ISAeca1 transposase	COG:COG2826, COG:X, GO:0004803, IS:ISAeca1, RefSeq:WP_012564931.1, SO:0001217, UniParc:UPI00002555E1, UniRef:UniRef100_A0A729RVT0, UniRef:UniRef50_A0A432W514, UniRef:UniRef90_A0A6M4YFY5
+contig_2	cds	1228	1869	+	ANCKCK_09	catA2	type A-2 chloramphenicol O-acetyltransferase CatII	COG:COG4845, COG:V, EC:2.3.1.28, GO:0008811, GO:0046677, KEGG:K19271, NCBIProtein:WP_011751353.1, RefSeq:WP_011751353.1, SO:0001217, UniParc:UPI0000055EA0, UniRef:UniRef100_Q8RQP2, UniRef:UniRef50_P00484, UniRef:UniRef90_P22615
