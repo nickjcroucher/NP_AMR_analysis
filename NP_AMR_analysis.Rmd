@@ -42,6 +42,13 @@ require(SummarizedExperiment)
 require(dendextend)
 require(ggdendro)
 require(umap)
+require(data.table)
+library(dplyr)
+library(tidyr)
+require(pheatmap)
+require(ggplot2)
+require(viridis)
+require(gt)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -1767,9 +1774,131 @@ for f in *fasta; do echo -en "${f}\t"; grep -v ">" ${f} | tr -d "\n" | wc -c; do
 
 ```
 
+Read in the gene presence/absence matrix for *H. influenzae*:
+
+```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
+
+hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
+
+# if (identical(Sys.getenv("CI"), "true")) {
+#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
+# }
+
+tmp_dir  <- tempdir()
+hflu_fn <- "Hflu_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, hflu_fn)
+
+archive::archive_extract(
+  hflu_tar,
+  file = hflu_fn,
+  dir  = tmp_dir
+)
+
+Hinflu_gene_preabsence <-
+  read.csv(
+    tmp_path,
+    header = TRUE,
+    comment.char = "",
+    check.names = FALSE,
+    sep = ","
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+      names_to = "npg_run_id",
+      values_to = "CDS"
+    )
+
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
+
+if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+  stop("Hflu Panaroo not run on correct isolate set")
+}
+
+```
+
+### Pangenome curve for *H. influenzae*
+
+TO DO
+
+```{r Hflu downsampling for CI, cache = FALSE}
+
+if (identical(Sys.getenv("CI"), "true")) {
+  
+  message("CI environment detected: memory management commands")
+  Hinflu_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
+}
+
+```
+
+### Analysis of *M. catarrhalis* gene content
+
+``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
+
+mkdir -p Moraxella_panaroo_result
+panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
+panaroo -i *.gff -o Moraxella_panaroo_result --clean-mode moderate --merge_paralogs --remove-invalid-genes
+
+```
+
+Read in the gene presence/absence matrix:
+
+```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
+
+mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
+
+# if (identical(Sys.getenv("CI"), "true")) {
+#   mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
+# }
+
+tmp_dir  <- tempdir()
+mcat_fn <- "Mcat_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, mcat_fn)
+
+archive::archive_extract(
+  mcat_tar,
+  file = mcat_fn,
+  dir  = tmp_dir
+)
+
+```
+
+``` {r Process archive, cache = FALSE}
+
+Mcat_gene_preabsence <- read.csv(
+  tmp_path,
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+  )
+
+included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
+
+if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
+  stop("Mcat Panaroo not run on correct isolate set")
+}
+
+```
+
 We plot the overall size distribution of the plasmids:
 
 ``` {r Load size and clustering of plasmid sequences }
+
 
 # For checking no QC failures are analysed
 expected_hflu <- Hflu_filter$npg_run_id
@@ -2470,6 +2599,1072 @@ long_read_non_specific_methylase_carriers <-
 
 Also a passage was run of four isolates. Each was started from a single colony on THY. Each was grown for 24 h in 10 mL Mix media. Successive inoculations used 100 uL. Four colonies were picked from each day from THY plates.
 
+# DNA methylation downstream analysis
+
+
+## Import sample metadata
+
+```{r}
+Run1 <- fread("sample_list_run1.txt", header = FALSE)
+Run2 <- fread("sample_list_run2.txt", header = FALSE)
+
+colnames(Run1) <- colnames(Run2) <-
+  c("Assembly","Bam","Sample","Species")
+
+Long_read_sample_df <-
+  bind_rows(Run1, Run2) %>%
+  select(Sample, Species)
+
+head(Long_read_sample_df)
+```
+
+This step imports sample metadata and species information for all long-read sequenced isolates.
+
+# Import methylation motif calls
+
+```{r}
+files <- list.files(
+  path = "motifs/",
+  pattern = "_motifs.tsv$"
+)
+
+all <- list()
+
+for(f in files){
+
+  df <- fread(paste0("motifs/", f))
+
+  Sample <- substr(f, 1, nchar(f)-11)
+
+  df <- df %>%
+    select(-V1, -index)
+
+  df$Sample <- Sample
+
+  df <- df %>%
+    select(Sample, everything())
+
+  all[[f]] <- df
+}
+
+df_meth <- bind_rows(all)
+
+head(df_meth)
+```
+
+Methylation motifs identified by MicrobeMod were combined into a single dataset for downstream analysis.
+
+# Data cleaning and filtering
+
+```{r}
+df_meth$Methylated_sites <-
+  as.numeric(df_meth$Methylated_sites)
+
+df_meth$Average_Percent_Methylation_per_site <-
+  as.numeric(df_meth$Average_Percent_Methylation_per_site)
+
+df_meth <- df_meth %>%
+  mutate(
+    Motif = case_when(
+      Motif == "No Motif Assigned" ~
+        "No Motif Assigned",
+      TRUE ~ Motif
+    )
+  )
+```
+
+Samples containing only “No Motif Assigned” calls were separated from samples with identified motifs.
+
+```{r}
+sample_no_motif <- df_meth %>%
+  group_by(Sample) %>%
+  summarise(
+    n_motifs = n_distinct(Motif),
+    only_no_motif =
+      all(Motif == "No Motif Assigned")
+  ) %>%
+  filter(only_no_motif) %>%
+  pull(Sample)
+```
+
+# Merge methylation and species metadata
+
+```{r}
+df_meth2 <- df_meth %>%
+  dplyr::left_join(
+    Long_read_sample_df,
+    by = "Sample"
+  )
+
+head(df_meth2)
+```
+
+# Heatmap visualisation of methylation motifs
+
+## Heatmap function
+
+```{r}
+plot_species_heatmap <- function(sp){
+
+  x <- df_meth2 %>%
+    filter(Species == sp) %>%
+    select(
+      Sample,
+      Motif,
+      Average_Percent_Methylation_per_site
+    ) %>%
+    pivot_wider(
+      names_from = Motif,
+      values_from =
+        Average_Percent_Methylation_per_site,
+      values_fill = 0
+    )
+
+  mat <- as.data.frame(x)
+
+  rownames(mat) <- mat$Sample
+
+  mat$Sample <- NULL
+
+  mat <- as.matrix(mat)
+
+  pheatmap(
+    mat,
+    cluster_rows = TRUE,
+    cluster_cols = TRUE,
+    border_color = NA,
+    fontsize_row = 7,
+    fontsize_col = 8,
+    main = sp
+  )
+}
+```
+
+Heatmaps were generated to compare methylation motif distributions across species.
+
+## Moraxella catarrhalis heatmap
+
+```{r fig.width=10, fig.height=8}
+plot_species_heatmap(
+  "Moraxella catarrhalis"
+)
+```
+
+## Haemophilus influenzae heatmap
+
+```{r fig.width=10, fig.height=8}
+plot_species_heatmap(
+  "Haemophilus influenzae"
+)
+```
+
+# ML probability analysis
+
+## Import ML probability histograms
+
+```{r}
+passed <- readLines("ML_Prob/passed.txt")
+failed <- readLines("ML_Prob/failed.txt")
+No_Motifs <- df_meth2 %>% select(Sample,Motif)%>%
+  group_by(Sample) %>%
+  filter(n() == 1 & Motif == "No Motif Assigned") %>%
+  pull(Sample)
+passed = passed[!passed%in%No_Motifs]
+
+# get histogram files
+files <- list.files(path ="ML_Prob/" ,pattern="_histogram.txt$")
+
+all <- list()
+
+for(f in files){
+  
+  df <- read.table(paste("ML_Prob/",f,sep = ""), header=FALSE)
+  colnames(df) <- c("prob","count")
+  
+  Sample <- substr(f,1,nchar(f)-17)
+  
+  status <- ifelse(Sample %in% passed,"With Assigned Motif",
+                   ifelse(Sample %in% failed,"No Methylation Detected",
+                    ifelse(Sample %in% No_Motifs,"No Motif Assigned","NA")))
+  
+  df$Sample <- Sample
+  df$status <- status
+  
+  all[[f]] <- df
+}
+
+dat <- bind_rows(all)
+
+dat <- dat %>% dplyr::left_join(Long_read_sample_df,by="Sample")
+
+# weighted mean ML probability per sample
+means <- dat %>%
+  group_by(Sample,status) %>%
+  summarise(mean_prob = weighted.mean(prob,count),
+            total=sum(count))%>%
+  dplyr::left_join(Long_read_sample_df,by="Sample")
+```
+
+Modification likelihood (ML) probability distributions were analysed to compare methylation confidence between samples.
+
+# Density plot of ML probabilities
+
+```{r fig.width=12, fig.height=7}
+p1 <- ggplot(
+  dat,
+  aes(
+    prob,
+    weight = count,
+    colour = status
+  )
+) +
+  geom_density(size = 1.2) +
+  theme_bw(base_size = 14) +
+  facet_wrap(~Species)
+
+p1
+```
+
+
+# Mean ML probability per sample
+
+Modification likelihood (ML) probabilities were summarised per sample to compare methylation confidence across isolates with assigned motifs, no assigned motifs, and no detectable methylation.
+
+```{r fig.width=12, fig.height=7}
+p2 <- ggplot(
+  means,
+  aes(
+    status,
+    mean_prob,
+    fill = status
+  )
+) +
+  geom_boxplot() +
+  geom_jitter(width = 0.1) +
+  theme_bw(base_size = 14) +
+  facet_wrap(~Species) +
+  labs(
+    title = "Mean ML Probability per Sample",
+    x = "Methylation status",
+    y = "Mean modification probability"
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_text(
+      size = 15,
+      color = "black"
+    ),
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    ),
+    legend.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    strip.text = element_text(
+      size = 20,
+      face = "bold"
+    ),
+    legend.text = element_text(size = 15)
+  )
+
+p2
+```
+
+# Per-sample ML probability histograms
+
+## Moraxella catarrhalis
+
+Per-sample histograms were generated to visualise ML probability distributions across *Moraxella catarrhalis* isolates.
+
+```{r fig.width=16, fig.height=10}
+p3 <- ggplot(
+  dat %>%
+    filter(
+      Species == "Moraxella catarrhalis"
+    ),
+  aes(
+    prob,
+    count,
+    fill = status
+  )
+) +
+  geom_col() +
+  facet_wrap(
+    ~Sample,
+    scales = "free_y"
+  ) +
+  theme_bw(base_size = 5) +
+  labs(
+    title = "Per-sample ML Histograms",
+    x = "Modification probability",
+    y = "Count"
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_text(
+      size = 12,
+      color = "black"
+    ),
+    axis.title = element_text(
+      size = 12,
+      face = "bold"
+    ),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    ),
+    legend.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    strip.text = element_text(
+      size = 12,
+      face = "bold"
+    ),
+    legend.text = element_text(size = 12)
+  )
+
+p3
+```
+
+## Haemophilus influenzae
+
+Per-sample histograms were generated to visualise ML probability distributions across *Haemophilus influenzae* isolates.
+
+```{r fig.width=16, fig.height=10}
+p4 <- ggplot(
+  dat %>%
+    filter(
+      Species == "Haemophilus influenzae"
+    ),
+  aes(
+    prob,
+    count,
+    fill = status
+  )
+) +
+  geom_col() +
+  facet_wrap(
+    ~Sample,
+    scales = "free_y"
+  ) +
+  theme_bw(base_size = 5) +
+  labs(
+    title = "Per-sample ML Histograms",
+    x = "Modification probability",
+    y = "Count"
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_text(
+      size = 12,
+      color = "black"
+    ),
+    axis.title = element_text(
+      size = 12,
+      face = "bold"
+    ),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    ),
+    legend.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    strip.text = element_text(
+      size = 12,
+      face = "bold"
+    ),
+    legend.text = element_text(size = 12)
+  )
+
+p4
+```
+
+# Restriction–modification system analysis
+
+# Restriction–modification system analysis
+
+```{r}
+MicroMod_an_Passed = fread("annotate_rm/passed_all_rm_genes.tsv")
+MicroMod_an_Passed_MT <- MicroMod_an_Passed %>% filter(Gene_type == "MT")%>%
+  mutate(Status="With Assigned Motif")
+MicroMod_an_Passed_MT[MicroMod_an_Passed_MT$Sample%in%No_Motifs,"Status"]="No Motif Assigned"
+
+MicroMod_an_Failed = fread("annotate_rm/failed_all_rm_genes.tsv")
+MicroMod_an_Failed_MT <- MicroMod_an_Failed %>% filter(Gene_type == "MT")%>%
+  mutate(Status="No Methylation Detected")
+MicroMod_an_Passed_n <- MicroMod_an_Passed_MT %>%
+  dplyr::count(Sample) %>%
+  mutate(Group="With Assigned Motif")
+MicroMod_an_Passed_n[MicroMod_an_Passed_n$Sample%in%No_Motifs,"Group"]="No Motif Assigned"
+
+
+MicroMod_an_Failed_n <- MicroMod_an_Failed_MT %>%
+  dplyr::count(Sample) %>%
+  mutate(Group="No Methylation Detected")
+
+df <- bind_rows(MicroMod_an_Passed_n, MicroMod_an_Failed_n)
+
+
+df = df %>%
+  dplyr::left_join(Long_read_sample_df,
+                   by="Sample")
+p5=ggplot(df, aes(Group, n, fill=Group)) +
+  geom_boxplot() +
+  facet_wrap(~Species)+
+  geom_jitter(width=0.15) +
+  ylab("Number of MT genes")+
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_text(size = 20,color = "black"),
+    axis.title = element_text(size = 25,face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    legend.title = element_text(size = 25,face = "bold"),
+    strip.text = element_text(size = 20,face = "bold")
+  )+
+  labs(title = "Number of MT genes per sample")
+p5
+All_MT_data = rbind(MicroMod_an_Failed_MT,MicroMod_an_Passed_MT)
+
+All_MT_data <- All_MT_data %>%
+  dplyr::left_join(Long_read_sample_df,by="Sample")
+
+
+# ---------------------------------------
+# keep only MT genes with homolog names
+# ---------------------------------------
+x <- All_MT_data[
+  Gene_type == "MT" &
+    REBASE_homolog != "" &
+    !is.na(REBASE_homolog)
+]
+x <- x %>%
+  mutate(
+    Homolog_methylation = ifelse(
+      Homolog_methylation == "" | is.na(Homolog_methylation),
+      "unknown",
+      Homolog_methylation
+    )
+  )
+
+
+colnames_MT = c("Sample_file","Query","Subject","Percent_identity",
+                "Alignment_length","Mismatches","Gap_opens","Query_start",
+                "Query_end","Subject_start","Subject_end","Evalue","Bit_score")
+
+m4c = fread("annotate_rm/rm_m4C_summary.tsv")
+m5c = fread("annotate_rm/rm_m5C_summary.tsv")
+m6A = fread("annotate_rm/rm_m6A_summary.tsv")
+unk_MT = fread("annotate_rm/rm_unknown_MTase.tsv")
+colnames(m4c)=colnames(m5c)=colnames(m6A)=colnames(unk_MT)<-colnames_MT
+
+MT_Genes_alignment_Info = bind_rows(m4c,m5c,m6A,unk_MT)
+MT_Genes_alignment_Info = MT_Genes_alignment_Info%>% mutate(
+  Sample=substr(Sample_file,1,nchar(Sample_file)-9))%>% 
+  select(-Sample_file)%>%select(Sample,everything())%>%
+  mutate(
+    MT_type = case_when(
+      str_detect(Subject, "m6A") ~ "m6A",
+      str_detect(Subject, "m4C") ~ "m4C",
+      str_detect(Subject, "m5C") ~ "m5C",
+      str_detect(Subject, "--")  ~ "unknown",
+      TRUE ~ "other"
+    )
+  )
+
+MT_Genes_alignment_Info <- MT_Genes_alignment_Info %>%
+  separate_wider_delim(Subject,delim = ":",names = c("New1","New2"))%>%
+  separate_wider_delim(New2,delim = "-",names = c("REBASE_homolog","System_Type","Homolog_methylation","Homolog_motif"),
+                       too_many  = "merge")%>%
+  mutate(
+    System_Type = System_Type %>%
+      str_remove("^putative_") %>%           
+      str_remove("_methyltransferase$")      
+  )%>%
+  select(-New1)%>%
+  mutate(System_Type = paste("RM_",System_Type,sep = ""))%>%
+  select(Sample,Query,REBASE_homolog,System_Type,Homolog_methylation,Homolog_motif,Alignment_length)%>%
+  mutate(
+    Homolog_methylation = ifelse(
+      is.na(Homolog_methylation) | Homolog_methylation == "",
+      "unknown",
+      Homolog_methylation
+    )
+  )
+
+colnames(MT_Genes_alignment_Info)[2]="Gene"
+
+# best_hits <- MT_Genes_alignment_Info %>%
+#   group_by(Sample, Homolog_methylation) %>%
+#   slice_max(order_by = Alignment_length, n = 1, with_ties = FALSE) %>%
+#   ungroup()
+
+x <- x%>% 
+  
+  dplyr::left_join(MT_Genes_alignment_Info,
+                   by=c("Sample","Gene","REBASE_homolog",
+                      "System_Type","Homolog_methylation","Homolog_motif"))
+All_MT_data = rbind(MicroMod_an_Failed_MT,MicroMod_an_Passed_MT)
+
+All_MT_data <- All_MT_data %>%
+  dplyr::left_join(Long_read_sample_df,by="Sample")
+
+
+# ---------------------------------------
+# keep only MT genes with homolog names
+# ---------------------------------------
+x <- All_MT_data[
+  Gene_type == "MT" &
+    REBASE_homolog != "" &
+    !is.na(REBASE_homolog)
+]
+x <- x %>%
+  mutate(
+    Homolog_methylation = ifelse(
+      Homolog_methylation == "" | is.na(Homolog_methylation),
+      "unknown",
+      Homolog_methylation
+    )
+  )
+
+
+colnames_MT = c("Sample_file","Query","Subject","Percent_identity",
+                "Alignment_length","Mismatches","Gap_opens","Query_start",
+                "Query_end","Subject_start","Subject_end","Evalue","Bit_score")
+
+m4c = fread("annotate_rm/rm_m4C_summary.tsv")
+m5c = fread("annotate_rm/rm_m5C_summary.tsv")
+m6A = fread("annotate_rm/rm_m6A_summary.tsv")
+unk_MT = fread("annotate_rm/rm_unknown_MTase.tsv")
+colnames(m4c)=colnames(m5c)=colnames(m6A)=colnames(unk_MT)<-colnames_MT
+
+MT_Genes_alignment_Info = bind_rows(m4c,m5c,m6A,unk_MT)
+MT_Genes_alignment_Info = MT_Genes_alignment_Info%>% mutate(
+  Sample=substr(Sample_file,1,nchar(Sample_file)-9))%>% 
+  select(-Sample_file)%>%select(Sample,everything())%>%
+  mutate(
+    MT_type = case_when(
+      str_detect(Subject, "m6A") ~ "m6A",
+      str_detect(Subject, "m4C") ~ "m4C",
+      str_detect(Subject, "m5C") ~ "m5C",
+      str_detect(Subject, "--")  ~ "unknown",
+      TRUE ~ "other"
+    )
+  )
+
+MT_Genes_alignment_Info <- MT_Genes_alignment_Info %>%
+  separate_wider_delim(Subject,delim = ":",names = c("New1","New2"))%>%
+  separate_wider_delim(New2,delim = "-",names = c("REBASE_homolog","System_Type","Homolog_methylation","Homolog_motif"),
+                       too_many  = "merge")%>%
+  mutate(
+    System_Type = System_Type %>%
+      str_remove("^putative_") %>%           
+      str_remove("_methyltransferase$")      
+  )%>%
+  select(-New1)%>%
+  mutate(System_Type = paste("RM_",System_Type,sep = ""))%>%
+  select(Sample,Query,REBASE_homolog,System_Type,Homolog_methylation,Homolog_motif,Alignment_length)%>%
+  mutate(
+    Homolog_methylation = ifelse(
+      is.na(Homolog_methylation) | Homolog_methylation == "",
+      "unknown",
+      Homolog_methylation
+    )
+  )
+
+colnames(MT_Genes_alignment_Info)[2]="Gene"
+
+# best_hits <- MT_Genes_alignment_Info %>%
+#   group_by(Sample, Homolog_methylation) %>%
+#   slice_max(order_by = Alignment_length, n = 1, with_ties = FALSE) %>%
+#   ungroup()
+
+x <- x%>% 
+  
+  dplyr::left_join(MT_Genes_alignment_Info,
+                   by=c("Sample","Gene","REBASE_homolog",
+                      "System_Type","Homolog_methylation","Homolog_motif"))
+
+```
+
+# Methyltransferase heatmaps
+## Moraxella catarrhalis methyltransferase heatmap
+
+The distribution of methyltransferase homologs across *Moraxella catarrhalis* isolates was visualised using clustered heatmaps based on alignment lengths.
+
+```{r fig.width=10, fig.height=8}
+sp <- "Moraxella catarrhalis"
+
+sub <- x[Species == sp]
+
+mat_dt <- sub %>%
+  select(
+    Sample,
+    Status,
+    REBASE_homolog,
+    Alignment_length
+  )
+
+mat_dt[, RowID := paste(
+  Sample,
+  Status,
+  sep = " | "
+)]
+
+mat <- dcast(
+  mat_dt,
+  RowID ~ REBASE_homolog,
+  value.var = "Alignment_length",
+  fun.aggregate = max,
+  fill = 0
+)
+
+rn <- mat$RowID
+
+mat$RowID <- NULL
+
+mat <- as.matrix(mat)
+
+rownames(mat) <- rn
+
+ann <- data.frame(
+  Status =
+    ifelse(
+      grepl(
+        "With Assigned Motif$",
+        rn
+      ),
+      "With Assigned Motif",
+      ifelse(
+        grepl(
+          "No Methylation Detected$",
+          rn
+        ),
+        "No Methylation Detected",
+        "No Motif Assigned"
+      )
+    )
+)
+
+rownames(ann) <- rn
+
+pheatmap(
+  mat,
+  annotation_row = ann,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  fontsize_row = 6,
+  fontsize_col = 6,
+  border_color = NA,
+  main = paste("MT genes:", sp),
+
+  color = viridis::viridis(100),
+
+  annotation_colors = list(
+    Status = c(
+      `With Assigned Motif` = "green",
+      `No Motif Assigned` = "orange",
+      `No Methylation Detected` = "red"
+    )
+  )
+)
+```
+
+## Haemophilus influenzae methyltransferase heatmap
+
+The distribution of methyltransferase homologs across *Haemophilus influenzae* isolates was visualised using clustered heatmaps based on alignment lengths.
+
+```{r fig.width=10, fig.height=8}
+sp <- "Haemophilus influenzae"
+
+sub <- x[Species == sp]
+
+mat_dt <- sub %>%
+  select(
+    Sample,
+    Status,
+    REBASE_homolog,
+    Alignment_length
+  )
+
+mat_dt[, RowID := paste(
+  Sample,
+  Status,
+  sep = " | "
+)]
+
+mat <- dcast(
+  mat_dt,
+  RowID ~ REBASE_homolog,
+  value.var = "Alignment_length",
+  fun.aggregate = max,
+  fill = 0
+)
+
+rn <- mat$RowID
+
+mat$RowID <- NULL
+
+mat <- as.matrix(mat)
+
+rownames(mat) <- rn
+
+ann <- data.frame(
+  Status =
+    ifelse(
+      grepl(
+        "With Assigned Motif$",
+        rn
+      ),
+      "With Assigned Motif",
+      ifelse(
+        grepl(
+          "No Methylation Detected$",
+          rn
+        ),
+        "No Methylation Detected",
+        "No Motif Assigned"
+      )
+    )
+)
+
+rownames(ann) <- rn
+
+pheatmap(
+  mat,
+  annotation_row = ann,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  fontsize_row = 6,
+  fontsize_col = 5,
+  border_color = NA,
+  main = paste("MT genes:", sp),
+
+  color = viridis::viridis(100),
+
+  annotation_colors = list(
+    Status = c(
+      `With Assigned Motif` = "green",
+      `No Motif Assigned` = "orange",
+      `No Methylation Detected` = "red"
+    )
+  )
+)
+```
+
+Restriction–modification system annotations generated by MicrobeMod were used to characterise methyltransferase families across isolates.
+
+# Motif summary table
+
+## Create motif families
+
+```{r}
+
+df2 <- df_meth2 %>%
+  mutate(
+    Motif_family = case_when(
+
+      str_detect(Motif, "GCGC") ~ "GCGC-like",
+
+      str_detect(Motif, "GCGCNT") ~ "GCGC-like",
+
+      str_detect(Motif, "GCGCNY") ~ "GCGC-like",
+
+      str_detect(Motif, "GCGCY") ~ "GCGC-like",
+
+      str_detect(Motif, "GCGCYT") ~ "GCGC-like",
+
+      str_detect(Motif, "RGCGCY") ~ "GCGC-like",
+
+      str_detect(Motif, "No Motif Assigned") ~ "No motif assigned",
+
+      TRUE ~ "Rare motifs"
+    )
+  )
+```
+
+Motifs were grouped into broader motif families to simplify interpretation and facilitate comparison between *Moraxella catarrhalis* and *Haemophilus influenzae* methylation profiles.
+
+# Summarise motifs per species
+
+```{r}
+summary_table <- df2 %>%
+  group_by(
+    Species,
+    Motif_family,
+    Motif,
+    Methylation_type
+  ) %>%
+  summarise(
+
+    N_samples =
+      n_distinct(Sample),
+
+    Mean_methylation =
+      round(
+        mean(
+          Average_Percent_Methylation_per_site,
+          na.rm = TRUE
+        ),
+        1
+      ),
+
+    Mean_coverage =
+      round(
+        mean(
+          Methylation_coverage,
+          na.rm = TRUE
+        ),
+        1
+      ),
+
+    Mean_genome_sites =
+      round(
+        mean(
+          Genome_sites,
+          na.rm = TRUE
+        ),
+        1
+      ),
+
+    Mean_methylated_sites =
+      round(
+        mean(
+          Methylated_sites,
+          na.rm = TRUE
+        ),
+        1
+      ),
+
+    Prevalence =
+      round(
+        100 *
+          n_distinct(Sample) /
+          n_distinct(
+            df2$Sample[
+              df2$Species == first(Species)
+            ]
+          ),
+        1
+      ),
+
+    .groups = "drop"
+  ) %>%
+  arrange(
+    Species,
+    desc(N_samples)
+  )
+```
+
+Summary statistics were calculated for each motif, including prevalence, methylation levels, and coverage across samples.
+
+# Collapse singleton motifs
+
+```{r}
+summary_table2 <- summary_table %>%
+  mutate(
+    Motif_display = ifelse(
+      N_samples == 1,
+      "Singleton motifs",
+      Motif
+    )
+  ) %>%
+
+  group_by(
+    Species,
+    Motif_family,
+    Motif_display
+  ) %>%
+
+  summarise(
+
+    N_samples =
+      sum(N_samples),
+
+    Mean_methylation =
+      round(
+        mean(Mean_methylation),
+        1
+      ),
+
+    Mean_coverage =
+      round(
+        mean(Mean_coverage),
+        1
+      ),
+
+    Mean_genome_sites =
+      round(
+        mean(Mean_genome_sites),
+        1
+      ),
+
+    Mean_methylated_sites =
+      round(
+        mean(Mean_methylated_sites),
+        1
+      ),
+
+    Prevalence =
+      paste0(
+        round(
+          mean(Prevalence),
+          1
+        ),
+        "%"
+      ),
+
+    .groups = "drop"
+  ) %>%
+
+  arrange(
+    Species,
+    desc(N_samples)
+  )
+```
+
+Rare motifs identified in single isolates were collapsed into a single “Singleton motifs” category to improve table readability.
+
+# Generate publication-ready table
+
+```{r}
+final_gt <- summary_table2 %>%
+
+  gt(
+    groupname_col = "Species"
+  ) %>%
+
+  tab_header(
+    title = "Summary of methylated motifs by species"
+  ) %>%
+
+  cols_label(
+    Motif_family = "Motif family",
+    Motif_display = "Motif",
+    N_samples = "N samples",
+    Mean_methylation = "Mean methylation (%)",
+    Mean_coverage = "Mean coverage",
+    Mean_genome_sites = "Mean genome sites",
+    Mean_methylated_sites = "Mean methylated sites",
+    Prevalence = "Prevalence"
+  ) %>%
+
+  data_color(
+    columns = Mean_methylation,
+    colors = scales::col_numeric(
+      palette = c("white", "darkred"),
+      domain = c(0,100)
+    )
+  ) %>%
+
+  data_color(
+    columns = N_samples,
+    colors = scales::col_numeric(
+      palette = c("white", "darkblue"),
+      domain = NULL
+    )
+  ) %>%
+
+  opt_row_striping()
+
+final_gt
+```
+
+The final table summarises methylation motif distributions and prevalence across both bacterial species.
+
+
+# Restriction–modification methyltransferase family distribution
+
+## Summarise methyltransferase family frequencies
+
+```{r}
+Type_RM <- as.data.frame(
+  table(
+    All_MT_data$HMM,
+    All_MT_data$Species
+  )
+)
+
+colnames(Type_RM) <- c(
+  "RM_family",
+  "Species",
+  "Frequency"
+)
+
+head(Type_RM)
+```
+
+Restriction–modification methyltransferase families were quantified across *Moraxella catarrhalis* and *Haemophilus influenzae* isolates to compare species-specific R–M system composition.
+
+
+# Bubble plot of R–M families
+
+```{r fig.width=9, fig.height=8}
+
+p_rm <- ggplot(
+  Type_RM,
+  aes(
+    x = Species,
+    y = RM_family
+  )
+) +
+
+  geom_point(
+    aes(
+      size = Frequency,
+      colour = Species
+    ),
+    alpha = 0.85
+  ) +
+
+  scale_size_continuous(
+    range = c(1,12)
+  ) +
+
+  theme_bw() +
+
+  labs(
+    x = "",
+    y = "",
+    size = "Frequency",
+    colour = "Species"
+  ) +
+
+  theme(
+    panel.grid.major = element_line(
+      colour = "grey90"
+    ),
+
+    panel.grid.minor = element_blank(),
+
+    axis.text.y = element_text(
+      size = 8
+    ),
+
+    axis.text.x = element_text(
+      size = 10,
+      face = "bold"
+    ),
+
+    legend.title = element_text(
+      face = "bold"
+    )
+  )
+
+p_rm
+```
+
+The bubble plot highlights species-specific differences in the abundance and distribution of restriction–modification methyltransferase families between *Moraxella catarrhalis* and *Haemophilus influenzae*.
+
+
 # Analysis of deep sequencing data
 
 ``` {r Parse antibiotic administration data}
@@ -2700,12 +3895,12 @@ altExp(tse, "prevalent") <- addDominant(alt)
 
 labels(dend) <- altExp(tse, "prevalent")$dominant_taxa
 dend <- color_labels(dend, k = k, col = unlist(cols))
+ 
 # Adjust frame for the figure
 par(mar = c(9, 3, 0.5, 0.5))
 # Plot dendrogram
-dend |>
-  set("labels_cex", 0.5) |>
-  plot()
+dend <- dendextend::set(dend, "labels_cex", 0.5)
+plot(dend)
 
  
 ```
@@ -2963,6 +4158,465 @@ p6=ggplot(umap_values_per_country, aes(x = X1, y = X2,colour = Cluster)) +
     y="UMAP2",
     title = "UMAP of Mixed Infection Samples Across Two Countries")
 p6
+
+
+```
+
+
+# Genome-wide association analysis
+
+## Genome assembly using SPAdes
+
+Metagenomic samples enriched for *Moraxella catarrhalis* were assembled using SPAdes prior to downstream comparative genomics and GWAS analysis.
+
+```bash
+spades.py \
+  --careful \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o spades_output/
+```
+
+# Kraken2 filtering of *Moraxella catarrhalis* contigs
+
+To minimise contamination from mixed metagenomic assemblies, contigs assigned to *Moraxella catarrhalis* were extracted using Kraken2 classification and SeqKit filtering.
+
+```bash
+#!/bin/bash
+
+module load kraken2/2.1.2
+module load seqkit/v2.9.0
+
+SPADES_DIR="spades_mcat_only"
+OUTDIR="spades_mcat_kraken_filtered"
+
+THREADS=8
+TAXID=480
+
+for f in "$SPADES_DIR"/*.fasta
+do
+
+    sample=$(basename "$f" .fasta)
+
+    kraken2 \
+        --db k2_standard_08gb \
+        --threads "$THREADS" \
+        --report "$OUTDIR/${sample}.report" \
+        --output "$OUTDIR/${sample}.kraken.out" \
+        "$f"
+
+    awk -v tax="$TAXID" \
+      '$3==tax {print $2}' \
+      "$OUTDIR/${sample}.kraken.out" \
+      > "$OUTDIR/${sample}.mcat.ids"
+
+    seqkit grep \
+      -f "$OUTDIR/${sample}.mcat.ids" \
+      "$f" \
+      > "$OUTDIR/${sample}.Mcat.fasta"
+
+done
+```
+
+Only contigs classified as *Moraxella catarrhalis* were retained for downstream unitig-based GWAS analysis.
+
+# Unitig calling
+
+Unitigs were generated from filtered *Moraxella catarrhalis* assemblies using `unitig-caller`.
+
+```bash
+#!/bin/bash
+
+module load unitig-caller/1.3.0
+
+unitig-caller \
+    --call \
+    --refs Mcat_clean_list.txt \
+    --pyseer \
+    --out unitig_mcat \
+    --kmer 31 \
+    --threads 8
+```
+
+Unitig presence–absence matrices were generated for Pyseer-compatible bacterial GWAS analysis.
+
+# Mash distance matrix generation
+
+Pairwise Mash distances were calculated to estimate genome similarity between *Moraxella catarrhalis* isolates.
+
+```bash
+#!/bin/bash
+
+module load mash/2.1.1
+
+find spades_mcat_kraken_filtered \
+  -name "*.Mcat.fasta" \
+  > assemblies.txt
+
+mash sketch \
+    -p 16 \
+    -l assemblies.txt
+
+mash dist \
+    assemblies.txt.msh \
+    assemblies.txt.msh \
+    > mcat_mash_square.tsv
+```
+
+# Convert Mash distances into kinship matrix
+
+```{r}
+
+mash <- fread(
+  "Mcat_results/mcat_mash_distances.clean.tsv",
+  header = FALSE
+)
+
+colnames(mash) <- c(
+  "A",
+  "B",
+  "dist",
+  "pval",
+  "shared"
+)
+
+dist_mat <- acast(
+  mash,
+  A ~ B,
+  value.var = "dist"
+)
+
+dist_mat[is.na(dist_mat)] <- 0
+
+dist_mat <- (
+  dist_mat +
+  t(dist_mat)
+) / 2
+
+diag(dist_mat) <- 0
+
+kinship <- 1 - dist_mat
+
+write.table(
+  kinship,
+  "Mcat_results/mcat_mash_kinship_matrix.tsv",
+  sep = "\t",
+  quote = FALSE
+)
+```
+
+Mash distances were converted into a kinship matrix to account for bacterial population structure during GWAS analysis.
+
+# Pyseer GWAS analysis
+
+A linear mixed-model GWAS was performed using Pyseer with the Mash kinship matrix and unitig presence–absence data.
+
+```bash
+#!/bin/bash
+
+module load pyseer/1.4.0
+
+pyseer \
+  --phenotypes Mcat_phenotype_pyseer.txt \
+  --kmers unitig_mcat_fixed.pyseer.gz \
+  --similarity mcat_mash_kinship_matrix.tsv \
+  --lmm \
+  --min-af 0.01 \
+  --cpu 8 \
+  > mcat_pyseer_unitig_results_update.txt
+```
+
+Significant unitigs associated with *M. catarrhalis* co-colonisation phenotypes were identified using a linear mixed-model framework controlling for genomic relatedness.
+
+# Extract significant unitigs
+
+```bash
+awk '$4 < 1e-10 {print $1}' \
+mcat_pyseer_unitig_results_update.txt \
+> significant_kmers.txt
+```
+
+Significant unitigs were subsequently annotated and visualised using downstream R analyses and Manhattan plots.
+
+## Downstream analysis
+
+
+```{r gwas_downstream_analysis, message=FALSE, warning=FALSE}
+
+## -------------------------------------------
+## Load pyseer annotated significant hits
+## -------------------------------------------
+
+df <- fread(
+  "Mcat_results/all_annotated_hits.clean.tsv",
+  header = FALSE
+)
+
+colnames(df) <- c(
+  "variant",
+  "af",
+  "filter_p",
+  "lrt_p",
+  "beta",
+  "se",
+  "h2",
+  "annotation"
+)
+
+## -------------------------------------------
+## Extract genomic coordinates
+## -------------------------------------------
+
+df[, chrom := sub(":.*", "", annotation)]
+
+df[, pos := as.numeric(
+  sub(".*:(\\d+)-.*", "\\1", annotation)
+)]
+
+## -------------------------------------------
+## Calculate -log10 p-values
+## -------------------------------------------
+
+df[, logp := -log10(as.numeric(lrt_p))]
+
+## cap extremely significant values
+df[, logp := pmin(logp, 50)]
+
+## -------------------------------------------
+## Extract gene names
+## -------------------------------------------
+
+df[, gene := sub(
+  ".*cds-([^;]+).*",
+  "\\1",
+  annotation
+)]
+
+## -------------------------------------------
+## Highlight key loci
+## -------------------------------------------
+
+df2 <- df %>%
+  mutate(
+    highlight = case_when(
+
+      str_detect(gene, "uspA2H") &
+        pos >= 346070 &
+        pos <= 348520 ~ "uspA2H",
+
+      str_detect(gene, "mid") &
+        pos >= 622920 &
+        pos <= 629192 ~ "mid",
+
+      str_detect(gene, "uspA1") &
+        pos >= 1194300 &
+        pos <= 1197167 ~ "uspA1",
+
+      str_detect(gene, "CRISPR") ~ "CRISPR",
+
+      TRUE ~ "other"
+    )
+  ) %>%
+  select(
+    variant,
+    gene,
+    chrom,
+    pos,
+    highlight,
+    filter_p
+  )
+
+## -------------------------------------------
+## Extract significant hits
+## -------------------------------------------
+
+mid_hits <- df2 %>%
+  filter(
+    highlight == "mid",
+    filter_p <= 1e-10
+  ) %>%
+  arrange(pos)
+
+uspA1_hits <- df2 %>%
+  filter(
+    highlight == "uspA1",
+    filter_p <= 1e-10
+  ) %>%
+  arrange(pos)
+
+uspA2H_hits <- df2 %>%
+  filter(
+    highlight == "uspA2H",
+    filter_p <= 1e-10
+  ) %>%
+  arrange(pos)
+
+## -------------------------------------------
+## Prepare Manhattan plot data
+## -------------------------------------------
+
+manhattan <- df[, .(
+  chrom,
+  pos,
+  logp,
+  gene
+)]
+
+fwrite(
+  manhattan,
+  "manhattan_input.tsv",
+  sep = "\t"
+)
+
+## -------------------------------------------
+## Restrict to reference chromosome
+## -------------------------------------------
+
+main <- manhattan[
+  chrom == "CP002005.1"
+]
+
+## -------------------------------------------
+## Basic Manhattan plot
+## -------------------------------------------
+
+ggplot(main, aes(x = pos, y = logp)) +
+
+  geom_point(
+    alpha = 0.6,
+    size = 1
+  ) +
+
+  geom_hline(
+    yintercept = -log10(1e-10),
+    color = "red"
+  ) +
+
+  theme_classic() +
+
+  labs(
+    title = "Manhattan plot (CP002005.1)",
+    x = "Genome position",
+    y = "-log10(p-value)"
+  )
+
+## -------------------------------------------
+## Highlight significant k-mers
+## -------------------------------------------
+
+sig <- main[logp > 10]
+
+p1=ggplot(main, aes(pos, logp)) +
+
+  geom_point(alpha = 0.4) +
+
+  geom_point(
+    data = sig,
+    color = "red",
+    size = 1.5
+  ) +
+
+  theme_classic() +
+
+  labs(
+    x = "Genomic position (CP002005.1)",
+    y = expression(
+      -log[10](italic(p)) ~ "(LRT test)"
+    )
+  )
+
+## -------------------------------------------
+## Define important genomic regions
+## -------------------------------------------
+
+genes <- data.table(
+  gene  = c("uspA2H", "mid", "uspA1H"),
+  chrom = "CP002005.1",
+  start = c(346375, 627743, 1196528),
+  end   = c(346406, 627774, 1196583)
+)
+
+## -------------------------------------------
+## Add highlight labels
+## -------------------------------------------
+
+main <- main %>%
+  mutate(
+    highlight = case_when(
+
+      str_detect(gene, "uspA2H") &
+        pos >= 346070 &
+        pos <= 348520 ~ "uspA2H",
+
+      str_detect(gene, "mid") &
+        pos >= 622920 &
+        pos <= 629192 ~ "mid",
+
+      str_detect(gene, "uspA1") &
+        pos >= 1194300 &
+        pos <= 1197167 ~ "uspA1",
+
+      str_detect(gene, "CRISPR") ~ "CRISPR",
+
+      TRUE ~ "other"
+    )
+  )
+
+## -------------------------------------------
+## Final annotated Manhattan plot
+## -------------------------------------------
+
+p2 <- ggplot(
+  main,
+  aes(x = pos, y = logp)
+) +
+
+  geom_point(
+    aes(color = highlight),
+    alpha = 0.4,
+    size = 1
+  ) +
+
+  geom_point(
+    data = subset(main, highlight != "other"),
+    aes(color = highlight),
+    size = 2
+  ) +
+
+  geom_rect(
+    data = genes,
+    aes(
+      xmin = start,
+      xmax = end,
+      ymin = 0,
+      ymax = Inf,
+      fill = gene
+    ),
+    alpha = 0.1,
+    inherit.aes = FALSE
+  ) +
+
+  geom_hline(
+    yintercept = 10,
+    linetype = "dashed",
+    color = "black"
+  ) +
+
+  scale_y_continuous(
+    expand = c(0, 0)
+  ) +
+
+  theme_classic() +
+
+  labs(
+    x = "Genomic position (CP002005.1)",
+    y = expression(
+      -log[10](italic(p)) ~ "(LRT test)"
+    )
+  )
+
+p1
+p2
 
 
 ```
