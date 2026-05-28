@@ -49,6 +49,7 @@ require(pheatmap)
 require(ggplot2)
 require(viridis)
 require(gt)
+require(reshape2)
 
 theme_set(theme_bw() + theme(strip.background = element_blank()))
 
@@ -1776,65 +1777,11 @@ for f in *fasta; do echo -en "${f}\t"; grep -v ">" ${f} | tr -d "\n" | wc -c; do
 
 Read in the gene presence/absence matrix for *H. influenzae*:
 
-```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
-
-hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
-
-# if (identical(Sys.getenv("CI"), "true")) {
-#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
-# }
-
-tmp_dir  <- tempdir()
-hflu_fn <- "Hflu_gene_presence_absence.csv"
-tmp_path <- file.path(tmp_dir, hflu_fn)
-
-archive::archive_extract(
-  hflu_tar,
-  file = hflu_fn,
-  dir  = tmp_dir
-)
-
-Hinflu_gene_preabsence <-
-  read.csv(
-    tmp_path,
-    header = TRUE,
-    comment.char = "",
-    check.names = FALSE,
-    sep = ","
-    ) %>%
-    tidyr::pivot_longer(
-      cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-      ),
-      names_to = "npg_run_id",
-      values_to = "CDS"
-    )
-
-included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
-
-if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
-  stop("Hflu Panaroo not run on correct isolate set")
-}
-
-```
 
 ### Pangenome curve for *H. influenzae*
 
 TO DO
 
-```{r Hflu downsampling for CI, cache = FALSE}
-
-if (identical(Sys.getenv("CI"), "true")) {
-  
-  message("CI environment detected: memory management commands")
-  Hinflu_gene_preabsence %<>%
-  slice_sample(prop = 0.01)
-  
-}
-
-```
 
 ### Analysis of *M. catarrhalis* gene content
 
@@ -1886,11 +1833,68 @@ Mcat_gene_preabsence <- read.csv(
     names_to = "npg_run_id",
     values_to = "CDS"
   )
-
+expected_mcat <- Mcat_filter$npg_run_id
 included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
 
 if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
   stop("Mcat Panaroo not run on correct isolate set")
+}
+
+```
+
+Read in the gene presence/absence matrix for *H. influenzae*:
+
+```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
+
+hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
+
+# if (identical(Sys.getenv("CI"), "true")) {
+#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
+# }
+
+tmp_dir  <- tempdir()
+hflu_fn <- "Hflu_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, hflu_fn)
+
+archive::archive_extract(
+  hflu_tar,
+  file = hflu_fn,
+  dir  = tmp_dir
+)
+
+Hinflu_gene_preabsence <-
+  read.csv(
+    tmp_path,
+    header = TRUE,
+    comment.char = "",
+    check.names = FALSE,
+    sep = ","
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+      names_to = "npg_run_id",
+      values_to = "CDS"
+    )
+expected_hflu <- Hflu_filter$npg_run_id
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
+
+if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+  stop("Hflu Panaroo not run on correct isolate set")
+}
+
+```
+```{r Hflu downsampling for CI, cache = FALSE}
+
+if (identical(Sys.getenv("CI"), "true")) {
+  
+  message("CI environment detected: memory management commands")
+  Hinflu_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
 }
 
 ```
@@ -2340,126 +2344,11 @@ panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_pa
 
 ```
 
-Read in the gene presence/absence matrix for *H. influenzae*:
-
-```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
-
-hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
-
-# if (identical(Sys.getenv("CI"), "true")) {
-#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
-# }
-
-tmp_dir  <- tempdir()
-hflu_fn <- "Hflu_gene_presence_absence.csv"
-tmp_path <- file.path(tmp_dir, hflu_fn)
-
-archive::archive_extract(
-  hflu_tar,
-  file = hflu_fn,
-  dir  = tmp_dir
-)
-
-Hinflu_gene_preabsence <-
-  read.csv(
-    tmp_path,
-    header = TRUE,
-    comment.char = "",
-    check.names = FALSE,
-    sep = ","
-    ) %>%
-    tidyr::pivot_longer(
-      cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-      ),
-      names_to = "npg_run_id",
-      values_to = "CDS"
-    )
-
-included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
-
-if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
-  stop("Hflu Panaroo not run on correct isolate set")
-}
-
-```
 
 ### Pangenome curve for *H. influenzae*
 
 TO DO
 
-```{r Hflu downsampling for CI, cache = FALSE}
-
-if (identical(Sys.getenv("CI"), "true")) {
-  
-  message("CI environment detected: memory management commands")
-  Hinflu_gene_preabsence %<>%
-  slice_sample(prop = 0.01)
-  
-}
-
-```
-
-### Analysis of *M. catarrhalis* gene content
-
-``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
-
-mkdir -p Moraxella_panaroo_result
-panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
-panaroo -i *.gff -o Moraxella_panaroo_result --clean-mode moderate --merge_paralogs --remove-invalid-genes
-
-```
-
-Read in the gene presence/absence matrix:
-
-```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
-
-mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
-
-# if (identical(Sys.getenv("CI"), "true")) {
-#   mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
-# }
-
-tmp_dir  <- tempdir()
-mcat_fn <- "Mcat_gene_presence_absence.csv"
-tmp_path <- file.path(tmp_dir, mcat_fn)
-
-archive::archive_extract(
-  mcat_tar,
-  file = mcat_fn,
-  dir  = tmp_dir
-)
-
-```
-
-``` {r Process archive, cache = FALSE}
-
-Mcat_gene_preabsence <- read.csv(
-  tmp_path,
-  header = TRUE,
-  comment.char = "",
-  check.names = FALSE,
-  sep = ","
-  ) %>%
-  tidyr::pivot_longer(
-    cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-      ),
-    names_to = "npg_run_id",
-    values_to = "CDS"
-  )
-
-included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
-
-if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
-  stop("Mcat Panaroo not run on correct isolate set")
-}
-
-```
 
 ### Pangenome curve for *M. catarrhalis*
 
@@ -2690,6 +2579,12 @@ sample_no_motif <- df_meth %>%
 # Merge methylation and species metadata
 
 ```{r}
+df1_meth = df_meth%>%filter(!Sample%in%sample_no_motif)
+df1_meth = df1_meth%>%filter(Motif!="No Motif Assigned")
+df2_meth = df_meth%>%filter(Sample%in%sample_no_motif)
+
+df_meth = bind_rows(df1_meth, df2_meth)
+
 df_meth2 <- df_meth %>%
   dplyr::left_join(
     Long_read_sample_df,
@@ -2848,29 +2743,29 @@ p2 <- ggplot(
     x = "Methylation status",
     y = "Mean modification probability"
   ) +
-  theme(
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5),
     panel.grid = element_blank(),
     axis.text = element_text(
-      size = 15,
+      size = 10,
       color = "black"
     ),
     axis.title = element_text(
-      size = 15,
-      face = "bold"
+      size = 10,
+      face = "bold",
     ),
     plot.title = element_text(
       face = "bold",
       hjust = 0.5
     ),
     legend.title = element_text(
-      size = 15,
+      size = 10,
       face = "bold"
     ),
     strip.text = element_text(
-      size = 20,
+      size = 15,
       face = "bold"
     ),
-    legend.text = element_text(size = 15)
+    legend.text = element_text(size = 14)
   )
 
 p2
@@ -2990,7 +2885,6 @@ p4
 
 # Restriction–modification system analysis
 
-# Restriction–modification system analysis
 
 ```{r}
 MicroMod_an_Passed = fread("annotate_rm/passed_all_rm_genes.tsv")
@@ -3022,13 +2916,13 @@ p5=ggplot(df, aes(Group, n, fill=Group)) +
   facet_wrap(~Species)+
   geom_jitter(width=0.15) +
   ylab("Number of MT genes")+
-  theme(
+  theme(axis.text.x =  element_text(angle = 90, vjust = 0.5, hjust = 0.5),
     panel.grid = element_blank(),
-    axis.text = element_text(size = 20,color = "black"),
-    axis.title = element_text(size = 25,face = "bold"),
+    axis.text = element_text(size = 12,color = "black"),
+    axis.title = element_text(size = 12,face = "bold"),
     plot.title = element_text(face = "bold", hjust = 0.5),
-    legend.title = element_text(size = 25,face = "bold"),
-    strip.text = element_text(size = 20,face = "bold")
+    legend.title = element_text(size = 12,face = "bold"),
+    strip.text = element_text(size = 12,face = "bold")
   )+
   labs(title = "Number of MT genes per sample")
 p5

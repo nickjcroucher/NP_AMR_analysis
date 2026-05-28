@@ -6,3 +6,26 @@ NP_AMR_analysis_files
 NP_AMR_analysis_files/*
 NP_AMR_analysis_files/figure-html/*
 NP_AMR_analysis_cache
+# R session
+.RData
+.RDataTmp*
+.Rhistory
+
+# outputs
+*.tiff
+*.png
+*.pdf
+*.html
+*.docx
+
+# environments
+venv/
+
+# large analysis outputs
+Hinf_results/
+Mcat_results/
+ML_Prob/
+motifs/
+
+# git sub-repo issue
+microbemod/
