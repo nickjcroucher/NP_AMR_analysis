@@ -2598,7 +2598,7 @@ head(df_meth2)
 
 ## Heatmap function
 
-```{r}
+```{r Motifs heatmap}
 plot_species_heatmap <- function(sp){
 
   x <- df_meth2 %>%
@@ -2657,7 +2657,7 @@ plot_species_heatmap(
 
 ## Import ML probability histograms
 
-```{r}
+```{r Import Ml probability histograms}
 passed <- readLines("ML_Prob/passed.txt")
 failed <- readLines("ML_Prob/failed.txt")
 No_Motifs <- df_meth2 %>% select(Sample,Motif)%>%
@@ -3830,33 +3830,63 @@ for (i in 2:length(list_freq)) {
   table_Dominant_taxa = bind_rows(table_Dominant_taxa,list_freq[[i]])
 }
 
-species_colors=c("#D9F0A3","#A6CEE3", "#1F78B4", '#B2DF8A',"#FB9A99", 
-  "#33A02C", "#E31A1C","#CAB2D6","#FF7F00","#6A3D9A",
-  "#d5d5d5","#B15928","#08306B","#7CAE00" ,"#F8766D",
-  "#00BFC4", "#C77CFF","#E28900","#C29A00","#F27D54",
-  "#B5A000"  ,"#00BECC","#95A900", "#00B817","#B783FF",
-  "#00BB44" ,"#7D96FF" ,"#00C089" ,"#F365E6", "#00C19C",
-  "#00C1AD" ,"#FD7083","#00C0BD","#FFC107","#4F9FFF",
-  '#EE6677', "#FEB24C", "#000000", "#004529", "#78C679","#1E88E5"
-  )
-names(species_colors) <- c(colnames(Mixed_bacteria_samples[-c(41,42)]),"Other")
-
-
-table_Dominant_taxa<-table_Dominant_taxa%>%
-  mutate(Dominant_Species = factor(Dominant_Species,levels= c('Bacillus safensis',         
-                                                              'Bacillus velezensis','Enterobacter cloacae',       
-                                                              'Enterobacter hormaechei','Escherichia coli'   ,         
-                                                              'Acinetobacter baumannii', 'Klebsiella pneumoniae',       
-                                                              'Mammaliicoccus sciuri' ,'Moraxella bovis' ,            
-                                                              'Bacillus altitudinis','Moraxella lincolnii'  ,       
-                                                              'Moraxella nonliquefaciens','Neisseria subflava',          
-                                                              'Staphylococcus arlettae','Bacillus anthracis','Staphylococcus capitis',      
-                                                              'Bacillus cereus','Staphylococcus haemolyticus',
-                                                              'Staphylococcus hominis','Staphylococcus saprophyticus',
-                                                              'Streptococcus dysgalactiae','Streptococcus mitis',        
-                                                              'Acinetobacter variabilis','Streptococcus pyogenes',        
-                                                              'Staphylococcus epidermidis','Staphylococcus aureus','Moraxella catarrhalis',
-                                                              'Streptococcus pneumoniae','Haemophilus influenzae','Other')))
+species_colors=cols <- c(
+  
+  # Acinetobacter (Blues)
+  "Acinetobacter baumannii" = hcl.colors(9, "Blues")[1],
+  "Acinetobacter variabilis" = hcl.colors(9, "Blues")[2],
+  
+  # Bacillus (Oranges)
+  "Bacillus altitudinis" = hcl.colors(9, "Oranges")[1],
+  "Bacillus anthracis"   = hcl.colors(9, "Oranges")[2],
+  "Bacillus cereus"      = hcl.colors(9, "Oranges")[3],
+  "Bacillus safensis"    = hcl.colors(9, "Oranges")[4],
+  "Bacillus velezensis"  = hcl.colors(9, "Oranges")[5],
+  
+  # Enterobacter (Greens)
+  "Enterobacter cloacae"    = hcl.colors(9, "Greens")[1],
+  "Enterobacter hormaechei" = hcl.colors(9, "Greens")[2],
+  
+  # Escherichia
+  "Escherichia coli" = hcl.colors(1, "Purples"),
+  
+  # Haemophilus
+  "Haemophilus influenzae" = "red", #hcl.colors(1, "YlOrBr"),
+  
+  # Klebsiella
+  "Klebsiella pneumoniae" = hcl.colors(1, "Rocket"),
+  
+  # Mammaliicoccus
+  "Mammaliicoccus sciuri" = hcl.colors(1, "Inferno"),
+  
+  # Moraxella (YlGnBu)
+  "Moraxella bovis"          = hcl.colors(9, "Cyan")[2],
+  "Moraxella catarrhalis"    = hcl.colors(9, "Cyan")[1],
+  "Moraxella lincolnii"      = hcl.colors(9, "Cyan")[3],
+  "Moraxella nonliquefaciens"= hcl.colors(9, "Cyan")[4],
+  
+  # Neisseria
+  "Neisseria subflava" = hcl.colors(1, "Pink"),
+  
+  # Other
+  "Other" = hcl.colors(1, "Grays"),
+  
+  # Staphylococcus (Magenta)
+  "Staphylococcus arlettae"       = hcl.colors(9, "Magenta")[2],
+  "Staphylococcus aureus"         = hcl.colors(9, "Magenta")[1],
+  "Staphylococcus capitis"        = hcl.colors(9, "Magenta")[3],
+  "Staphylococcus epidermidis"    = hcl.colors(9, "Magenta")[4],
+  "Staphylococcus haemolyticus"   = hcl.colors(9, "Magenta")[5],
+  "Staphylococcus hominis"        = hcl.colors(9, "Magenta")[6],
+  "Staphylococcus saprophyticus"  = hcl.colors(9, "Magenta")[7],
+  
+  # Streptococcus (Blue-Yellow)
+  "Streptococcus dysgalactiae" = hcl.colors(9, "Teal")[],
+  "Streptococcus mitis"        = hcl.colors(9, "Teal")[2],
+  "Streptococcus pneumoniae"   = hcl.colors(9, "Teal")[1],
+  "Streptococcus pyogenes"     = hcl.colors(9, "Teal")[4]
+  
+)
 
 p3=ggplot(table_Dominant_taxa,aes(fill = Dominant_Species,y=Proportion,x=Cluster))+
   geom_bar(stat ="identity" ,position = "stack")+
