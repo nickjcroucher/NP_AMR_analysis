@@ -216,7 +216,7 @@ plot_locus_comparison <- function(seqs, feats, links,
     )
   }
   p <- p +
-    ggnewscale::geom_link(
+    gggenomes::geom_link(
       data = gggenomes::links(1, display_strand == "+"),
       aes(fill = identity),
       colour = "white",
