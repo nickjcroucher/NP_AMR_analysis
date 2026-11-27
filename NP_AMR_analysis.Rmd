@@ -1511,7 +1511,7 @@ FastTree hmrM_proteins.aln > hmrM_proteins.tre
 
 ```
 
-```{r Read blaBRO2 protein phylogeny}
+```{r Read hmrM protein phylogeny}
 
 hmrM_aln <- as.matrix(ape::read.FASTA("./resistance_proteins/hmrM_proteins.aln", type = "AA"))
 hmrM_dists <- ape::dist.aa(hmrM_aln,scaled = TRUE)
@@ -2654,7 +2654,7 @@ minimap2 -X -N 50 -p 0.1 -c recB_sequences.fna recB_sequences.fna > recB_locus_c
 
 ```
 
-```{r Plot ssuD locus comparison}
+```{r Plot recB locus comparison}
 
 # Parse sequences
 recB_fasta_files <- list.files(
