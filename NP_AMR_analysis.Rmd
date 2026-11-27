@@ -25,6 +25,7 @@ require(readr)
 require(cowplot)
 library(viridis)
 library(ape)
+library(ggtree)
 
 source("./R/comparison_plotting.R")
 
@@ -3053,7 +3054,66 @@ hflu_amr_distribution_df <-
                     )
                  )
 
+hflu_tree <- ape::read.tree("./PopPUNK_analysis/Hflu_viz_core_NJ.nwk")
+hflu_tree$tip.label <- sub("_fa$", "", hflu_tree$tip.label)
 
+# Preserve plasmid gene order of cluster_ids from hflu_amr_distribution_df
+hflu_amr_matched <- hflu_amr_distribution_df |>
+  dplyr::filter(annotation_id != "", cluster_id != "")
+
+cluster_order <- unique(hflu_amr_matched$cluster_id)
+
+# Match annotation_id to CDS in Hinflu_gene_preabsence (handling ';'-separated paralogs)
+hflu_amr_presence <- Hinflu_gene_preabsence |>
+  dplyr::filter(CDS != "", Gene %in% cluster_order) |>
+  tidyr::separate_rows(CDS, sep = ";") |>
+  dplyr::inner_join(
+    hflu_amr_matched |> dplyr::distinct(annotation_id, cluster_id),
+    by = c("CDS" = "annotation_id")
+  ) |>
+  dplyr::distinct(npg_run_id, cluster_id) |>
+  dplyr::mutate(present = "Present")
+
+# Build presence/absence matrix aligned to tree tip labels
+hflu_amr_mat <- tidyr::expand_grid(
+  npg_run_id = hflu_tree$tip.label,
+  cluster_id = cluster_order
+) |>
+  dplyr::left_join(hflu_amr_presence, by = c("npg_run_id", "cluster_id")) |>
+  dplyr::mutate(
+    present = factor(dplyr::coalesce(present, "Absent"), levels = c("Absent", "Present")),
+    cluster_id = factor(cluster_id, levels = cluster_order)
+  ) |>
+  tidyr::pivot_wider(
+    names_from = cluster_id,
+    values_from = present,
+    values_fill = factor("Absent", levels = c("Absent", "Present"))
+  ) |>
+  tibble::column_to_rownames("npg_run_id")
+
+p_hflu_tree <- ggtree(hflu_tree, layout = "rectangular", size = 0.2)
+
+gheatmap(
+  p_hflu_tree,
+  hflu_amr_mat,
+  offset = 0,
+  width = 2,
+  colnames = TRUE,
+  colnames_position = "top",
+  colnames_angle = 90,
+  hjust = 0,
+  font.size = 2,
+  color = NA
+) +
+  scale_fill_manual(
+    values = c("Absent" = "grey95", "Present" = "steelblue"),
+    name = "Gene presence"
+  ) +
+  coord_cartesian(clip = "off") +
+  theme(
+    legend.position = "right",
+    plot.margin = margin(60, 5.5, 5.5, 5.5)
+  )
 
 ```
 
