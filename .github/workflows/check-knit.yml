@@ -51,6 +51,7 @@ jobs:
             viridis
             igraph
             gggenes
+            gggenomes
             readr
             cowplot
 
