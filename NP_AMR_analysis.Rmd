@@ -2802,12 +2802,15 @@ Analyse the distribution of Panaroo clusters:
 
 hflu_amr_distribution_df <-
   read.csv("./resistance_proteins/PCV-C-0707-2_pAF100_distribution.csv") |> 
-    dplyr::filter(cluster_id = 
-                    dplyr::match_case(
+    dplyr::mutate(cluster_id = 
+                    dplyr::if_else(
                       query_id == "JEOCPL_10175",
-                      TRUE ~ cluster_id
+                      "aph(3'')-Ib",
+                      cluster_id
                     )
                  )
+
+
 
 ```
 
