@@ -22,8 +22,46 @@ require(igraph)
 require(gggenes)
 require(readr)
 require(cowplot)
+library(viridis)
+library(ape)
 
+source("./R/comparison_plotting.R")
+
+# Plotting aesthetics
 theme_set(theme_bw() + theme(strip.background = element_blank()))
+
+# Palettes and scales
+# Reusable palette
+prevalence_palette <- c(
+  white  = "white",
+  yellow = "lightyellow",
+  orange = "orange",
+  red    = "red"
+)
+
+# Fill scales
+prevalence_fill_scale <- function(sigma = 0.1) {
+  trans <- scales::pseudo_log_trans(sigma = sigma)
+  anchor_percentages <- c(0, 1, 10, 100)
+  colour_positions <- scales::rescale(
+    trans$transform(anchor_percentages),
+    from = trans$transform(c(0, 100))
+  )
+  scale_fill_gradientn(
+    colours = prevalence_palette,
+    values = colour_positions,
+    trans = trans,
+    limits = c(0, 100),
+    breaks = c(0, 0.1, 0.5, 1, 2, 5, 10, 25, 50, 75, 100),
+    labels = scales::label_number(accuracy = 0.1),
+    oob = scales::squish,
+    name = "Prevalence (%)",
+    guide = guide_colorbar(
+      barheight = grid::unit(6, "cm"),
+      barwidth = grid::unit(0.8, "cm")
+    )
+  )
+}
 
 ```
 
@@ -1445,13 +1483,41 @@ We try to find resistance genes of *M. cattarrhalis* in the serosensitive and se
 
 ```
 
-### Phylogeny of *blaBRO* in *M. catarrhalis*
+### Diversity of *blaBRO* in *M. catarrhalis*
 
-TO DO
+Proteins were extracted from the Panaroo gene cluster. Alignment with MAFFT v7.526 (2024/Apr/26) and FastTree 2.1.10:
 
-### Phylogeny of *hmm* in *H. influenzae*
+```{bash, eval=FALSE}
 
-TO DO
+mafft blaBRO_proteins.aa > blaBRO_proteins.aln
+FastTree blaBRO_proteins.aln > blaBRO_proteins.tre
+
+```
+
+```{r Read blaBRO2 protein phylogeny}
+
+blaBRO_aln <- as.matrix(ape::read.FASTA("./resistance_proteins/blaBRO_proteins.aln", type = "AA"))
+blaBRO_dists <- ape::dist.aa(blaBRO_aln,scaled = TRUE)
+mean(blaBRO_dists)
+
+```
+
+### Diversity of *hmm* in *H. influenzae*
+
+```{bash, eval=FALSE}
+
+mafft hmrM_proteins.aa > hmrM_proteins.aln
+FastTree hmrM_proteins.aln > hmrM_proteins.tre
+
+```
+
+```{r Read blaBRO2 protein phylogeny}
+
+hmrM_aln <- as.matrix(ape::read.FASTA("./resistance_proteins/hmrM_proteins.aln", type = "AA"))
+hmrM_dists <- ape::dist.aa(hmrM_aln,scaled = TRUE)
+mean(hmrM_dists)
+
+```
 
 ## Identify capsules in the single isolate datasets
 
@@ -1553,10 +1619,9 @@ Hflu_genes_amr <-
               percent_present = (Present /Total) * 100, 
               .groups = "drop")
 
-
 ggplot(Hflu_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red") +
+  geom_tile(color = "black") +
+  prevalence_fill_scale(sigma = 0.1) +
   labs(
     x = "Resistance Gene",
     y = "Country",
@@ -1588,8 +1653,8 @@ Mcat_genes_amr <-
 
 
 ggplot(Mcat_genes_amr, aes(x = Resistant_gene, y = Cohort, fill = percent_present)) +
-  geom_tile(color = "blue") +
-  scale_fill_gradient(low = "lightyellow", high = "red") +
+  geom_tile(color = "black") +
+  prevalence_fill_scale(sigma = 0.1) +
   labs(
     x = "Resistance Gene",
     y = "Country",
@@ -1637,25 +1702,40 @@ ggplot(amr_comparison_df,
 
 ## Add plot of serotype distribution across locations
 
-TO DO
 ```{r plot bargraph for serotype of H.influenzae}
-Hflu_serotype_percent <- Hflu_microreact_df %>% 
-  filter(!is.na(serotype)) %>%
-  group_by(Cohort, serotype) %>%
-  summarise(n = n(), .groups = "drop") %>%
-  group_by(serotype) %>%
-  mutate(
-    total = sum(n),
-    percent_serotype = (n / total) * 100) %>% 
-  ungroup()
+
+Hflu_serotype_percent <-
+  Hflu_microreact_df %>%
+    dplyr::filter(!is.na(serotype)) %>%
+    dplyr::group_by(Cohort) %>%
+    dplyr::mutate(pop_total = n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::count(Cohort, serotype, pop_total, name = "n_serotype") %>%
+    dplyr::group_by(Cohort) %>%
+    dplyr::mutate(percent_serotype = n_serotype / first(pop_total) * 100) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-pop_total) %>%
+    tidyr::complete(
+      Cohort,
+      serotype,
+      fill = list(n_serotype = 0, percent_serotype = 0)
+    ) |> 
+    dplyr::mutate(serotype = gsub("_"," ",serotype))
   
-ggplot(Hflu_serotype_percent, 
-       aes(x = serotype, y = Cohort, fill = percent_serotype )) + 
-  geom_tile(color = "blue") + 
-  scale_fill_gradient(low = "lightyellow", high = "red") + 
-  theme(axis.text.x = element_text(angle = 45, hjust =1), 
-        panel.grid = element_blank()) + 
-  labs(title = "Serotype Distribution of H.influenzae", x = "Serotypes", y = "Locations")
+ggplot(
+  Hflu_serotype_percent,
+  aes(x = serotype, y = Cohort, fill = percent_serotype)
+) +
+  geom_tile(color = "black") +
+  prevalence_fill_scale(sigma = 0.1) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  ) +
+  labs(
+    x = "Serotypes",
+    y = "Locations"
+  )
 
 ```
 
@@ -2138,7 +2218,7 @@ Hflu_microreact_df %<>%
 
 TO DO
 ```{r plot heatmap of plasmid distribution across cohort}
-library(viridis)
+
 plasmid_counts <- plasmid_reclustering_df %>%
   group_by(Cohort, Species, plasmid_name) %>%
   summarise(n = n(), .groups = "drop") %>%
@@ -2161,6 +2241,7 @@ ggplot(plasmid_counts,
   labs(title = "Plasmids Distribution Across Cohorts", x = "Cohort", y = "Plasmid", fill = "percent of plasmids")
                           
 ```
+
 ### Association between plasmids and resistance in *H. influenzae*
 
 ```{r calculate the proportion of resistance and plasmids H.influenzae}
@@ -2216,7 +2297,8 @@ ggplot(Mcat_plasmid_resistance_prop_df,
 ```
 
 ## Analysis of plasmid gene content
-We select the plasmids from the plasmid_reclustering_df to analize in the Bakta tool, then we plot the sequence by gggenes function.
+
+We select the plasmids from the plasmid_reclustering_df to analyse in the Bakta tool, then we plot the sequence by gggenes function.
 
 ```{r Get representative plasmid sequences}
 
@@ -2483,6 +2565,208 @@ Use `plasmid_reclustering_df` to find representatives for annotation:
 [13] "plasmid_AB946_30" "plasmid_AF100_5"  "plasmid_AF100_6"  "plasmid_AF100_7"  "plasmid_AF100_8"  "plasmid_AF100_16"
 [19] "plasmid_AC497_18" "plasmid_AF100_19" "plasmid_AC497_21" "plasmid_AE169"    "plasmid_AB947_24"
 
+## Specific analysis of AMR loci
+
+### Analysis of *M. catarrhalis* AMR loci
+
+#### Analysis of the *ssuD* locus
+
+Run comparison of *ssuD* loci:
+
+```{bash, eval=FALSE}
+
+for f in ./*_ssuD_locus.fa; do
+    [[ "$f" == "./ssuD_sequences.fna" ]] && continue;
+    cat "$f";
+done > ssuD_sequences.fna
+minimap2 -X -N 50 -p 0.1 -c ssuD_sequences.fna ssuD_sequences.fna > ssuD_locus_comp.paf
+
+```
+
+```{r Plot ssuD locus comparison}
+
+# Parse sequences
+ssuD_fasta_files <- list.files(
+  "./AMR_loci/",
+  pattern = "ssuD_locus\\.fa$",
+  full.names = TRUE
+)
+
+ssuD_seqs  <- read_seqs(
+  rev(ssuD_fasta_files),
+  .id = "bin_id"
+)
+
+# Parse annotations
+ssuD_gff_files <- list.files(
+  "./AMR_loci/",
+  pattern = "ssuD_locus\\.gff(3)?(\\.gz)?$",
+  full.names = TRUE
+)
+
+ssuD_feats <- read_feats(
+  rev(ssuD_gff_files),
+  .id = "bin_id"   # use this if each GFF represents a separate genome/bin
+) |> dplyr::filter(type == "CDS")
+
+ssuD_locus_links <-
+  read_paf("./AMR_loci/ssuD_locus_comp.paf") 
+
+ssuD_locus_labels <- list()
+ssuD_locus_labels[["MEGIMD_04450"]] = "italic(tetD)"
+ssuD_locus_labels[["MEGIMD_04445"]] = "italic(tetC)"
+ssuD_locus_labels[["MEGIMD_04440"]] = "italic(tetB)"
+ssuD_locus_labels[["MEGIMD_04435"]] = "italic(tetR)"
+ssuD_locus_labels[["MEGIMD_04480"]] = "italic(ssuD)"
+ssuD_locus_labels[["MEGIMD_04385"]] = "italic(phoB)"
+ssuD_locus_labels[["MEGIMD_04415"]] = "italic(gltS)"
+ssuD_locus_labels[["MEGIMD_04365"]] = "italic(pstS)"
+
+ssuD_locus_names = list()
+ssuD_locus_names[["PCV-C-0245-2_ssuD_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0245-2)"
+ssuD_locus_names[["PCV-C-0760-2_ssuD_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0760-2)"
+
+plot_locus_comparison(
+  ssuD_seqs,
+  ssuD_feats,
+  ssuD_locus_links,
+  min_identity = 0.90,
+  gene_annotations = ssuD_locus_labels,
+  sequence_names = ssuD_locus_names,
+  sync = TRUE
+)
+
+```
+
+The antibiotic resistance cassette inserts into the *ataC* gene. The cassette appears to be found in many gram-negative bacteria, including *Haemophilus seminalis*, *Escherichia coli*, *Klebsiella pneumoniae* and *Enterobacter hormaechei*.
+
+#### Analysis of the *recB* locus
+
+Run comparison of *recB* loci:
+
+```{bash, eval=FALSE}
+
+for f in ./*_recB_locus.fa; do
+    [[ "$f" == "./recB_sequences.fna" ]] && continue;
+    cat "$f";
+done > recB_sequences.fna
+minimap2 -X -N 50 -p 0.1 -c recB_sequences.fna recB_sequences.fna > recB_locus_comp.paf
+
+```
+
+```{r Plot ssuD locus comparison}
+
+# Parse sequences
+recB_fasta_files <- list.files(
+  "./AMR_loci/",
+  pattern = "recB_locus\\.fa$",
+  full.names = TRUE
+)
+
+recB_seqs  <- read_seqs(
+  recB_fasta_files,
+  .id = "bin_id"
+)
+
+# Parse annotations
+recB_gff_files <- list.files(
+  "./AMR_loci/",
+  pattern = "recB_locus\\.gff(3)?(\\.gz)?$",
+  full.names = TRUE
+)
+
+recB_feats <- read_feats(
+  recB_gff_files,
+  .id = "bin_id"   # use this if each GFF represents a separate genome/bin
+) |> dplyr::filter(type == "CDS")
+
+recB_locus_links <-
+  read_paf("./AMR_loci/recB_locus_comp.paf") 
+
+recB_locus_labels <- list()
+recB_locus_labels[["PMFBMI_04940"]] = "italic(recB)"
+recB_locus_labels[["PMFBMI_05040"]] = "italic(tnp)"
+recB_locus_labels[["PMFBMI_05065"]] = "italic(gltS)"
+recB_locus_labels[["PMFBMI_05090"]] = "italic(tetB)"
+recB_locus_labels[["PMFBMI_05100"]] = "italic(sul2)"
+recB_locus_labels[["PMFBMI_05105"]] = "italic(aph)~'(3\")-Ib'"
+recB_locus_labels[["PMFBMI_05135"]] = "italic(tolC)"
+recB_locus_labels[["PMFBMI_05140"]] = "italic(hrpA)"
+
+recB_locus_names = list()
+recB_locus_names[["PCV-C-0245-2_recB_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0245-2)"
+recB_locus_names[["PCV-C-0760-2_recB_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0760-2)"
+
+plot_locus_comparison(
+  recB_seqs,
+  recB_feats,
+  recB_locus_links,
+  min_identity = 0.90,
+  gene_annotations = recB_locus_labels,
+  sequence_names = recB_locus_names,
+  sync = TRUE
+)
+
+```
+
+The antibiotic resistance cassette inserts adjacent to a PRCI-type element.
+
+#### Analysis of the distribution of these AMR genes
+
+### Analysis of *H. influenzae* AMR loci
+
+#### Analysis of the pAF100 plasmid
+
+Plasmid isolated as a contig from the long-read assembly of isolate from PCV-C-0707-2. This was labelled contig_4, which is identified as circular by the output of flye:
+
+```{eval=FALSE}
+#seq_name       length  cov.    circ.   repeat  mult.   alt_group       graph_path
+contig_3        1943383 585     N       N       1       *       *,3,*
+contig_4        74669   633     Y       N       1       *       4
+contig_2        7201    469     N       Y       1       2       *,2,*
+```
+
+The annotation can therefore be represented as a circular plasmid:
+
+```{r plot long-read assembly of AF100 plasmid name by gggenes}
+
+plot_plasmid_function("PCV-C-0707-2_pAF100.tsv", title_str = "pAF100") +
+  coord_polar(theta = "x") + theme_void()
+
+```
+
+#### Analysis of the distribution of these AMR genes
+
+Use proteins from long-read assembly to match those found in short-read assemblies, and the corresponding Panaroo clusters:
+
+```{bash, eval=FALSE}
+
+python get_resistance_loci.py --gene-data ../../panaroo/Hflu_gene_data.csv.tar.gz --presence ../panaroo_output/Hflu_gene_presence_absence.tar.gz --query PCV-C-0707-2_pAF100.aa --output PCV-C-0707-2_pAF100_distribution.csv
+
+Mapping complete
+------------------------------
+Queries processed: 83
+Matched queries:   80
+Unmatched queries: 3
+Output file:       PCV-C-0707-2_pAF100_distribution.csv
+
+```
+
+Analyse the distribution of Panaroo clusters:
+
+``` {r Distribution of AMR loci in Hflu}
+
+hflu_amr_distribution_df <-
+  read.csv("./resistance_proteins/PCV-C-0707-2_pAF100_distribution.csv") |> 
+    dplyr::filter(cluster_id = 
+                    dplyr::match_case(
+                      query_id == "JEOCPL_10175",
+                      TRUE ~ cluster_id
+                    )
+                 )
+
+```
+
 ## Summarise single isolate epidemiology
 
 ### Generate microreact output files
@@ -2523,7 +2807,6 @@ Microreact visualisations are available from:
 
 ### Compare *H. influenzae* strain frequencies between locations
 
-TO DO
 ```{r calculate strains frequencies of H.influenzae then plot the frequency}
 Hflu_strains <- Hflu_microreact_df %>%
   group_by(id, 
@@ -2755,14 +3038,6 @@ Key hypothesis for the evolution of plasmids is that they enable the local adapt
 ### Frequency of plasmids across populations
 
 ### Frequency of plasmid-borne genes across populations
-
-## Phylogenetic analysis
-
-TO DO: Gubbins
-
-### Analysis of recombination across populations
-
-TO DO: fastGEAR
 
 # Analysis of long-read data
 

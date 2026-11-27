@@ -47,6 +47,12 @@ jobs:
             ggrepel
             patchwork
             cowplot
+            ape
+            viridis
+            igraph
+            gggenes
+            readr
+            cowplot
 
       - name: Render NP_AMR_analysis.Rmd
         run: |
