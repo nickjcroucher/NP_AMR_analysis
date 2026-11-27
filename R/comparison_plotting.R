@@ -142,7 +142,7 @@ plot_locus_comparison <- function(seqs, feats, links,
   if (colour_min >= 1) colour_min <- min_identity
   
   make_plot <- function(link_data) {
-    q <- gggenomes(
+    q <- gggenomes::gggenomes(
       seqs  = seqs,
       genes = feats,
       links = link_data,
@@ -172,7 +172,7 @@ plot_locus_comparison <- function(seqs, feats, links,
   # Compare actual sequence orientation before/after sync and explicit flips.
   # Build twice so link display_strand can be set on the input links table;
   # gggenomes still receives the unmodified PAF strand for ribbon geometry.
-  original <- gggenomes(seqs = seqs, genes = feats, links = links,
+  original <- gggenomes::gggenomes(seqs = seqs, genes = feats, links = links,
                         adjacent_only = TRUE)
   p <- make_plot(links)
   before <- gggenomes::pull_seqs(original) %>%
