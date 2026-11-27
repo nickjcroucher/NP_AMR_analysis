@@ -1758,6 +1758,253 @@ ggplot(
 
 ```
 
+## Compare strain frequencies between locations
+
+### Plot distributions of strain frequencies across locations
+
+### Compare *H. influenzae* strain frequencies between locations
+
+```{r calculate strains frequencies of H.influenzae then plot the frequency}
+Hflu_strains <- Hflu_microreact_df %>%
+  group_by(id, 
+           Cohort, 
+           Cluster) %>%
+  summarise(strains_count = n_distinct(id), 
+            .groups = "drop") %>%
+  arrange(Cohort)
+
+Hflu_strains_freq <- Hflu_strains %>%
+  group_by(Cohort) %>% 
+  mutate(Frequency = (strains_count / sum(strains_count) *100))
+
+ggplot(Hflu_strains_freq, 
+       aes(x = Cluster, 
+           y = Frequency, 
+           fill = Cohort)) + 
+  geom_bar(stat = "identity", 
+           position = "stack") + 
+  theme_minimal() + 
+  labs(title = "H. influenzae strain frequencies\nby cohort", 
+       x = "Cluster", 
+       y = "Frequency", 
+       fill = "Cohort")
+```
+
+### Compare strain frequencies between locations
+
+``` {r Compare strain frequencies across locations}
+
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    process_strain_frequencies(Mcat_microreact_df) %>% 
+      dplyr::mutate(Species = "Moraxella catarrhalis"),
+    process_strain_frequencies(Hflu_microreact_df) %>%
+      dplyr::mutate(Species = "Haemophilus influenzae")
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = species_palette,
+  drakenstein_name = "Drakenstein"
+)
+
+p
+
+```
+
+## Compare gene frequencies across locations
+
+After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
+
+### Parse Panaroo output
+
+This analysis used Panaroo version 1.5.2.
+
+``` {bash Run panaroo on H. influenzae, eval = FALSE}
+
+mkdir -p Haemophilus_panaroo_results
+panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
+panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_paralogs --remove-invalid-genes
+
+```
+
+``` {r Filters to check panaroo run on correct isolate set}
+
+# For checking no QC failures are analysed
+expected_hflu <- Hflu_filter$npg_run_id
+expected_mcat <- Mcat_filter$npg_run_id
+
+```
+
+Read in the gene presence/absence matrix for *H. influenzae*:
+
+```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
+
+hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
+
+# if (identical(Sys.getenv("CI"), "true")) {
+#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
+# }
+
+tmp_dir  <- tempdir()
+hflu_fn <- "Hflu_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, hflu_fn)
+
+archive::archive_extract(
+  hflu_tar,
+  file = hflu_fn,
+  dir  = tmp_dir
+)
+
+Hinflu_gene_preabsence <-
+  read.csv(
+    tmp_path,
+    header = TRUE,
+    comment.char = "",
+    check.names = FALSE,
+    sep = ","
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+      names_to = "npg_run_id",
+      values_to = "CDS"
+    )
+
+included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
+
+if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
+  stop("Hflu Panaroo not run on correct isolate set")
+}
+
+```
+
+### Pangenome curve for *H. influenzae*
+
+TO DO
+
+```{r Hflu downsampling for CI, cache = FALSE}
+
+if (identical(Sys.getenv("CI"), "true")) {
+  
+  message("CI environment detected: memory management commands")
+  Hinflu_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
+}
+
+```
+
+### Analysis of *M. catarrhalis* gene content
+
+``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
+
+mkdir -p Moraxella_panaroo_result
+panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
+panaroo -i *.gff -o Moraxella_panaroo_result --clean-mode moderate --merge_paralogs --remove-invalid-genes
+
+```
+
+Read in the gene presence/absence matrix:
+
+```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
+
+mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
+
+# if (identical(Sys.getenv("CI"), "true")) {
+#   mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
+# }
+
+tmp_dir  <- tempdir()
+mcat_fn <- "Mcat_gene_presence_absence.csv"
+tmp_path <- file.path(tmp_dir, mcat_fn)
+
+archive::archive_extract(
+  mcat_tar,
+  file = mcat_fn,
+  dir  = tmp_dir
+)
+
+```
+
+``` {r Process archive, cache = FALSE}
+
+Mcat_gene_preabsence <- read.csv(
+  tmp_path,
+  header = TRUE,
+  comment.char = "",
+  check.names = FALSE,
+  sep = ","
+  ) %>%
+  tidyr::pivot_longer(
+    cols = -c(
+      Gene,
+      `Non-unique Gene name`,
+      Annotation
+      ),
+    names_to = "npg_run_id",
+    values_to = "CDS"
+  )
+
+included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
+
+if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
+  stop("Mcat Panaroo not run on correct isolate set")
+}
+
+```
+
+### Pangenome curve for *M. catarrhalis*
+
+TO DO
+
+```{r Mcat downsampling for CI, cache = FALSE}
+
+if (identical(Sys.getenv("CI"), "true")) {
+
+  message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
+  Mcat_gene_preabsence %<>%
+  slice_sample(prop = 0.01)
+  
+}
+
+```
+
+### Geographic analysis of gene frequencies
+
+``` {r Compare gene frequencies across locations}
+
+p <- plot_mcat_cluster_pairs_two_species(
+  dplyr::bind_rows(
+    Mcat_gene_preabsence %>% 
+      process_gene_frequencies(Mcat_microreact_df)  %>% 
+      dplyr::mutate(Species = "Moraxella catarrhalis"),
+    Hinflu_gene_preabsence %>% 
+      process_gene_frequencies(Hflu_microreact_df)  %>% 
+      dplyr::mutate(Species = "Haemophilus influenzae")
+  ),
+  species1 = "Moraxella catarrhalis",
+  species2 = "Haemophilus influenzae",
+  species_palette = species_palette,
+  drakenstein_name = "Drakenstein",
+  hist_on_diagonal = TRUE
+)
+
+p
+
+```
+
+## Compare gene frequencies across locations
+
+Key hypothesis for the evolution of plasmids is that they enable the local adaptation of strains. Therefore we can plot their frequency across locations.
+
+### Frequency of plasmids across populations
+
+### Frequency of plasmid-borne genes across populations
+
+
 ## Plasmid clustering and phylogeny analysis
 
 ### Analysis of genomic data with MOB suite
@@ -1870,10 +2117,6 @@ for f in *fasta; do echo -en "${f}\t"; grep -v ">" ${f} | tr -d "\n" | wc -c; do
 We plot the overall size distribution of the plasmids:
 
 ``` {r Load size and clustering of plasmid sequences }
-
-# For checking no QC failures are analysed
-expected_hflu <- Hflu_filter$npg_run_id
-expected_mcat <- Mcat_filter$npg_run_id
 
 # Load up sizes
 plasmid_sizes_df <-
@@ -2847,244 +3090,6 @@ Microreact visualisations are available from:
 - Seroresistance *M. catarrhalis*: https://microreact.org/project/cYSZ1g2Scstfbg1hVpoe7r-seroresistant-moraxella-poppunk
 
 - *H. influenzae*: https://microreact.org/project/qCSg4Ut9QYfAXo3tK3gTDu-h-influenzae-poppunk
-
-## Compare strain frequencies between locations
-
-### Plot distributions of strain frequencies across locations
-
-### Compare *H. influenzae* strain frequencies between locations
-
-```{r calculate strains frequencies of H.influenzae then plot the frequency}
-Hflu_strains <- Hflu_microreact_df %>%
-  group_by(id, 
-           Cohort, 
-           Cluster) %>%
-  summarise(strains_count = n_distinct(id), 
-            .groups = "drop") %>%
-  arrange(Cohort)
-
-Hflu_strains_freq <- Hflu_strains %>%
-  group_by(Cohort) %>% 
-  mutate(Frequency = (strains_count / sum(strains_count) *100))
-
-ggplot(Hflu_strains_freq, 
-       aes(x = Cluster, 
-           y = Frequency, 
-           fill = Cohort)) + 
-  geom_bar(stat = "identity", 
-           position = "stack") + 
-  theme_minimal() + 
-  labs(title = "H. influenzae strain frequencies\nby cohort", 
-       x = "Cluster", 
-       y = "Frequency", 
-       fill = "Cohort")
-```
-
-### Compare strain frequencies between locations
-
-``` {r Compare strain frequencies across locations}
-
-p <- plot_mcat_cluster_pairs_two_species(
-  dplyr::bind_rows(
-    process_strain_frequencies(Mcat_microreact_df) %>% 
-      dplyr::mutate(Species = "Moraxella catarrhalis"),
-    process_strain_frequencies(Hflu_microreact_df) %>%
-      dplyr::mutate(Species = "Haemophilus influenzae")
-  ),
-  species1 = "Moraxella catarrhalis",
-  species2 = "Haemophilus influenzae",
-  species_palette = species_palette,
-  drakenstein_name = "Drakenstein"
-)
-
-p
-
-```
-
-## Compare gene frequencies across locations
-
-After we got the gene presence absence from *Moraxella catarrhalis* Panaroo, then we extracted that csv file for doing tidy column, calculate the gene frequencies and number of genomes then final plotting scatter graph and plot histograms between countries.
-
-### Parse Panaroo output
-
-This analysis used Panaroo version 1.5.2.
-
-``` {bash Run panaroo on H. influenzae, eval = FALSE}
-
-mkdir -p Haemophilus_panaroo_results
-panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
-panaroo -i *.gff -o Haemophilus_panaroo_results --clean-mode moderate --merge_paralogs --remove-invalid-genes
-
-```
-
-Read in the gene presence/absence matrix for *H. influenzae*:
-
-```{r import data Hinflu version4 gene presence absence after running Panaroo script, cache = FALSE}
-
-hflu_tar <- "./panaroo_output/Hflu_gene_presence_absence.tar.gz"
-
-# if (identical(Sys.getenv("CI"), "true")) {
-#   hflu_tar <- "./panaroo_output/test.Hflu_gene_presence_absence.tar.gz"
-# }
-
-tmp_dir  <- tempdir()
-hflu_fn <- "Hflu_gene_presence_absence.csv"
-tmp_path <- file.path(tmp_dir, hflu_fn)
-
-archive::archive_extract(
-  hflu_tar,
-  file = hflu_fn,
-  dir  = tmp_dir
-)
-
-Hinflu_gene_preabsence <-
-  read.csv(
-    tmp_path,
-    header = TRUE,
-    comment.char = "",
-    check.names = FALSE,
-    sep = ","
-    ) %>%
-    tidyr::pivot_longer(
-      cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-      ),
-      names_to = "npg_run_id",
-      values_to = "CDS"
-    )
-
-included_hflu <- unique(Hinflu_gene_preabsence$npg_run_id)
-
-if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_hflu,expected_hflu)) > 0) {
-  stop("Hflu Panaroo not run on correct isolate set")
-}
-
-```
-
-### Pangenome curve for *H. influenzae*
-
-TO DO
-
-```{r Hflu downsampling for CI, cache = FALSE}
-
-if (identical(Sys.getenv("CI"), "true")) {
-  
-  message("CI environment detected: memory management commands")
-  Hinflu_gene_preabsence %<>%
-  slice_sample(prop = 0.01)
-  
-}
-
-```
-
-### Analysis of *M. catarrhalis* gene content
-
-``` {bash Run panaroo on M. catarrhalis genome, eval = FALSE}
-
-mkdir -p Moraxella_panaroo_result
-panaroo-qc -t 8 --graph_type all -i *.gff --ref_db refseq.genomes.k21s1000.msh -o results
-panaroo -i *.gff -o Moraxella_panaroo_result --clean-mode moderate --merge_paralogs --remove-invalid-genes
-
-```
-
-Read in the gene presence/absence matrix:
-
-```{r import gene prensence absence file after ran quality control from Panaroo script and tidy up the Moraxella cattarrhalis gene presence absence columns to longer format columns, cache = FALSE}
-
-mcat_tar <- "./panaroo_output/Mcat_gene_presence_absence.tar.gz"
-
-# if (identical(Sys.getenv("CI"), "true")) {
-#   mcat_tar <- "./panaroo_output/test.Mcat_gene_presence_absence.tar.gz"
-# }
-
-tmp_dir  <- tempdir()
-mcat_fn <- "Mcat_gene_presence_absence.csv"
-tmp_path <- file.path(tmp_dir, mcat_fn)
-
-archive::archive_extract(
-  mcat_tar,
-  file = mcat_fn,
-  dir  = tmp_dir
-)
-
-```
-
-``` {r Process archive, cache = FALSE}
-
-Mcat_gene_preabsence <- read.csv(
-  tmp_path,
-  header = TRUE,
-  comment.char = "",
-  check.names = FALSE,
-  sep = ","
-  ) %>%
-  tidyr::pivot_longer(
-    cols = -c(
-      Gene,
-      `Non-unique Gene name`,
-      Annotation
-      ),
-    names_to = "npg_run_id",
-    values_to = "CDS"
-  )
-
-included_mcat <- unique(Mcat_gene_preabsence$npg_run_id)
-
-if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_mcat,expected_mcat)) > 0) {
-  stop("Mcat Panaroo not run on correct isolate set")
-}
-
-```
-
-### Pangenome curve for *M. catarrhalis*
-
-TO DO
-
-```{r Mcat downsampling for CI, cache = FALSE}
-
-if (identical(Sys.getenv("CI"), "true")) {
-
-  message("CI environment detected: downsampling Hinflu_long_filtered for speed/memory.")
-  Mcat_gene_preabsence %<>%
-  slice_sample(prop = 0.01)
-  
-}
-
-```
-
-### Geographic analysis of gene frequencies
-
-``` {r Compare gene frequencies across locations}
-
-p <- plot_mcat_cluster_pairs_two_species(
-  dplyr::bind_rows(
-    Mcat_gene_preabsence %>% 
-      process_gene_frequencies(Mcat_microreact_df)  %>% 
-      dplyr::mutate(Species = "Moraxella catarrhalis"),
-    Hinflu_gene_preabsence %>% 
-      process_gene_frequencies(Hflu_microreact_df)  %>% 
-      dplyr::mutate(Species = "Haemophilus influenzae")
-  ),
-  species1 = "Moraxella catarrhalis",
-  species2 = "Haemophilus influenzae",
-  species_palette = species_palette,
-  drakenstein_name = "Drakenstein",
-  hist_on_diagonal = TRUE
-)
-
-p
-
-```
-
-## Compare gene frequencies across locations
-
-Key hypothesis for the evolution of plasmids is that they enable the local adaptation of strains. Therefore we can plot their frequency across locations.
-
-### Frequency of plasmids across populations
-
-### Frequency of plasmid-borne genes across populations
 
 # Analysis of long-read data
 
