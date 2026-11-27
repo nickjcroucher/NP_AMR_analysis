@@ -194,7 +194,7 @@ plot_locus_comparison <- function(seqs, feats, links,
   p <- make_plot(links)
   
   # Keep the original strand for geometry; colour by post-flip orientation.
-  p <- p + geom_seq()
+  p <- p + gggenomes::geom_seq()
   if (is.null(colour_map) && is.null(clusters)) {
     p <- p + geom_gene(fill = "white")
   } else if (is.null(colour_map)) {
@@ -236,7 +236,7 @@ plot_locus_comparison <- function(seqs, feats, links,
       )
     ) +
     ggnewscale::new_scale_fill() +
-    geom_link(
+    gggenomes::geom_link(
       data = gggenomes::links(1, display_strand == "-"),
       aes(fill = identity),
       colour = "white",
@@ -259,9 +259,9 @@ plot_locus_comparison <- function(seqs, feats, links,
   # Reserve a dedicated band under the lowest bin. Expanding only the y range
   # keeps every sequence and link at its original genomic plot coordinates.
   if (is.null(bin_labels)) {
-    p <- p + geom_bin_label()
+    p <- p + gggenomes::geom_bin_label()
   } else {
-    p <- p + geom_bin_label(aes(label = ifelse(
+    p <- p + gggenomes::geom_bin_label(aes(label = ifelse(
       bin_id %in% names(bin_labels),
       unname(bin_labels[as.character(bin_id)]),
       encodeString(as.character(bin_id), quote = '"')
