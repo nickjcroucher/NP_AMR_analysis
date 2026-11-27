@@ -719,23 +719,41 @@ sample_df <-
                   )
                 )
 
-plot_plasmid_function <- function(fn, title_str = NULL) {
-  
+plot_plasmid_function <- function(fn, title_str = NULL, palette = NULL) {
+
   if (is.null(title_str)) {
-    title_str = fn
+    title_str <- fn
   }
-  
-  plasmid_tsv <-
-    readr::read_tsv(paste0('./plasmid_annotations/',fn),
-                    col_names = TRUE,skip = 5)
-  
-  ggplot(plasmid_tsv, aes(xmin = Start, xmax = Stop, y = `#Sequence Id`, fill = Gene)) +
-  geom_gene_arrow() +
-  facet_wrap(~ `#Sequence Id`, scales = "free", ncol = 1) +
-  scale_fill_brewer(palette = "Set3") +
-  ggtitle(title_str) +
-  theme_genes()
-  
+
+  plasmid_tsv <- readr::read_tsv(
+    paste0("./plasmid_annotations/", fn),
+    col_names = TRUE,
+    skip = 5
+  )
+
+  plasmid_plot <- ggplot(
+    plasmid_tsv,
+    aes(
+      xmin = Start,
+      xmax = Stop,
+      y = `#Sequence Id`,
+      fill = Gene
+    )
+  ) +
+    geom_gene_arrow() +
+    facet_wrap(~`#Sequence Id`, scales = "free", ncol = 1) +
+    ggtitle(title_str) +
+    theme_genes()
+
+  if (is.null(palette)) {
+    plasmid_plot <- plasmid_plot +
+      scale_fill_brewer(palette = "Set3")
+  } else {
+    plasmid_plot <- plasmid_plot +
+      scale_fill_manual(values = palette, na.value = "grey80")
+  }
+
+  return(plasmid_plot)
 }
 
 species_palette <- c(
@@ -2592,7 +2610,7 @@ ssuD_fasta_files <- list.files(
   full.names = TRUE
 )
 
-ssuD_seqs  <- read_seqs(
+ssuD_seqs  <- gggenomes::read_seqs(
   rev(ssuD_fasta_files),
   .id = "bin_id"
 )
@@ -2604,13 +2622,13 @@ ssuD_gff_files <- list.files(
   full.names = TRUE
 )
 
-ssuD_feats <- read_feats(
+ssuD_feats <- gggenomes::read_feats(
   rev(ssuD_gff_files),
   .id = "bin_id"   # use this if each GFF represents a separate genome/bin
 ) |> dplyr::filter(type == "CDS")
 
 ssuD_locus_links <-
-  read_paf("./AMR_loci/ssuD_locus_comp.paf") 
+  gggenomes::read_paf("./AMR_loci/ssuD_locus_comp.paf") 
 
 ssuD_locus_labels <- list()
 ssuD_locus_labels[["MEGIMD_04450"]] = "italic(tetD)"
@@ -2663,7 +2681,7 @@ recB_fasta_files <- list.files(
   full.names = TRUE
 )
 
-recB_seqs  <- read_seqs(
+recB_seqs  <- gggenomes::read_seqs(
   recB_fasta_files,
   .id = "bin_id"
 )
@@ -2675,13 +2693,13 @@ recB_gff_files <- list.files(
   full.names = TRUE
 )
 
-recB_feats <- read_feats(
+recB_feats <- gggenomes::read_feats(
   recB_gff_files,
   .id = "bin_id"   # use this if each GFF represents a separate genome/bin
 ) |> dplyr::filter(type == "CDS")
 
 recB_locus_links <-
-  read_paf("./AMR_loci/recB_locus_comp.paf") 
+  gggenomes::read_paf("./AMR_loci/recB_locus_comp.paf") 
 
 recB_locus_labels <- list()
 recB_locus_labels[["PMFBMI_04940"]] = "italic(recB)"
@@ -2730,8 +2748,33 @@ The annotation can therefore be represented as a circular plasmid:
 
 ```{r plot long-read assembly of AF100 plasmid name by gggenes}
 
-plot_plasmid_function("PCV-C-0707-2_pAF100.tsv", title_str = "pAF100") +
-  coord_polar(theta = "x") + theme_void()
+pAF100_palette = c(
+  "tet(B)" = "blue",
+  "tetC" = "blue",
+  "tetD" = "blue",
+  "tetR(B)" = "blue",
+  "dfrA4" = "blue",
+  "catA2" = "blue",
+  "sul2" = "blue",
+  "aph(3')-Ia" = "blue",
+  "aph(3'')-Ib" = "blue",
+  "aph3-Ic" = "blue",
+  "aph(6)-Id" = "blue",
+  "blaTEM-1" = "blue",
+  "topB" = "pink",
+  "traX" = "pink",
+  "traD" = "pink",
+  "traG" = "pink",
+  "traC" = "pink",
+  "traD" = "pink",
+  "mobH" = "pink",
+  "trnL" = "pink",
+  "dnaB" = "pink"
+)
+
+plot_plasmid_function("PCV-C-0707-2_pAF100.tsv", title_str = "pAF100", palette = pAF100_palette) +
+  coord_polar(theta = "x") +
+  theme_void()
 
 ```
 
