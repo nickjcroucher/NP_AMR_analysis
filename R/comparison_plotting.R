@@ -196,13 +196,13 @@ plot_locus_comparison <- function(seqs, feats, links,
   # Keep the original strand for geometry; colour by post-flip orientation.
   p <- p + gggenomes::geom_seq()
   if (is.null(colour_map) && is.null(clusters)) {
-    p <- p + geom_gene(fill = "white")
+    p <- p + gggenomes::geom_gene(fill = "white")
   } else if (is.null(colour_map)) {
-    p <- p + geom_gene(aes(fill = cluster_id), show.legend = FALSE) +
+    p <- p + gggenomes::geom_gene(aes(fill = cluster_id), show.legend = FALSE) +
       ggplot2::scale_fill_discrete(na.value = "white", guide = "none") +
       ggnewscale::new_scale_fill()
   } else {
-    p <- p + geom_gene(aes(fill = gene_fill), show.legend = FALSE) +
+    p <- p + gggenomes::geom_gene(aes(fill = gene_fill), show.legend = FALSE) +
       ggplot2::scale_fill_identity(guide = "none") +
       ggnewscale::new_scale_fill()
   }
@@ -216,7 +216,7 @@ plot_locus_comparison <- function(seqs, feats, links,
     )
   }
   p <- p +
-    geom_link(
+    ggnewscale::geom_link(
       data = gggenomes::links(1, display_strand == "+"),
       aes(fill = identity),
       colour = "white",
