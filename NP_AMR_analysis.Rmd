@@ -3080,6 +3080,15 @@ plot_amr_locus_comparison(
 
 ```
 
+```{bash, eval=FALSE}
+
+# Extract contig_1 from /Users/nc3/Documents/NP_colonisation/plasmid_sequences/36812_1#12_plasmid_AF098.fasta
+# as ./plasmid_annotations/36812_1_12_plasmid_AF098_contig1.fa with header >pAF098_3_contig_1, then run:
+cat ./AMR_loci/PCV-C-0760-2_ssuD_locus.fa ./plasmid_annotations/36812_1_12_plasmid_AF098_contig1.fa > ./AMR_loci/ssuD_pAF098_3_sequences.fna
+minimap2 -X -N 50 -p 0.1 -c ./AMR_loci/ssuD_pAF098_3_sequences.fna ./AMR_loci/ssuD_pAF098_3_sequences.fna > ./AMR_loci/ssuD_pAF098_3_comp.paf
+
+```
+
 ```{r Plot ssuD locus vs pAF098_3 comparison}
 
 ssuD_0760_seqs <- gggenomes::read_seqs(
@@ -3091,17 +3100,16 @@ ssuD_0760_feats <- gggenomes::read_feats(
   .id = "bin_id"
 ) |> dplyr::filter(type == "CDS")
 
+pAF098_3_seqs <- gggenomes::read_seqs(
+  "./plasmid_annotations/36812_1_12_plasmid_AF098_contig1.fa",
+  .id = "bin_id"
+) |> dplyr::mutate(bin_id = "pAF098_3", seq_id = "pAF098_3_contig_1")
+
 pAF098_3_tsv <- readr::read_tsv(
   "./plasmid_annotations/36812_1_12_plasmid_AF098.tsv",
   col_names = TRUE,
   skip = 5
 ) |> dplyr::filter(`#Sequence Id` == "contig_1")
-
-pAF098_3_seqs <- tibble::tibble(
-  bin_id = "pAF098_3",
-  seq_id = "pAF098_3_contig_1",
-  length = max(pAF098_3_tsv$Stop, na.rm = TRUE) + 500L
-)
 
 pAF098_3_feats <- pAF098_3_tsv |>
   dplyr::transmute(
@@ -3115,27 +3123,7 @@ pAF098_3_feats <- pAF098_3_tsv |>
     gene = Gene
   )
 
-# Link shared orthologous genes between PCV-C-0760-2 ssuD locus and pAF098_3 contig_1
-ssuD_pAF098_gene_pairs <- tibble::tibble(
-  ssuD_id = c("MEGIMD_04415", "MEGIMD_04420", "MEGIMD_04425", "MEGIMD_04430", "MEGIMD_04435", "MEGIMD_04440", "MEGIMD_04445"),
-  pAF098_id = c("IPFPOL_010", "IPFPOL_006", "IPFPOL_005", "IPFPOL_004", "IPFPOL_003", "IPFPOL_002", "IPFPOL_001")
-)
-
-ssuD_pAF098_links <- ssuD_pAF098_gene_pairs |>
-  dplyr::inner_join(
-    ssuD_0760_feats |> dplyr::select(ssuD_id = feat_id, seq_id, start, end, strand),
-    by = "ssuD_id"
-  ) |>
-  dplyr::inner_join(
-    pAF098_3_feats |> dplyr::select(pAF098_id = feat_id, seq_id2 = seq_id, start2 = start, end2 = end, strand2 = strand),
-    by = "pAF098_id"
-  ) |>
-  dplyr::transmute(
-    seq_id, start, end,
-    seq_id2, start2, end2,
-    strand = dplyr::if_else(as.character(strand) == as.character(strand2), "+", "-"),
-    de = 0
-  )
+ssuD_pAF098_links <- gggenomes::read_paf("./AMR_loci/ssuD_pAF098_3_comp.paf")
 
 ssuD_pAF098_labels <- c(
   ssuD_locus_labels,
