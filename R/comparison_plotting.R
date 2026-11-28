@@ -1,3 +1,53 @@
+#' Compute sliding-window GC content from one or more FASTA files
+#'
+#' @param fasta_files Character vector of FASTA file paths.
+#' @param window      Sliding window size in bp (default 500).
+#' @param step        Step size in bp; defaults to `max(1L, window %/% 5L)`.
+#' @return A tibble with columns `bin_id`, `seq_id`, `pos`, `gc`, and `length`.
+compute_gc_content <- function(fasta_files, window = 500L, step = NULL) {
+  window <- as.integer(window)
+  if (is.null(step)) step <- max(1L, window %/% 5L)
+  step <- as.integer(step)
+  stopifnot(window >= 1L, step >= 1L)
+
+  purrr::map_dfr(fasta_files, function(fp) {
+    lines <- readLines(fp, warn = FALSE)
+    hdr_idx <- grep("^>", lines)
+    if (length(hdr_idx) == 0L) return(tibble::tibble())
+    bin_id <- tools::file_path_sans_ext(basename(fp))
+    ends <- c(hdr_idx[-1L] - 1L, length(lines))
+
+    purrr::map_dfr(seq_along(hdr_idx), function(i) {
+      hdr <- sub("^>", "", lines[hdr_idx[i]])
+      seq_id <- strsplit(trimws(hdr), "\\s+")[[1L]][1L]
+      seq_str <- paste0(lines[(hdr_idx[i] + 1L):ends[i]], collapse = "")
+      bases <- strsplit(toupper(seq_str), "", fixed = TRUE)[[1L]]
+      n <- length(bases)
+      if (n == 0L) return(tibble::tibble())
+
+      w <- min(window, n)
+      starts <- seq(1L, max(1L, n - w + 1L), by = step)
+      is_gc <- as.integer(bases %in% c("G", "C"))
+      is_atgc <- as.integer(bases %in% c("A", "T", "G", "C"))
+      cs_gc <- c(0L, cumsum(is_gc))
+      cs_atgc <- c(0L, cumsum(is_atgc))
+
+      win_ends <- pmin(starts + w - 1L, n)
+      gc_counts <- cs_gc[win_ends + 1L] - cs_gc[starts]
+      atgc_counts <- cs_atgc[win_ends + 1L] - cs_atgc[starts]
+      gc_prop <- ifelse(atgc_counts > 0L, gc_counts / atgc_counts, NA_real_)
+
+      tibble::tibble(
+        bin_id = bin_id,
+        seq_id = seq_id,
+        pos = (starts + win_ends) / 2,
+        gc = gc_prop,
+        length = n
+      )
+    })
+  })
+}
+
 #' Plot a gggenomes locus comparison with flip support and separate red/blue
 #' identity-gradient legends (red = same, blue = opposite direction).
 #'
@@ -35,6 +85,16 @@
 #'                     cluster; otherwise uncoloured genes stay white.
 #' @param gene_label_nudge_y vertical offset of gene labels in bin-row units
 #'                           (default 0.12); increase to raise them further.
+#' @param fasta_files  optional FASTA file path(s) used to compute sliding-window
+#'                     GC content for the top sequence and plot it above the
+#'                     linear comparison.
+#' @param gc_data      optional precomputed GC data frame (with `pos`, `gc`, and
+#'                     `seq_id` or `bin_id`) to plot above the top sequence.
+#' @param gc_window    sliding-window size in bp when `fasta_files` is supplied
+#'                     (default 500).
+#' @param gc_height    height of the GC track in bin-row units (default 0.30).
+#' @param gc_nudge_y   vertical offset of the GC track above the top sequence
+#'                     in bin-row units (default 0.40).
 plot_locus_comparison <- function(seqs, feats, links,
                                   flip_bins = character(0),
                                   min_identity = 0.90,
@@ -47,7 +107,12 @@ plot_locus_comparison <- function(seqs, feats, links,
                                   gene_label_nudge_y = 0.12,
                                   sync = TRUE,
                                   clusters = NULL,
-                                  sync_link_track = 1) {
+                                  sync_link_track = 1,
+                                  fasta_files = NULL,
+                                  gc_data = NULL,
+                                  gc_window = 500L,
+                                  gc_height = 0.30,
+                                  gc_nudge_y = 0.40) {
   
   if (is.null(scalebar_y)) scalebar_y <- legend_y + 0.05
   stopifnot(
@@ -256,6 +321,82 @@ plot_locus_comparison <- function(seqs, feats, links,
       )
     )
   
+  # Optional GC content track above the top sequence
+  if (is.null(gc_data) && !is.null(fasta_files)) {
+    gc_data <- compute_gc_content(fasta_files, window = gc_window)
+  }
+  top_y_expand <- NULL
+  if (!is.null(gc_data) && nrow(gc_data) > 0L) {
+    plotted_final <- gggenomes::pull_seqs(p)
+    top_seq <- plotted_final[which.max(plotted_final$y), ]
+    top_gc <- if ("seq_id" %in% names(gc_data)) {
+      dplyr::filter(gc_data, .data$seq_id == top_seq$seq_id)
+    } else {
+      tibble::tibble()
+    }
+    if (nrow(top_gc) == 0L && "bin_id" %in% names(gc_data)) {
+      top_gc <- dplyr::filter(gc_data, .data$bin_id == top_seq$bin_id)
+    }
+    if (nrow(top_gc) == 0L && !("seq_id" %in% names(gc_data)) && !("bin_id" %in% names(gc_data))) {
+      top_gc <- gc_data
+    }
+    if (nrow(top_gc) == 0L) {
+      warning(
+        "GC track skipped: no rows in `gc_data` matched top sequence seq_id = '",
+        top_seq$seq_id, "' or bin_id = '", top_seq$bin_id, "'."
+      )
+    } else {
+      y_mid <- top_seq$y + gc_nudge_y + gc_height / 2
+      top_gc <- top_gc |>
+        dplyr::filter(is.finite(.data$gc)) |>
+        dplyr::mutate(
+          x = if (identical(as.character(top_seq$strand), "-")) {
+            top_seq$x + (top_seq$length - .data$pos)
+          } else {
+            top_seq$x + .data$pos
+          }
+        ) |>
+        dplyr::arrange(.data$x)
+
+      mean_gc <- mean(top_gc$gc, na.rm = TRUE)
+      max_dev <- max(abs(top_gc$gc - mean_gc), 0.05, na.rm = TRUE)
+      top_gc <- top_gc |>
+        dplyr::mutate(
+          y_mid = y_mid,
+          y_gc = y_mid + ((.data$gc - mean_gc) / max_dev) * (gc_height / 2)
+        )
+
+      p <- p +
+        ggplot2::annotate(
+          "segment",
+          x = top_seq$x, xend = top_seq$xend,
+          y = y_mid, yend = y_mid,
+          colour = "grey60", linetype = "dashed", linewidth = 0.3
+        ) +
+        ggplot2::geom_ribbon(
+          data = top_gc,
+          aes(x = .data$x, ymin = .data$y_mid, ymax = .data$y_gc),
+          fill = "grey45", alpha = 0.5,
+          inherit.aes = FALSE
+        ) +
+        ggplot2::geom_line(
+          data = top_gc,
+          aes(x = .data$x, y = .data$y_gc),
+          colour = "grey20", linewidth = 0.35,
+          inherit.aes = FALSE
+        ) +
+        ggplot2::annotate(
+          "text",
+          x = top_seq$x,
+          y = y_mid,
+          label = sprintf("GC%% (mean %.0f%%) ", mean_gc * 100),
+          hjust = 1,
+          size = 2.8
+        )
+      top_y_expand <- top_seq$y + gc_nudge_y + gc_height + 0.1
+    }
+  }
+
   # Reserve a dedicated band under the lowest bin. Expanding only the y range
   # keeps every sequence and link at its original genomic plot coordinates.
   if (is.null(bin_labels)) {
@@ -268,7 +409,7 @@ plot_locus_comparison <- function(seqs, feats, links,
     )), parse = TRUE)
   }
   p +
-    ggplot2::expand_limits(y = min(gggenomes::pull_seqs(p)$y) - legend_space) +
+    ggplot2::expand_limits(y = c(min(gggenomes::pull_seqs(p)$y) - legend_space, top_y_expand)) +
     gggenomes::geom_scalebar(
       x = 0.90, y = scalebar_y, length = 0.10,
       label_position = "above", guide_x = "none"
@@ -282,4 +423,48 @@ plot_locus_comparison <- function(seqs, feats, links,
       legend.box = "horizontal",
       legend.spacing.x = grid::unit(0.4, "cm")
     )
+}
+
+#' Load and plot an AMR locus comparison from an AMR loci directory
+#'
+#' @param locus            Locus prefix (e.g. `"ssuD"` or `"recB"`).
+#' @param gene_annotations Named list/vector of gene annotations.
+#' @param sequence_names   Named list/vector of sequence display labels.
+#' @param reverse_bins     Logical; reverse the input file order (default FALSE).
+#' @param amr_dir          Directory containing `<locus>_locus.*` files.
+#' @param ...              Additional arguments passed to `plot_locus_comparison()`.
+plot_amr_locus_comparison <- function(locus,
+                                      gene_annotations = NULL,
+                                      sequence_names = NULL,
+                                      reverse_bins = FALSE,
+                                      amr_dir = "./AMR_loci/",
+                                      ...) {
+  fasta_files <- sort(list.files(
+    amr_dir,
+    pattern = paste0(locus, "_locus\\.fa$"),
+    full.names = TRUE
+  ))
+  gff_files <- sort(list.files(
+    amr_dir,
+    pattern = paste0(locus, "_locus\\.gff(3)?(\\.gz)?$"),
+    full.names = TRUE
+  ))
+  if (isTRUE(reverse_bins)) {
+    fasta_files <- rev(fasta_files)
+    gff_files <- rev(gff_files)
+  }
+
+  seqs <- gggenomes::read_seqs(fasta_files, .id = "bin_id")
+  feats <- gggenomes::read_feats(gff_files, .id = "bin_id") |>
+    dplyr::filter(.data$type == "CDS")
+  links <- gggenomes::read_paf(file.path(amr_dir, paste0(locus, "_locus_comp.paf")))
+
+  plot_locus_comparison(
+    seqs,
+    feats,
+    links,
+    gene_annotations = gene_annotations,
+    sequence_names = sequence_names,
+    ...
+  )
 }

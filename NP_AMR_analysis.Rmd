@@ -26,6 +26,7 @@ require(cowplot)
 library(viridis)
 library(ape)
 library(ggtree)
+library(ggtree)
 
 source("./R/comparison_plotting.R")
 
@@ -544,6 +545,183 @@ process_strain_frequencies <- function(df) {
     mutate(Frequency = Strains_count / sum(Strains_count)) %>% 
     dplyr::ungroup()
   
+}
+
+#' Plot distribution of AMR locus genes across a core-genome phylogeny
+#'
+#' @param amr_distribution_df Data frame with a `cluster_id` column defining the
+#'   Panaroo gene clusters to plot (in order).
+#' @param gene_preabsence_df Long-format Panaroo presence/absence data frame with
+#'   `Gene`, `npg_run_id`, and `CDS` columns.
+#' @param tree_path Path to a Newick phylogeny whose tip labels match `npg_run_id`
+#'   (after stripping an optional `_fa` suffix).
+#' @param heatmap_width Width of the gheatmap relative to the tree (default `2`).
+#' @param font_size Font size for column labels (default `2`).
+#' @return A `ggplot` / `ggtree` object.
+plot_amr_gene_distribution <- function(amr_distribution_df,
+                                       gene_preabsence_df,
+                                       tree_path,
+                                       heatmap_width = 2,
+                                       font_size = 2) {
+  tree <- ape::read.tree(tree_path)
+  tree$tip.label <- sub("_fa$", "", tree$tip.label)
+
+  cluster_order <- amr_distribution_df |>
+    dplyr::filter(!is.na(cluster_id), cluster_id != "") |>
+    dplyr::pull(cluster_id) |>
+    unique()
+
+  # Determine presence/absence directly from Panaroo gene clusters
+  gene_presence <- gene_preabsence_df |>
+    dplyr::filter(!is.na(CDS), CDS != "", Gene %in% cluster_order) |>
+    dplyr::distinct(npg_run_id, cluster_id = Gene) |>
+    dplyr::mutate(present = "Present")
+
+  # Build presence/absence matrix aligned to tree tip labels
+  gene_mat <- tidyr::expand_grid(
+    npg_run_id = tree$tip.label,
+    cluster_id = cluster_order
+  ) |>
+    dplyr::left_join(gene_presence, by = c("npg_run_id", "cluster_id")) |>
+    dplyr::mutate(
+      present = factor(dplyr::coalesce(present, "Absent"), levels = c("Absent", "Present")),
+      cluster_id = factor(cluster_id, levels = cluster_order)
+    ) |>
+    tidyr::pivot_wider(
+      names_from = cluster_id,
+      values_from = present,
+      values_fill = factor("Absent", levels = c("Absent", "Present"))
+    ) |>
+    tibble::column_to_rownames("npg_run_id")
+
+  p_tree <- ggtree(tree, layout = "rectangular", size = 0.2)
+
+  gheatmap(
+    p_tree,
+    gene_mat,
+    offset = 0,
+    width = heatmap_width,
+    colnames = TRUE,
+    colnames_position = "top",
+    colnames_angle = 90,
+    hjust = 0,
+    font.size = font_size,
+    color = NA
+  ) +
+    scale_fill_manual(
+      values = c("Absent" = "grey95", "Present" = "steelblue"),
+      name = "Gene presence"
+    ) +
+    coord_cartesian(clip = "off") +
+    theme(
+      legend.position = "right",
+      plot.margin = margin(60, 5.5, 5.5, 5.5)
+    )
+}
+
+#' Plot a pangenome accumulation curve with a Heaps' law power-law fit
+#'
+#' @param gene_preabsence_df Long-format Panaroo presence/absence data frame with
+#'   `Gene`, `npg_run_id`, and `CDS` columns.
+#' @param n_samples Number of random genome orderings to sample (default `100`).
+#' @param seed Random seed for reproducibility (default `42`).
+#' @return A `ggplot` object.
+plot_pangenome_curve <- function(gene_preabsence_df,
+                                 n_samples = 100,
+                                 seed = 42) {
+  present_df <- gene_preabsence_df |>
+    dplyr::filter(!is.na(CDS), CDS != "") |>
+    dplyr::distinct(Gene, npg_run_id)
+
+  gene_idx <- as.integer(factor(present_df$Gene))
+  iso_idx <- as.integer(factor(present_df$npg_run_id))
+  n_genes <- max(gene_idx)
+  n_isolates <- max(iso_idx)
+  isolate_genes <- split(gene_idx, iso_idx)
+
+  set.seed(seed)
+  counts_mat <- matrix(0L, nrow = n_isolates, ncol = n_samples)
+
+  for (s in seq_len(n_samples)) {
+    seen <- logical(n_genes)
+    perm <- sample.int(n_isolates)
+    total <- 0L
+    for (k in seq_len(n_isolates)) {
+      g <- isolate_genes[[perm[k]]]
+      new_g <- g[!seen[g]]
+      if (length(new_g) > 0L) {
+        seen[new_g] <- TRUE
+        total <- total + length(new_g)
+      }
+      counts_mat[k, s] <- total
+    }
+  }
+
+  curve_df <- tibble::tibble(
+    n_genomes = seq_len(n_isolates),
+    mean_genes = rowMeans(counts_mat),
+    sd_genes = apply(counts_mat, 1, stats::sd),
+    min_genes = apply(counts_mat, 1, min),
+    max_genes = apply(counts_mat, 1, max)
+  )
+
+  # Fit Heaps' law power-law model: G(N) = kappa * N^gamma
+  fit <- tryCatch(
+    stats::nls(
+      mean_genes ~ kappa * n_genomes^gamma,
+      data = curve_df,
+      start = list(kappa = curve_df$mean_genes[1], gamma = 0.3)
+    ),
+    error = function(e) {
+      lm_fit <- stats::lm(log(mean_genes) ~ log(n_genomes), data = curve_df)
+      list(
+        kappa = exp(stats::coef(lm_fit)[1]),
+        gamma = stats::coef(lm_fit)[2],
+        is_lm = TRUE
+      )
+    }
+  )
+
+  if (is.list(fit) && isTRUE(fit$is_lm)) {
+    kappa <- unname(fit$kappa)
+    gamma <- unname(fit$gamma)
+  } else {
+    coefs <- stats::coef(fit)
+    kappa <- unname(coefs["kappa"])
+    gamma <- unname(coefs["gamma"])
+  }
+
+  curve_df <- curve_df |>
+    dplyr::mutate(fit_genes = kappa * n_genomes^gamma)
+
+  fit_label <- sprintf(
+    "italic(G)(italic(N)) == %.1f %%*%% italic(N)^{%.3f}",
+    kappa, gamma
+  )
+
+  ggplot(curve_df, aes(x = n_genomes)) +
+    geom_ribbon(aes(ymin = min_genes, ymax = max_genes), fill = "steelblue", alpha = 0.25) +
+    geom_line(aes(y = mean_genes, colour = "Observed mean"), linewidth = 0.8) +
+    geom_line(aes(y = fit_genes, colour = "Power-law fit"), linewidth = 0.8, linetype = "dashed") +
+    annotate(
+      "text",
+      x = Inf,
+      y = -Inf,
+      label = fit_label,
+      parse = TRUE,
+      hjust = 1.05,
+      vjust = -0.5,
+      size = 3.5
+    ) +
+    scale_colour_manual(
+      values = c("Observed mean" = "steelblue", "Power-law fit" = "firebrick"),
+      name = NULL
+    ) +
+    labs(
+      x = "Number of genomes",
+      y = "Total gene clusters"
+    ) +
+    theme(legend.position = "bottom")
 }
 
 ```
@@ -1884,8 +2062,6 @@ if (length(setdiff(expected_hflu,included_hflu)) > 0 | length(setdiff(included_h
 
 ### Pangenome curve for *H. influenzae*
 
-TO DO
-
 ```{r Hflu downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
@@ -1895,6 +2071,15 @@ if (identical(Sys.getenv("CI"), "true")) {
   slice_sample(prop = 0.01)
   
 }
+
+```
+
+```{r Hflu pangenome curve}
+
+plot_pangenome_curve(
+  Hinflu_gene_preabsence,
+  n_samples = 100
+)
 
 ```
 
@@ -1959,8 +2144,6 @@ if (length(setdiff(expected_mcat,included_mcat)) > 0 | length(setdiff(included_m
 
 ### Pangenome curve for *M. catarrhalis*
 
-TO DO
-
 ```{r Mcat downsampling for CI, cache = FALSE}
 
 if (identical(Sys.getenv("CI"), "true")) {
@@ -1970,6 +2153,15 @@ if (identical(Sys.getenv("CI"), "true")) {
   slice_sample(prop = 0.01)
   
 }
+
+```
+
+```{r Mcat pangenome curve}
+
+plot_pangenome_curve(
+  Mcat_gene_preabsence,
+  n_samples = 100
+)
 
 ```
 
@@ -2479,7 +2671,6 @@ Hflu_microreact_df %<>%
 
 ### Plot plasmid distribution across cohorts
 
-TO DO
 ```{r plot heatmap of plasmid distribution across cohort}
 
 plasmid_counts <- plasmid_reclustering_df %>%
@@ -2609,7 +2800,9 @@ cowplot::plot_grid(
 This plasmid appears to be mobilizable, because FEFEPI_001 corresponds to a bacterial mobilisation domain-containing protein, supporting a role in DNA processing or transfer during plasmid mobilization. The plasmid encodes mobilization/replication functions and a bacteriocin–immunity/export module, this sequence is best described as a competition-and-defense plasmid that can likely spread between bacteria. Overall, the plasmid most likely promotes interbacterial antagonism, self-protection, and horizontal dissemination of these traits.
 
 ``` {r Plot AB778 plasmids by gggenes after ran bakta}
+
 plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
+
 ```
 
 #### pAG261_20
@@ -2617,7 +2810,9 @@ plot_plasmid_function("SAMEA4620300_plasmid_AB778.tsv", title_str = "pAB778")
 Based on the InterPro classification of protein families which finalized the plasmid protein and found that the sequence HAEKGJ_001 is still just a small hypothetical protein with no confidently assignable conserved InterPro domain, so it does not materially improve functional annotation of the plasmid. Based on the currently available evidence, this sequence is best described as a poorly characterized plasmid carrying mostly uninformative small proteins, with no strong domain support for a specific role such as resistance, secretion, metabolism, or mobility. Overall, it is most likely a cryptic plasmid or plasmid fragment whose biological function remains uncertain pending comparative or experimental analysis.
 
 ```{r import AG261_20 plasmid from bakta tool analysis and plot by gggenes}
+
 plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
+
 ```
 
 #### pAG261_17
@@ -2625,10 +2820,13 @@ plot_plasmid_function("SAMEA4621056_plasmid_AG261.tsv", title_str = "pAG261_20")
 After analyzing the plasmid by bakta tool, we uploaded embl file into artemis for identify the plasmid protein and then download amino acid file for input to the InterPro through the link https://www.ebi.ac.uk/interpro/. Based on InterPro classification of protein families which finalized clearly to be a replicative plasmid, because HJCCDA_001 is a large replication initiation protein consistent with a plasmid Rep factor required for origin recognition and plasmid maintenance. In the absence of additional InterPro-supported accessory functions such as toxin, resistance, secretion, or mobilization proteins, the sequence is best interpreted as a minimal maintenance plasmid whose primary biological role is autonomous replication and stable inheritance in its bacterial host. Overall, this looks most like a cryptic plasmid centered on replication rather than specialized adaptive cargo.
 
 ```{r plot gggenes of selected AG261_17 plasmid}
+
 plot_plasmid_function("SAMEA4620430_plasmid_AG261.tsv", title_str = "pAG261_17")
+
 ```
 
 #### pAG261_14
+
 This plasmid likely functions primarily in gene regulation and plasmid maintenance, as it encodes an H-NS family nucleoid-associated protein, a DNA-binding factor that can compact DNA and transcriptionally silence or modulate expression of plasmid-borne genes. The presence of an H-NS-like protein suggests the plasmid may help control its own transcriptional burden and improve compatibility with the host by repressing potentially deleterious or horizontally acquired sequences. Overall, this is most consistent with a small regulatory/maintenance plasmid, although additional genes would be needed to define any specialized accessory function.
 
 ```{r plot the selected AG261_14 plasmid by gggenes}
@@ -2666,7 +2864,6 @@ Use `plasmid_reclustering_df` to find representatives for annotation:
 For each one, search the dataframe, then use the "sample_name" column to find the right annotation (note you may have to replace the # character with an underscore).
 
 ### Plasmids in *H. influenzae*
-Import each H. influenzae plasmids group of all tsv files from plasmid_annotations after analised by Bakta tool
 
 #### pAF100_1
 This sequence still encodes only a small conserved hypothetical protein with no detectable InterPro domain, so it does not provide evidence for a specific plasmid-associated function. Because there are likewise no signatures here for replication, mobilization, resistance, toxin production, or secretion, the element is best described as a poorly characterized cryptic plasmid or plasmid fragment. Overall, its biological role remains unknown, beyond carrying a recurrent small hypothetical protein found on related sequences.
@@ -2747,6 +2944,7 @@ plot_plasmid_function("36812_1_226_plasmid_AF100.tsv", title_str = "pAF100_28")
 ```
 
 #### pAF098_3
+
 This plasmid likely contributes to tetracycline resistance regulation, because it encodes TetC, a tetracycline resistance-associated transcriptional repressor that would typically control expression of a linked tetracycline resistance determinant. Even if the effector resistance gene is not shown here, the presence of TetC strongly suggests participation in a tetracycline-responsive resistance module rather than a purely cryptic plasmid function. Overall, this sequence is best interpreted as a resistance-associated plasmid or plasmid fragment involved in the control of tetracycline resistance genes.
 
 ```{r plot AF098_3 plasmid by gggenes}
@@ -2764,6 +2962,7 @@ plot_plasmid_function("36774_1#134_plasmid_AF098.tsv", title_str = "pAF098_29")
 This result still supports only a small hypothetical protein with no recognizable conserved InterPro domain, so it does not permit a confident assignment of biological function. In the absence of replication, mobilization, resistance, secretion, or toxin-associated signatures, the sequence is best interpreted as a poorly characterized cryptic plasmid or plasmid fragment encoding an uncharacterized small protein. Overall, its biological role remains uncertain and will require comparative or experimental follow-up.
 
 ```{r plot new AB946 plasmid name by gggenes}
+
 plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b6.tsv", title_str = "pAB946")
 
 ```
@@ -2772,11 +2971,13 @@ plot_plasmid_function("36812_1_100_plasmid_novel_058a9c5c6f0355e99dfddf5ddd1752b
 With only a single predicted protein containing DUF7695 and no additional conserved replication, mobilization, resistance, toxin, or metabolic domains, this plasmid remains functionally uncharacterized based on current InterProScan evidence. The sequence most likely encodes a small hypothetical protein of unknown role, and there is not enough domain information to infer a confident biological function for the plasmid as a whole. Overall, this appears to be a cryptic plasmid or plasmid fragment whose biological significance will require comparative genomics or experimental validation.
 
 ```{r plot gggenes for new AB946_30 plasmid name}
+
 plot_plasmid_function("36812_1#183_plasmid_AB946.tsv", title_str = "pAB946_30")
 
 ```
 
 #### pAB946_27
+
 This sequence is best interpreted as a replication-focused plasmid, because GAPPCC_01 is a Replicase A–type replication initiation protein consistent with autonomous plasmid replication. Since no additional InterPro-supported functions are evident here for mobilization, resistance, toxin production, or specialized metabolism, the plasmid most likely serves primarily as a self-maintaining cryptic replicon. Overall, its main biological role is likely plasmid replication and stable persistence in the host bacterium.
 
 ```{r plot gggenes of new AB946 plasmid}
@@ -2784,9 +2985,11 @@ plot_plasmid_function("46321_2_221_plasmid_AB946.tsv", title_str = "pAB946_27")
 ```
 
 #### pAE025
+
 This additional sequence still supports only a hypothetical protein with no confidently assignable conserved InterPro domain, so it does not provide strong new evidence for a specific plasmid function. Based on the currently available annotations, the plasmid remains best described as a poorly characterized or cryptic replicon/plasmid fragment, with insufficient domain support to infer roles such as conjugation, resistance, toxin production, or specialized metabolism. Overall, its biological function is still uncertain and likely requires comparison to related plasmids or experimental follow-up.
 
 ```{r plot gggenes of new AE025 plasmid name}
+
 plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("48373_1_177_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("46358_2_150_plasmid_AE025.tsv", title_str = "pAE025")
@@ -2796,12 +2999,14 @@ plot_plasmid_function("48373_1_159_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("36984_2_130_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("36983_1_178_plasmid_AE025.tsv", title_str = "pAE025")
 #plot_plasmid_function("36985_2_360_plasmid_novel_071630adf7395bed54463d0ce41009d5.tsv", title_str = "pAE025")
+
 ```
 
 #### pAB621
 This plasmid clearly carries an antibiotic resistance determinant, because it encodes blaROB-1, a broad-spectrum class A beta-lactamase that would be expected to inactivate beta-lactam antibiotics such as penicillins and related compounds. The sequence is therefore best interpreted as a resistance plasmid or resistance-associated plasmid fragment whose primary adaptive role is to confer beta-lactam resistance to its host bacterium. Overall, this plasmid likely contributes to the maintenance and potential dissemination of clinically relevant antimicrobial resistance.
 
 ```{r plot AB621 plasmid by gggenes}
+
 plot_plasmid_function("36812_1_239_plasmid_AB621.tsv", title_str = "pAB621")
 #plot_plasmid_function("36985_2_126_plasmid_AB621.tsv", title_str = "pAB621")
 ```
@@ -2824,7 +3029,7 @@ plot_plasmid_function("36774_1_56_plasmid_AC497.tsv", title_str = "pAC497_2")
 Use `plasmid_reclustering_df` to find representatives for annotation:
 
  [1] "plasmid_AF100_1"  "plasmid_AB621"    "plasmid_AF100_23" "plasmid_AF100_25" "plasmid_AF100_26" "plasmid_AB946_27"
- [7] "plasmid_AF100_28" "plasmid_AF098_29" "plasmid_AB946"    "plasmid_AC497_2"  "plasmid_AF098_3"  "plasmid_AE025"   
+ [7] "plasmid_AF100_28" "plasmid_AF098_29" "plasmid_AB946"    "plasmid_AC497_2"  "plasmid_AF098_3"  "plasmid_AE025"
 [13] "plasmid_AB946_30" "plasmid_AF100_5"  "plasmid_AF100_6"  "plasmid_AF100_7"  "plasmid_AF100_8"  "plasmid_AF100_16"
 [19] "plasmid_AC497_18" "plasmid_AF100_19" "plasmid_AC497_21" "plasmid_AE169"    "plasmid_AB947_24"
 
@@ -2848,33 +3053,6 @@ minimap2 -X -N 50 -p 0.1 -c ssuD_sequences.fna ssuD_sequences.fna > ssuD_locus_c
 
 ```{r Plot ssuD locus comparison}
 
-# Parse sequences
-ssuD_fasta_files <- list.files(
-  "./AMR_loci/",
-  pattern = "ssuD_locus\\.fa$",
-  full.names = TRUE
-)
-
-ssuD_seqs  <- gggenomes::read_seqs(
-  rev(ssuD_fasta_files),
-  .id = "bin_id"
-)
-
-# Parse annotations
-ssuD_gff_files <- list.files(
-  "./AMR_loci/",
-  pattern = "ssuD_locus\\.gff(3)?(\\.gz)?$",
-  full.names = TRUE
-)
-
-ssuD_feats <- gggenomes::read_feats(
-  rev(ssuD_gff_files),
-  .id = "bin_id"   # use this if each GFF represents a separate genome/bin
-) |> dplyr::filter(type == "CDS")
-
-ssuD_locus_links <-
-  gggenomes::read_paf("./AMR_loci/ssuD_locus_comp.paf") 
-
 ssuD_locus_labels <- list()
 ssuD_locus_labels[["MEGIMD_04450"]] = "italic(tetD)"
 ssuD_locus_labels[["MEGIMD_04445"]] = "italic(tetC)"
@@ -2889,13 +3067,99 @@ ssuD_locus_names = list()
 ssuD_locus_names[["PCV-C-0245-2_ssuD_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0245-2)"
 ssuD_locus_names[["PCV-C-0760-2_ssuD_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0760-2)"
 
-plot_locus_comparison(
-  ssuD_seqs,
-  ssuD_feats,
-  ssuD_locus_links,
-  min_identity = 0.90,
+plot_amr_locus_comparison(
+  locus = "ssuD",
   gene_annotations = ssuD_locus_labels,
   sequence_names = ssuD_locus_names,
+  reverse_bins = TRUE,
+  min_identity = 0.90,
+  fasta_files = "./AMR_loci/PCV-C-0760-2_ssuD_locus.fa",
+  gc_nudge_y = 0.6,
+  sync = TRUE
+)
+
+```
+
+```{r Plot ssuD locus vs pAF098_3 comparison}
+
+ssuD_0760_seqs <- gggenomes::read_seqs(
+  "./AMR_loci/PCV-C-0760-2_ssuD_locus.fa",
+  .id = "bin_id"
+)
+ssuD_0760_feats <- gggenomes::read_feats(
+  "./AMR_loci/PCV-C-0760-2_ssuD_locus.gff",
+  .id = "bin_id"
+) |> dplyr::filter(type == "CDS")
+
+pAF098_3_tsv <- readr::read_tsv(
+  "./plasmid_annotations/36812_1_12_plasmid_AF098.tsv",
+  col_names = TRUE,
+  skip = 5
+) |> dplyr::filter(`#Sequence Id` == "contig_1")
+
+pAF098_3_seqs <- tibble::tibble(
+  bin_id = "pAF098_3",
+  seq_id = "pAF098_3_contig_1",
+  length = max(pAF098_3_tsv$Stop, na.rm = TRUE) + 500L
+)
+
+pAF098_3_feats <- pAF098_3_tsv |>
+  dplyr::transmute(
+    bin_id = "pAF098_3",
+    seq_id = "pAF098_3_contig_1",
+    start = Start,
+    end = Stop,
+    strand = Strand,
+    feat_id = `Locus Tag`,
+    type = "CDS",
+    gene = Gene
+  )
+
+# Link shared orthologous genes between PCV-C-0760-2 ssuD locus and pAF098_3 contig_1
+ssuD_pAF098_gene_pairs <- tibble::tibble(
+  ssuD_id = c("MEGIMD_04415", "MEGIMD_04420", "MEGIMD_04425", "MEGIMD_04430", "MEGIMD_04435", "MEGIMD_04440", "MEGIMD_04445"),
+  pAF098_id = c("IPFPOL_010", "IPFPOL_006", "IPFPOL_005", "IPFPOL_004", "IPFPOL_003", "IPFPOL_002", "IPFPOL_001")
+)
+
+ssuD_pAF098_links <- ssuD_pAF098_gene_pairs |>
+  dplyr::inner_join(
+    ssuD_0760_feats |> dplyr::select(ssuD_id = feat_id, seq_id, start, end, strand),
+    by = "ssuD_id"
+  ) |>
+  dplyr::inner_join(
+    pAF098_3_feats |> dplyr::select(pAF098_id = feat_id, seq_id2 = seq_id, start2 = start, end2 = end, strand2 = strand),
+    by = "pAF098_id"
+  ) |>
+  dplyr::transmute(
+    seq_id, start, end,
+    seq_id2, start2, end2,
+    strand = dplyr::if_else(as.character(strand) == as.character(strand2), "+", "-"),
+    de = 0
+  )
+
+ssuD_pAF098_labels <- c(
+  ssuD_locus_labels,
+  list(
+    IPFPOL_007 = "italic(bla)[TEM-2]",
+    IPFPOL_008 = "italic(tnpR)",
+    IPFPOL_009 = "italic(tnpA)"
+  )
+)
+
+ssuD_pAF098_names <- list(
+  "PCV-C-0760-2_ssuD_locus" = "atop(italic(M.~catarrhalis),PCV-C-0760-2)",
+  "pAF098_3" = "pAF098_3"
+)
+
+plot_locus_comparison(
+  dplyr::bind_rows(ssuD_0760_seqs, pAF098_3_seqs),
+  dplyr::bind_rows(ssuD_0760_feats, pAF098_3_feats),
+  ssuD_pAF098_links,
+  min_identity = 0.90,
+  gene_annotations = ssuD_pAF098_labels,
+  sequence_names = ssuD_pAF098_names,
+  fasta_files = "./AMR_loci/PCV-C-0760-2_ssuD_locus.fa",
+  gc_nudge_y = 0.6,
   sync = TRUE
 )
 
@@ -2919,33 +3183,6 @@ minimap2 -X -N 50 -p 0.1 -c recB_sequences.fna recB_sequences.fna > recB_locus_c
 
 ```{r Plot recB locus comparison}
 
-# Parse sequences
-recB_fasta_files <- list.files(
-  "./AMR_loci/",
-  pattern = "recB_locus\\.fa$",
-  full.names = TRUE
-)
-
-recB_seqs  <- gggenomes::read_seqs(
-  recB_fasta_files,
-  .id = "bin_id"
-)
-
-# Parse annotations
-recB_gff_files <- list.files(
-  "./AMR_loci/",
-  pattern = "recB_locus\\.gff(3)?(\\.gz)?$",
-  full.names = TRUE
-)
-
-recB_feats <- gggenomes::read_feats(
-  recB_gff_files,
-  .id = "bin_id"   # use this if each GFF represents a separate genome/bin
-) |> dplyr::filter(type == "CDS")
-
-recB_locus_links <-
-  gggenomes::read_paf("./AMR_loci/recB_locus_comp.paf") 
-
 recB_locus_labels <- list()
 recB_locus_labels[["PMFBMI_04940"]] = "italic(recB)"
 recB_locus_labels[["PMFBMI_05040"]] = "italic(tnp)"
@@ -2960,13 +3197,13 @@ recB_locus_names = list()
 recB_locus_names[["PCV-C-0245-2_recB_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0245-2)"
 recB_locus_names[["PCV-C-0760-2_recB_locus"]] = "atop(italic(M.~catarrhalis),PCV-C-0760-2)"
 
-plot_locus_comparison(
-  recB_seqs,
-  recB_feats,
-  recB_locus_links,
-  min_identity = 0.90,
+plot_amr_locus_comparison(
+  locus = "recB",
   gene_annotations = recB_locus_labels,
   sequence_names = recB_locus_names,
+  min_identity = 0.90,
+  fasta_files = "./AMR_loci/PCV-C-0245-2_recB_locus.fa",
+  gc_nudge_y = 0.6,
   sync = TRUE
 )
 
@@ -2975,6 +3212,45 @@ plot_locus_comparison(
 The antibiotic resistance cassette inserts adjacent to a PRCI-type element.
 
 #### Analysis of the distribution of these AMR genes
+
+Use proteins from the two AMR loci from long-read assemblies to match those found in short-read assemblies, and the corresponding Panaroo clusters:
+
+```{bash, eval=FALSE}
+
+python get_resistance_loci.py --gene-data ../../panaroo/Mcat_gene_data.csv.tar.gz --presence ../panaroo_output/Mcat_gene_presence_absence.tar.gz --query Mcat_AMR_Tnp.aa --output Mcat_AMR_Tnp_distribution.csv
+
+Mapping complete
+------------------------------
+Queries processed: 15
+Matched queries:   14
+Unmatched queries: 1
+Output file:       Mcat_AMR_Tnp_distribution.csv
+
+```
+
+Analyse the distribution of Panaroo clusters:
+
+``` {r Distribution of AMR loci in Mcat}
+
+mcat_amr_distribution_df <-
+  read.csv("./resistance_proteins/Mcat_AMR_Tnp_distribution.csv") |> 
+    dplyr::mutate(cluster_id = 
+                    dplyr::if_else(
+                      query_id == "PMFBMI_05105",
+                      "aph3Ib",
+                      cluster_id
+                    )
+                 )
+
+plot_amr_gene_distribution(
+  amr_distribution_df = mcat_amr_distribution_df,
+  gene_preabsence_df = Mcat_gene_preabsence,
+  tree_path = "./PopPUNK_analysis/Mcat_seroClassification_viz_core_NJ.nwk",
+  heatmap_width = 1,
+  font_size = 2.5
+)
+
+```
 
 ### Analysis of *H. influenzae* AMR loci
 
@@ -3014,12 +3290,83 @@ pAF100_palette = c(
   "traD" = "pink",
   "mobH" = "pink",
   "trnL" = "pink",
-  "dnaB" = "pink"
+  "dnaB" = "pink",
+  "ssb" = "pink",
+  "tnp" = "hotpink"
 )
 
-plot_plasmid_function("PCV-C-0707-2_pAF100.tsv", title_str = "pAF100", palette = pAF100_palette) +
+pAF100_tsv <- readr::read_tsv(
+  "./plasmid_annotations/PCV-C-0707-2_pAF100.tsv",
+  col_names = TRUE,
+  skip = 5
+)
+
+pAF100_gc <- compute_gc_content(
+  "./plasmid_annotations/PCV-C-0707-2_pAF100.fa",
+  window = 500L,
+  step = 100L
+)
+
+pAF100_len <- max(pAF100_gc$length, pAF100_tsv$Stop, na.rm = TRUE)
+pAF100_mean_gc <- mean(pAF100_gc$gc, na.rm = TRUE)
+pAF100_max_dev <- max(abs(pAF100_gc$gc - pAF100_mean_gc), 0.05, na.rm = TRUE)
+
+# Radial bands: empty centre (0..1.8) makes a larger plasmid ring;
+# internal GC ring at y = 2.2 +/- 0.4; outer gene ring at y = 3.2; labels outside
+gc_mid_y <- 2.2
+pAF100_gc <- pAF100_gc |>
+  dplyr::mutate(
+    y_gc = gc_mid_y + ((gc - pAF100_mean_gc) / pAF100_max_dev) * 0.4
+  )
+
+pAF100_labels <- pAF100_tsv |>
+  dplyr::filter(!is.na(Gene), Gene != "", Gene != "tnp") |>
+  dplyr::mutate(mid = (Start + Stop) / 2)
+
+ggplot(pAF100_tsv) +
+  geom_hline(yintercept = gc_mid_y, colour = "grey60", linetype = "dashed", linewidth = 0.3) +
+  geom_ribbon(
+    data = pAF100_gc,
+    aes(x = pos, ymin = gc_mid_y, ymax = y_gc),
+    fill = "grey45",
+    alpha = 0.55
+  ) +
+  geom_line(
+    data = pAF100_gc,
+    aes(x = pos, y = y_gc),
+    colour = "grey20",
+    linewidth = 0.3
+  ) +
+  geom_hline(yintercept = 3.2, colour = "grey50", linewidth = 0.4) +
+  geom_gene_arrow(
+    aes(
+      xmin = Start,
+      xmax = Stop,
+      y = 3.2,
+      fill = Gene,
+      forward = Strand == "+"
+    ),
+    arrowhead_height = grid::unit(4, "mm"),
+    arrow_body_height = grid::unit(3, "mm"),
+    show.legend = FALSE
+  ) +
+  ggrepel::geom_text_repel(
+    data = pAF100_labels,
+    aes(x = mid, y = 3.35, label = Gene),
+    size = 2.5,
+    nudge_y = 0.35,
+    segment.size = 0.25,
+    segment.colour = "grey50",
+    min.segment.length = 0,
+    max.overlaps = Inf
+  ) +
+  annotate("text", x = 0, y = 0, label = "pAF100", size = 6, fontface = "bold") +
+  scale_fill_manual(values = pAF100_palette, na.value = "grey80") +
+  scale_x_continuous(limits = c(0, pAF100_len), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 4.3)) +
   coord_polar(theta = "x") +
-  theme_void()
+  theme_void() +
+  theme(legend.position = "none")
 
 ```
 
@@ -3049,71 +3396,18 @@ hflu_amr_distribution_df <-
     dplyr::mutate(cluster_id = 
                     dplyr::if_else(
                       query_id == "JEOCPL_10175",
-                      "aph(3'')-Ib",
+                      "aph3Ib",
                       cluster_id
                     )
                  )
 
-hflu_tree <- ape::read.tree("./PopPUNK_analysis/Hflu_viz_core_NJ.nwk")
-hflu_tree$tip.label <- sub("_fa$", "", hflu_tree$tip.label)
-
-# Preserve plasmid gene order of cluster_ids from hflu_amr_distribution_df
-hflu_amr_matched <- hflu_amr_distribution_df |>
-  dplyr::filter(annotation_id != "", cluster_id != "")
-
-cluster_order <- unique(hflu_amr_matched$cluster_id)
-
-# Match annotation_id to CDS in Hinflu_gene_preabsence (handling ';'-separated paralogs)
-hflu_amr_presence <- Hinflu_gene_preabsence |>
-  dplyr::filter(CDS != "", Gene %in% cluster_order) |>
-  tidyr::separate_rows(CDS, sep = ";") |>
-  dplyr::inner_join(
-    hflu_amr_matched |> dplyr::distinct(annotation_id, cluster_id),
-    by = c("CDS" = "annotation_id")
-  ) |>
-  dplyr::distinct(npg_run_id, cluster_id) |>
-  dplyr::mutate(present = "Present")
-
-# Build presence/absence matrix aligned to tree tip labels
-hflu_amr_mat <- tidyr::expand_grid(
-  npg_run_id = hflu_tree$tip.label,
-  cluster_id = cluster_order
-) |>
-  dplyr::left_join(hflu_amr_presence, by = c("npg_run_id", "cluster_id")) |>
-  dplyr::mutate(
-    present = factor(dplyr::coalesce(present, "Absent"), levels = c("Absent", "Present")),
-    cluster_id = factor(cluster_id, levels = cluster_order)
-  ) |>
-  tidyr::pivot_wider(
-    names_from = cluster_id,
-    values_from = present,
-    values_fill = factor("Absent", levels = c("Absent", "Present"))
-  ) |>
-  tibble::column_to_rownames("npg_run_id")
-
-p_hflu_tree <- ggtree(hflu_tree, layout = "rectangular", size = 0.2)
-
-gheatmap(
-  p_hflu_tree,
-  hflu_amr_mat,
-  offset = 0,
-  width = 2,
-  colnames = TRUE,
-  colnames_position = "top",
-  colnames_angle = 90,
-  hjust = 0,
-  font.size = 2,
-  color = NA
-) +
-  scale_fill_manual(
-    values = c("Absent" = "grey95", "Present" = "steelblue"),
-    name = "Gene presence"
-  ) +
-  coord_cartesian(clip = "off") +
-  theme(
-    legend.position = "right",
-    plot.margin = margin(60, 5.5, 5.5, 5.5)
-  )
+plot_amr_gene_distribution(
+  amr_distribution_df = hflu_amr_distribution_df,
+  gene_preabsence_df = Hinflu_gene_preabsence,
+  tree_path = "./PopPUNK_analysis/Hflu_viz_core_NJ.nwk",
+  heatmap_width = 2,
+  font_size = 2
+)
 
 ```
 
